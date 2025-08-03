@@ -1,13 +1,8 @@
-/*
- * tile_drive_h.h
- *
- */
-
 #ifndef INC_TILE_SENSE_I_9_H_
 #define INC_TILE_SENSE_I_9_H_
 
+#include "main.h"
 #include "stdint.h"
-#include "i2c.h"
 
 #define ICM20948_I2C_ADDR			0x68
 
