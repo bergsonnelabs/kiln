@@ -6,7 +6,9 @@
 
 #define TMD3725_I2C_ADDR				0x39
 
+#define TMD3725_REG_ENABLE				0x80
 #define TMD3725_REG_ID					0x92
+#define TMD3725_REG_PDATA				0x9C
 
 #define TMD3725_REG_ID_DEFAULT			0xE4
 

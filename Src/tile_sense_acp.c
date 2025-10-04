@@ -39,6 +39,11 @@ uint8_t tile_sense_acp_init(I2C_HandleTypeDef* hi2c)
 	if(tmd3725_read(TMD3725_REG_ID) != TMD3725_REG_ID_DEFAULT){
 		return 0;
 	}
+	tmd3725_write(TMD3725_REG_ENABLE, 0x08); // activate everything
 	return 1;
+}
 
+uint8_t tile_sense_acp_get_pdata()
+{
+	return tmd3725_read(TMD3725_REG_PDATA);
 }
