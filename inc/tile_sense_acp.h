@@ -26,4 +26,34 @@
 **********************************************************/
 uint8_t tile_sense_acp_check(I2C_HandleTypeDef* hi2c);
 
+/**********************************************************
+
+	INITIALIZE THE TILE
+
+	parameters
+	-------------------------------------------------------
+	hi2c		handle to the pre-configured I2C port
+
+	returns
+	-------------------------------------------------------
+	success		1 = success, 0 = error
+
+**********************************************************/
+uint8_t tile_sense_acp_init(I2C_HandleTypeDef* hi2c);
+
+/**********************************************************
+
+	READ PROXIMITY DATA
+
+	parameters
+	-------------------------------------------------------
+	hi2c		handle to the pre-configured I2C port
+
+	returns
+	-------------------------------------------------------
+	success		1 = success, 0 = error
+
+**********************************************************/
+uint8_t tile_sense_acp_get_pdata(void);
+
 #endif
