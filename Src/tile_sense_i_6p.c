@@ -14,9 +14,14 @@ uint8_t tile_sense_i_6p_init(I2C_HandleTypeDef* hi2c)
 		return 0;
 	}
 
-	icm42688p_write(ICM42688P_REG_PWR_MGMT0, 0x0F); // turn on the gyro and accel
+	icm42688p_write(ICM42688P_REG_PWR_MGMT0, 0x0F); // turn on the gyro and accel in low-noise mode
 
 	return 1;
+}
+
+void tile_sense_i_6p_config_accel(accel_fsr_t fsr, accel_odr_t odr){
+	icm42688p_write(ICM42688P_REG_ACCEL_CONFIG0, fsr<<5);
+	//TODO working here
 }
 
 void tile_sense_i_6p_get_raw_6dof(int16_t* buffer){
