@@ -8,7 +8,8 @@
 
 #define TMD3725_REG_ENABLE				0x80
 #define TMD3725_REG_ID					0x92
-#define TMD3725_REG_PDATA				0x9C
+#define TMD3725_REG_CDATAL				0x94
+#define TMD3725_REG_CDATAH				0x95
 
 #define TMD3725_REG_ID_DEFAULT			0xE4
 
@@ -45,7 +46,7 @@ uint8_t tile_sense_acp_init(I2C_HandleTypeDef* hi2c);
 
 /**********************************************************
 
-	READ PROXIMITY DATA
+	READ CLEAR-CHANNEL DATA
 
 	parameters
 	-------------------------------------------------------
@@ -56,6 +57,6 @@ uint8_t tile_sense_acp_init(I2C_HandleTypeDef* hi2c);
 	success		1 = success, 0 = error
 
 **********************************************************/
-uint8_t tile_sense_acp_get_pdata(void);
+uint16_t tile_sense_acp_get_cdata(void);
 
 #endif
