@@ -8,6 +8,23 @@ uint8_t drive_p_return_reg = 0x00;
 static void bos1921_write(uint8_t index, uint8_t reg, uint16_t value);
 static void bos1921_set_return_reg(uint8_t index, uint8_t reg);
 
+uint8_t tile_drive_p_find(I2C_HandleTypeDef* hi2c)
+{
+	uint8_t TX_Buffer[2] = {0,0};
+	uint16_t temp = 0;
+	drive_p_handle = hi2c;
+
+	// attempt to wake the chip
+	HAL_I2C_Mem_Write(drive_p_handle, BOS1921_I2C_ADDR<<1, 0x00, 1, (uint8_t *)TX_Buffer, 2, 1000);
+	tile_drive_p_reset(0);
+	temp = tile_drive_p_read(0);
+	if( (temp & 0x0FFF) != 0x0781){
+
+		return 0;
+	}
+	return 1;
+}
+
 uint8_t tile_drive_p_init(I2C_HandleTypeDef* hi2c)
 {
 	uint8_t TX_Buffer[2] = {0,0};

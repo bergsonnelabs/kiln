@@ -59,6 +59,7 @@
 #define TILE_DRIVE_P_MODE_PLAY_FIFO      4
 #define TILE_DRIVE_P_MODE_DEBUG			 5
 
+uint8_t tile_drive_p_find(I2C_HandleTypeDef* hi2c);
 uint8_t tile_drive_p_init(I2C_HandleTypeDef* hi2c);
 void tile_drive_p_reset(uint8_t lsb);
 void tile_drive_p_set_mode(uint8_t lsb, uint8_t mode);
