@@ -4,9 +4,13 @@
 #include "main.h"
 #include "stdint.h"
 
+#define MODE_I2C							0
+#define MODE_PADS							1
+
 #define DRV8214_I2C_ADDR					0x34
 
 #define DRV8214_REG_CONFIG0					0x09
+#define DRV8214_REG_CONFIG4					0x0D
 
 #define DRV8214_REG_CONFIG0_DEFAULT			0x60
 
@@ -24,5 +28,23 @@
 
 **********************************************************/
 uint8_t tile_drive_dc_i_find(I2C_HandleTypeDef* hi2c);
+
+/**********************************************************
+
+	CONFIGURE THE TILE FOR I2C
+
+	parameters
+	-------------------------------------------------------
+	mode		0 = I2C, 1 = pads
+
+	returns
+	-------------------------------------------------------
+	success		1 = success, 0 = error
+
+**********************************************************/
+
+void tile_drive_dc_i_config(uint8_t mode);
+
+void tile_drive_dc_i_output(uint8_t en, uint8_t dir);
 
 #endif
