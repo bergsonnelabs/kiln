@@ -1,6 +1,6 @@
 #include "tile_tak.h"
 
-I2C_HandleTypeDef* tak_handle;
+I2C_HandleTypeDef* tak_handles[10];
 
 uint8_t return_reg = 0x00;
 
@@ -12,41 +12,26 @@ int *tx_ptr = (int *)TX_Buffer;
 void bos1921_write(uint8_t index, uint8_t reg, uint16_t value);
 void bos1921_set_return_reg(uint8_t index, uint8_t reg);
 
-uint8_t tile_tak_init(I2C_HandleTypeDef* hi2c, uint8_t index, uint16_t gpio_pin)
+uint8_t tile_tak_find(I2C_HandleTypeDef* hi2c, uint8_t index)
 {
 	uint16_t temp = 0;
-	tak_handle = hi2c;
+	tak_handles[index] = hi2c;
 
-	// wake the chip
-	HAL_I2C_Mem_Write(tak_handle, BOS1921_I2C_ADDR<<1, 0x00, 1, (uint8_t *)TX_Buffer, 2, 1000);
-//	HAL_Delay(50);
+	// SEND DUMMY DATA TO WAKE
+	HAL_I2C_Mem_Write(tak_handles[index], (BOS1921_I2C_ADDR+index)<<1, 0x00, 1, (uint8_t *)TX_Buffer, 2, 1000);
 
-	tile_tak_reset(0);
-
-	// 6 = 1
-	// 5 = 0
-	// 4:0 = 11110 (0x1E)
-//	bos1921_write(0,BOS_REG_COMM,0x005E); // GPIODIR = 1; RDARRR = 0x1E
-
-	// A8 = far; A12 = near
-//    HAL_GPIO_WritePin(GPIOA, gpio_pin, 0);
-
-    // SUP RISE
-    // 15:12	0100	I2C ADDR LSB
-    // 11		1		LP
-    // 10:6		00101	VDD
-    // 5:0		100111	TI_RISE
-    // DEFAULT: 0100100101100111 (0x4967)
-    // NEW: change I2C ADDR LSB from 4 to 5
-//    bos1921_write(0,BOS_REG_SUP_RISE, (0x4967 | ((uint16_t)index)<<12) );
-//	*tx_ptr = __builtin_bswap16(0x4967 | ((uint16_t)index)<<12);
-//	HAL_I2C_Mem_Write(tak_handle, BOS1921_I2C_ADDR<<1, BOS_REG_SUP_RISE, 1, (uint8_t *)TX_Buffer, 2, 1000);
+	tile_tak_reset(index);
 
 	temp = tile_tak_read(index);
 	if( (temp & 0x0FFF) != 0x0781){
-
 		return 0;
 	}
+	return 1;
+
+}
+
+uint8_t tile_tak_init(uint8_t index)
+{
 	return 1;
 }
 
@@ -94,19 +79,19 @@ uint16_t tile_tak_read(uint8_t index){
 	uint8_t RX_Buffer[2] = {0,0};
 	int *rx_ptr = (int *)RX_Buffer;
 
-	HAL_I2C_Mem_Read(tak_handle, (0x44+index)<<1, 0x00, 1, (uint8_t *)RX_Buffer, 2, 1000);
+	HAL_I2C_Mem_Read(tak_handles[index], (BOS1921_I2C_ADDR+index)<<1, 0x00, 1, (uint8_t *)RX_Buffer, 2, 1000);
 
 	return __builtin_bswap16(*rx_ptr);
 }
 
 void tile_tak_write(uint8_t index, uint8_t reg, uint16_t value){
 	*tx_ptr = __builtin_bswap16(value);
-	HAL_I2C_Mem_Write(tak_handle, (0x44+index)<<1, reg, 1, (uint8_t *)TX_Buffer, 2, 1000);
+	HAL_I2C_Mem_Write(tak_handles[index], (BOS1921_I2C_ADDR+index)<<1, reg, 1, (uint8_t *)TX_Buffer, 2, 1000);
 }
 
 void bos1921_write(uint8_t index, uint8_t reg, uint16_t value){
 	*tx_ptr = __builtin_bswap16(value);
-	HAL_I2C_Mem_Write(tak_handle, (0x44+index)<<1, reg, 1, (uint8_t *)TX_Buffer, 2, 1000);
+	HAL_I2C_Mem_Write(tak_handles[index], (BOS1921_I2C_ADDR+index)<<1, reg, 1, (uint8_t *)TX_Buffer, 2, 1000);
 }
 
 void bos1921_set_return_reg(uint8_t index, uint8_t reg){

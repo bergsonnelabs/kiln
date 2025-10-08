@@ -1,8 +1,16 @@
+/*
+ * tile_tak.h
+ *
+ *  Created on: Jun 6, 2025
+ *      Author: jonathanfiene
+ */
+
 #ifndef INC_TILE_TAK_H_
 #define INC_TILE_TAK_H_
 
-#include "main.h"
+
 #include "stdint.h"
+#include "i2c.h"
 
 #define BOS1921_I2C_ADDR	0x44
 
@@ -59,8 +67,10 @@
 #define TILE_TAK_MODE_PLAY_FIFO      4
 #define TILE_TAK_MODE_DEBUG			 5
 
-uint8_t tile_tak_init(I2C_HandleTypeDef* hi2c, uint8_t index, uint16_t gpio_pin);
+uint8_t tile_tak_find(I2C_HandleTypeDef* hi2c, uint8_t index);
 void tile_tak_reset(uint8_t lsb);
+uint8_t tile_tak_init(uint8_t index);
+
 void tile_tak_set_mode(uint8_t lsb, uint8_t mode);
 uint16_t tile_tak_read(uint8_t lsb);
 void tile_tak_write(uint8_t lsb, uint8_t reg, uint16_t value);
