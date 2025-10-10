@@ -9,6 +9,7 @@
 #define DAC530A2W_REG_GEN_STATUS			0x22
 
 #define DAC530A2W_REG_GEN_STATUS_L_DEFAULT	0x18
+#define DAC530A2W_REG_COMMON_CONFIG			0x1F
 
 
 /**********************************************************
