@@ -40,8 +40,7 @@ uint8_t tile_sense_acp_init(I2C_HandleTypeDef* hi2c)
 		return 0;
 	}
 	tmd3725_write(TMD3725_REG_CFG1, 0x02); // set ALS gain to 16x
-
-
+	tmd3725_write(TMD3725_REG_ATIME, 0x2F);
 	tmd3725_write(TMD3725_REG_PCFG1, 0b10000001); // set PGAIN = 4x; PLDRIVE = 12mA
 	tmd3725_write(TMD3725_REG_ENABLE, 0x07); // activate ALS & PROX
 	return 1;
@@ -52,6 +51,16 @@ uint16_t tile_sense_acp_get_cdata()
 	return (uint16_t)
 	( ( (uint16_t) tmd3725_read(TMD3725_REG_CDATAH) )<<8) +
 	( ( (uint16_t) tmd3725_read(TMD3725_REG_CDATAL) ));
+}
+
+void tile_sense_acp_get_rgb(int16_t* buffer)
+{
+	HAL_I2C_Mem_Read(tile_handle, TMD3725_I2C_ADDR<<1, TMD3725_REG_RDATAL, 1, (uint8_t *)buffer, 6, 1000);
+// byte swap is only required IF data is stored high-byte first
+//	for(int i=0;i<6;i++){
+//		buffer[i] = (int16_t*)__builtin_bswap16(buffer[i]);
+//	}
+
 }
 
 uint8_t tile_sense_acp_get_pdata()
