@@ -9,8 +9,8 @@
 #define INC_TILE_TAK_H_
 
 
+#include "main.h"
 #include "stdint.h"
-#include "i2c.h"
 
 #define BOS1921_I2C_ADDR	0x44
 
