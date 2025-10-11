@@ -48,16 +48,36 @@ void tile_drive_dc_i_config(uint8_t mode)
 	// 	B		NAME			DEFAULT		SET
 	// ----------------------------------------------------------------------
 	// 	7		EN_OUT			0			1 (turn on output stage)
-	// 	6		EN_OVP			1
-	// 	5		EN_STALL		1
-	// 	4		VSNS_SEL		0
-	// 	3		VM_GAIN_SEL		0
-	//	2		CLR_CNT			0
-	//	1		CLR_FLT			0
-	//	0		DUTY_CTRL		0
+	// 	6		EN_OVP			1			1
+	// 	5		EN_STALL		1			0 (disable stall detection)
+	// 	4		VSNS_SEL		0			0
+	// 	3		VM_GAIN_SEL		0			1 (3.92V full scale voltage mode)
+	//	2		CLR_CNT			0			0
+	//	1		CLR_FLT			0			0
+	//	0		DUTY_CTRL		0			0
 	TX_Buffer[0] = 0b11100000;
 	HAL_I2C_Mem_Write(tile_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG0, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
 
+	// ----------------------------------------------------------------------
+	// REGISTER: CTRL0
+	// ----------------------------------------------------------------------
+	// 	B		NAME			DEFAULT		SET
+	// ----------------------------------------------------------------------
+	// 	7:6		-				00			00
+	//	5		EN_SS			0			1		enable soft start/stop
+	//	4:3		REG_CTRL		00			11		voltage regulated
+	//	2		PWM_FREQ		1			1		25kHz
+	//	1:0		W_SCALE			11			11		128
+	TX_Buffer[0] = 0b00111111;
+	HAL_I2C_Mem_Write(tile_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CTRL0, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
+
+	// set TINRUSH
+	TX_Buffer[0] = 0x1F;
+	HAL_I2C_Mem_Write(tile_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG1, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
+
+	// set target motor voltage to 3.92 * 180/255 = 2.8V
+	TX_Buffer[0] = 180;
+	HAL_I2C_Mem_Write(tile_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CTRL1, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
 }
 
 
