@@ -27,6 +27,6 @@
 	success		1 = success, 0 = error
 
 **********************************************************/
-uint8_t tile_sense_co2_check(I2C_HandleTypeDef* hi2c);
+uint8_t tile_sense_co2_find(I2C_HandleTypeDef* hi2c);
 
 #endif

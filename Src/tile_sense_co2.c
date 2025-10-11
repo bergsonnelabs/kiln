@@ -6,7 +6,7 @@ static I2C_HandleTypeDef* tile_handle;
 // PUBLIC FUNCTIONS
 // ---------------------------------------------------------
 
-uint8_t tile_sense_co2_check(I2C_HandleTypeDef* hi2c)
+uint8_t tile_sense_co2_find(I2C_HandleTypeDef* hi2c)
 {
 	uint8_t RX_Buffer[1];
 //	uint8_t TX_Buffer[1] = {STC31_CMD_ID1B};
