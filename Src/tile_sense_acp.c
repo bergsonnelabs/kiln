@@ -39,7 +39,11 @@ uint8_t tile_sense_acp_init(I2C_HandleTypeDef* hi2c)
 	if(tmd3725_read(TMD3725_REG_ID) != TMD3725_REG_ID_DEFAULT){
 		return 0;
 	}
-	tmd3725_write(TMD3725_REG_ENABLE, 0x03); // activate ALS
+	tmd3725_write(TMD3725_REG_CFG1, 0x02); // set ALS gain to 16x
+
+
+	tmd3725_write(TMD3725_REG_PCFG1, 0b10000001); // set PGAIN = 4x; PLDRIVE = 12mA
+	tmd3725_write(TMD3725_REG_ENABLE, 0x07); // activate ALS & PROX
 	return 1;
 }
 
@@ -48,4 +52,9 @@ uint16_t tile_sense_acp_get_cdata()
 	return (uint16_t)
 	( ( (uint16_t) tmd3725_read(TMD3725_REG_CDATAH) )<<8) +
 	( ( (uint16_t) tmd3725_read(TMD3725_REG_CDATAL) ));
+}
+
+uint8_t tile_sense_acp_get_pdata()
+{
+	return tmd3725_read(TMD3725_REG_PDATA);
 }
