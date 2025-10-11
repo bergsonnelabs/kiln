@@ -54,8 +54,9 @@ void tile_drive_h_play(uint8_t index, uint8_t repeat){
 	TX_Buffer[0] = index; // 10110110
 	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_WAVE_SEQ_0, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
 	TX_Buffer[0] = 0x01; // 10110110
-	for(int i=0; i<repeat; i++){
-		HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_GO, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
+	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_GO, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
+	for(int i=1; i<repeat; i++){
 		HAL_Delay(200);
+		HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_GO, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
 	}
 }
