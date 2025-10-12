@@ -19,3 +19,27 @@ uint8_t tile_drive_vc_s_find(I2C_HandleTypeDef* hi2c)
 		return 0;
 	}
 }
+
+uint8_t tile_drive_vc_s_init(I2C_HandleTypeDef* hi2c){
+	tile_handle = hi2c;
+	return 1;
+}
+
+uint8_t tile_drive_vc_s_output(uint16_t current){
+
+	// ----------------------------------------------------------------------
+	// REGISTER: VCA_CURRENT_MSB
+	// ----------------------------------------------------------------------
+	uint8_t RX_Buffer[1];
+	uint8_t TX_Buffer[1];
+
+	TX_Buffer[0] = current>>8;
+	HAL_I2C_Mem_Write(tile_handle, DRV201_I2C_ADDR<<1, DRV201_REG_VCM_CURRENT_MSB, 1, (uint8_t *)TX_Buffer, 1, 1000);
+
+	TX_Buffer[0] = (uint8_t)(current & 0x00FF);
+	HAL_I2C_Mem_Write(tile_handle, DRV201_I2C_ADDR<<1, DRV201_REG_VCM_CURRENT_LSB, 1, (uint8_t *)TX_Buffer, 1, 1000);
+
+	HAL_I2C_Mem_Read(tile_handle, DRV201_I2C_ADDR<<1, DRV201_REG_STATUS, 1, (uint8_t *)RX_Buffer, 1, 1000);
+	return RX_Buffer[0];
+
+}
