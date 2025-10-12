@@ -8,6 +8,7 @@
 
 #define ILPS22QS_REG_WHO_AM_I			0x0F
 #define ILPS22QS_REG_CTRL_REG1			0x10
+#define ILPS22QS_REG_CTRL_REG2			0x11
 #define ILPS22QS_REG_PRESS_OUT_XL		0x28
 #define ILPS22QS_REG_PRESS_OUT_L		0x29
 #define ILPS22QS_REG_PRESS_OUT_H		0x2A
@@ -58,5 +59,9 @@ uint8_t tile_sense_bp_init(I2C_HandleTypeDef* hi2c);
 
 **********************************************************/
 uint32_t tile_sense_bp_get_pressure(void);
+
+void tile_sense_bp_set_offset(void);
+int16_t tile_sense_bp_get_scaled_pressure(void);
+
 
 #endif
