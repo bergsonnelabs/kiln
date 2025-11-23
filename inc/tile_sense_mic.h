@@ -19,7 +19,7 @@
 	success		1 = success, 0 = error
 
 **********************************************************/
-uint8_t tile_sense_mic_check(I2C_HandleTypeDef* hi2c);
+uint8_t tile_sense_mic_find(I2C_HandleTypeDef* hi2c);
 
 /**********************************************************
 
