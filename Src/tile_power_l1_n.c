@@ -36,8 +36,8 @@ uint8_t tile_power_l1_n_init(I2C_HandleTypeDef* hi2c)
 	// -----------------------------------------------------------
 	//	BITS					DEF		SET		NOTES
 	// -----------------------------------------------------------
-	TX_Buffer[0] = 100;
-	HAL_I2C_Mem_Write(power_l1_n_handle, NPM1300_I2C_ADDR<<1, NPM1300_REG_ADCDELTIMCONF, I2C_MEMADD_SIZE_16BIT, (uint8_t *)TX_Buffer, 1, 1000);
+//	TX_Buffer[0] = 100;
+//	HAL_I2C_Mem_Write(power_l1_n_handle, NPM1300_I2C_ADDR<<1, NPM1300_REG_ADCDELTIMCONF, I2C_MEMADD_SIZE_16BIT, (uint8_t *)TX_Buffer, 1, 1000);
 
 	// 	NPM1300_REG_ADCCONFIG
 	// -----------------------------------------------------------
@@ -71,7 +71,7 @@ uint8_t tile_power_l1_n_init(I2C_HandleTypeDef* hi2c)
 	//	BITS					DEF		SET		NOTES
 	// -----------------------------------------------------------
 	// value = floor(ma/4)
-	TX_Buffer[0] = 8;
+	TX_Buffer[0] = 25;
 	HAL_I2C_Mem_Write(power_l1_n_handle, NPM1300_I2C_ADDR<<1, NPM1300_REG_BCHGISETMSB, I2C_MEMADD_SIZE_16BIT, (uint8_t *)TX_Buffer, 1, 1000);
 
 	// NPM1300_REG_BCHGVTERM & NPM1300_REG_BCHGVTERMR
@@ -83,6 +83,7 @@ uint8_t tile_power_l1_n_init(I2C_HandleTypeDef* hi2c)
 	HAL_I2C_Mem_Write(power_l1_n_handle, NPM1300_I2C_ADDR<<1, NPM1300_REG_BCHGVTERM, I2C_MEMADD_SIZE_16BIT, (uint8_t *)TX_Buffer, 1, 1000);
 	HAL_I2C_Mem_Write(power_l1_n_handle, NPM1300_I2C_ADDR<<1, NPM1300_REG_BCHGVTERMR, I2C_MEMADD_SIZE_16BIT, (uint8_t *)TX_Buffer, 1, 1000);
 
+
 	// NPM1300_REG_BCHGENABLESET
 	// -----------------------------------------------------------
 	//	BITS					DEF		SET		NOTES
@@ -92,10 +93,6 @@ uint8_t tile_power_l1_n_init(I2C_HandleTypeDef* hi2c)
 	TX_Buffer[0] = 0b00000011;
 	HAL_I2C_Mem_Write(power_l1_n_handle, NPM1300_I2C_ADDR<<1, NPM1300_REG_BCHGENABLESET, I2C_MEMADD_SIZE_16BIT, (uint8_t *)TX_Buffer, 1, 1000);
 
-	// LEDs
-
-	TX_Buffer[0] = 1;
-	HAL_I2C_Mem_Write(power_l1_n_handle, NPM1300_I2C_ADDR<<1, NPM1300_REG_LEDDRV2SET, I2C_MEMADD_SIZE_16BIT, (uint8_t *)TX_Buffer, 1, 1000);
 
 	return 1;
 }
@@ -131,7 +128,14 @@ uint16_t tile_power_l1_n_get_status(void)
 
 uint16_t tile_power_l1_n_get_vbat(void)
 {
+
+	uint8_t TX_Buffer[1];
 	uint8_t RX_Buffer[1] = {0};
+
+//	TX_Buffer[0] = 1;
+//	HAL_I2C_Mem_Write(power_l1_n_handle, NPM1300_I2C_ADDR<<1, NPM1300_REG_LEDDRV2SET, I2C_MEMADD_SIZE_16BIT, (uint8_t *)TX_Buffer, 1, 1000);
+
+
 	HAL_I2C_Mem_Read(power_l1_n_handle, NPM1300_I2C_ADDR<<1, NPM1300_REG_ADCVBATRESULTMSB, I2C_MEMADD_SIZE_16BIT, (uint8_t *)RX_Buffer, 1, 1000);
 	uint16_t result = 5 * (((uint16_t)RX_Buffer[0]) << 2);
 	return result;//(uint16_t) RX_Buffer[0];
