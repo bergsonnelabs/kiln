@@ -16,10 +16,13 @@ uint8_t tile_drive_p_find(I2C_HandleTypeDef* hi2c)
 
 	// attempt to wake the chip
 	HAL_I2C_Mem_Write(drive_p_handle, BOS1921_I2C_ADDR<<1, 0x00, 1, (uint8_t *)TX_Buffer, 2, 1000);
+
+	// reset
 	tile_drive_p_reset(0);
+
+	// read the CHIP_ID register (default response)
 	temp = tile_drive_p_read(0);
 	if( (temp & 0x0FFF) != 0x0781){
-
 		return 0;
 	}
 	return 1;
@@ -27,40 +30,6 @@ uint8_t tile_drive_p_find(I2C_HandleTypeDef* hi2c)
 
 uint8_t tile_drive_p_init(I2C_HandleTypeDef* hi2c)
 {
-	uint8_t TX_Buffer[2] = {0,0};
-	uint16_t temp = 0;
-	drive_p_handle = hi2c;
-
-	// wake the chip
-	HAL_I2C_Mem_Write(drive_p_handle, BOS1921_I2C_ADDR<<1, 0x00, 1, (uint8_t *)TX_Buffer, 2, 1000);
-//	HAL_Delay(50);
-
-	tile_drive_p_reset(0);
-
-	// 6 = 1
-	// 5 = 0
-	// 4:0 = 11110 (0x1E)
-//	bos1921_write(0,BOS_REG_COMM,0x005E); // GPIODIR = 1; RDARRR = 0x1E
-
-	// A8 = far; A12 = near
-//    HAL_GPIO_WritePin(GPIOA, gpio_pin, 0);
-
-    // SUP RISE
-    // 15:12	0100	I2C ADDR LSB
-    // 11		1		LP
-    // 10:6		00101	VDD
-    // 5:0		100111	TI_RISE
-    // DEFAULT: 0100100101100111 (0x4967)
-    // NEW: change I2C ADDR LSB from 4 to 5
-//    bos1921_write(0,BOS_REG_SUP_RISE, (0x4967 | ((uint16_t)index)<<12) );
-//	*tx_ptr = __builtin_bswap16(0x4967 | ((uint16_t)index)<<12);
-//	HAL_I2C_Mem_Write(drive_p_handle, BOS1921_I2C_ADDR<<1, BOS_REG_SUP_RISE, 1, (uint8_t *)TX_Buffer, 2, 1000);
-
-	temp = tile_drive_p_read(0);
-	if( (temp & 0x0FFF) != 0x0781){
-
-		return 0;
-	}
 	return 1;
 }
 
