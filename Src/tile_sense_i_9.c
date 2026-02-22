@@ -5,6 +5,15 @@ I2C_HandleTypeDef* sense_i_9_handle;
 void icm20948_write(uint8_t reg, uint8_t value);
 void ak09916_write(uint8_t reg, uint8_t value);
 
+uint8_t tile_sense_i_9_find(I2C_HandleTypeDef* hi2c)
+{
+	if(HAL_I2C_IsDeviceReady(hi2c, ICM20948_I2C_ADDR<<1, 3, 1000) == 0){ // HAL_StatusTypeDef = 0=okay, 1=error, 2=busy, 3=timeout
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
 uint8_t tile_sense_i_9_init(I2C_HandleTypeDef* hi2c)
 {
 	uint8_t RX_Buffer[1];

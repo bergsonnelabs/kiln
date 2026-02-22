@@ -4,7 +4,7 @@
 #include "main.h"
 #include "stdint.h"
 
-#define ICM20948_I2C_ADDR			0x68
+#define ICM20948_I2C_ADDR			0x69
 
 #define ICM20948_BANK_0             0x00
 #define ICM20948_BANK_1             0x01
@@ -66,6 +66,7 @@ typedef enum
     GYRO_2000DPS = (0x03),
 } g_range_t;
 
+uint8_t tile_sense_i_9_find(I2C_HandleTypeDef* hi2c);
 uint8_t tile_sense_i_9_init(I2C_HandleTypeDef* hi2c);
 void tile_sense_i_9_set_accel_range(a_range_t accel_range);
 void tile_sense_i_9_set_gyro_range(g_range_t gyro_range);
