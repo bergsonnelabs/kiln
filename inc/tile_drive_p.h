@@ -61,10 +61,10 @@
 
 uint8_t tile_drive_p_find(I2C_HandleTypeDef* hi2c);
 uint8_t tile_drive_p_init(I2C_HandleTypeDef* hi2c);
-void tile_drive_p_reset(uint8_t lsb);
-void tile_drive_p_set_mode(uint8_t lsb, uint8_t mode);
-uint16_t tile_drive_p_read(uint8_t lsb);
-void tile_drive_p_write(uint8_t lsb, uint8_t reg, uint16_t value);
+void tile_drive_p_reset(I2C_HandleTypeDef* hi2c);
+void tile_drive_p_set_mode(I2C_HandleTypeDef* hi2c, uint8_t mode);
+uint16_t tile_drive_p_read(I2C_HandleTypeDef* hi2c);
+void tile_drive_p_write(I2C_HandleTypeDef* hi2c, uint8_t reg, uint16_t value);
 
 
 #endif /* INC_TILE_DRIVE_P_H_ */
