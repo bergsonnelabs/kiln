@@ -1,91 +1,190 @@
+/**
+ * @file   tile_sense_i_9.c
+ * @brief  9-DOF IMU driver implementation (ICM-20948 + AK09916).
+ */
+
 #include "tile_sense_i_9.h"
 
-I2C_HandleTypeDef* sense_i_9_handle;
+/* -------------------------------------------------------------- */
+/* Private state                                                   */
+/* -------------------------------------------------------------- */
 
-void icm20948_write(uint8_t reg, uint8_t value);
-void ak09916_write(uint8_t reg, uint8_t value);
+static kiln_hal_t* hal_ptr = 0;
+static uint8_t icm_addr = ICM20948_I2C_ADDR_DEFAULT;
 
-uint8_t tile_sense_i_9_find(I2C_HandleTypeDef* hi2c)
+/* -------------------------------------------------------------- */
+/* Private helpers                                                 */
+/* -------------------------------------------------------------- */
+
+static void icm_write(uint8_t reg, uint8_t value)
 {
-	if(HAL_I2C_IsDeviceReady(hi2c, ICM20948_I2C_ADDR<<1, 3, 1000) == 0){ // HAL_StatusTypeDef = 0=okay, 1=error, 2=busy, 3=timeout
-		return 1;
-	} else {
-		return 0;
-	}
+    hal_ptr->i2c_write(hal_ptr->handle, icm_addr, reg, &value, 1);
 }
 
-uint8_t tile_sense_i_9_init(I2C_HandleTypeDef* hi2c)
+static void icm_read(uint8_t reg, uint8_t* data, uint16_t len)
 {
-	uint8_t RX_Buffer[1];
-
-	sense_i_9_handle = hi2c;
-
-	// CHECK WHO_AM_I
-	HAL_I2C_Mem_Read(sense_i_9_handle, ICM20948_I2C_ADDR<<1, ICM20948_REG_WHOAMI, 1, (uint8_t *)RX_Buffer, 1, 1000);
-	if(RX_Buffer[0] != ICM20948_REG_WHOAMI_DEFAULT){
-		return 0;
-	}
-
-	icm20948_write(ICM20948_REG_PWR_MGMT_1,1<<7);		// reset
-	HAL_Delay(50);
-
-    icm20948_write(ICM20948_REG_PWR_MGMT_1, 1);			// WAKE (6=0) & AUTO CLK (2:0 = 1)
-    icm20948_write(ICM20948_REG_PWR_MGMT_2, 7);         // DISABLE GYRO (--000111)
-    icm20948_write(ICM20948_REG_PWR_MGMT_2, 0x00);      // ENABLE GYRO + ACCEL (--000000)
-    icm20948_write(ICM20948_REG_INT_PIN_CFG, 0x02);     // BYPASS_EN for talking to the magnetometer directly
-
-    icm20948_write(ICM20948_REG_BANK_SEL, ICM20948_BANK_0);  // switch to bank 0
-
-    ak09916_write(AK09916_REG_CNTL2, 0x06);              // initialize the magnetometer
-
-	return 1;
+    hal_ptr->i2c_read(hal_ptr->handle, icm_addr, reg, data, len);
 }
 
-void tile_sense_i_9_set_accel_range(a_range_t accel_range)
+static void ak_write(uint8_t reg, uint8_t value)
 {
-    // SET ACCEL RANGE
-    icm20948_write(ICM20948_REG_BANK_SEL, ICM20948_BANK_2);  // switch to bank 2
-    icm20948_write(ICM20948_REG_ACCEL_CONFIG, accel_range);  // set range and FCHOICE=0 to disable internal filter
-
+    hal_ptr->i2c_write(hal_ptr->handle, AK09916_I2C_ADDR, reg, &value, 1);
 }
 
-void tile_sense_i_9_set_gyro_range(g_range_t gyro_range)
+static void ak_read(uint8_t reg, uint8_t* data, uint16_t len)
 {
-    icm20948_write(ICM20948_REG_BANK_SEL, ICM20948_BANK_2);  // switch to bank 2
-    icm20948_write(ICM20948_REG_GYRO_CONFIG, gyro_range);  // set range and FCHOICE=0 to disable internal
-
+    hal_ptr->i2c_read(hal_ptr->handle, AK09916_I2C_ADDR, reg, data, len);
 }
 
-void tile_sense_i_9_get_raw_accels(int16_t* buffer){
-	HAL_I2C_Mem_Read(sense_i_9_handle, ICM20948_I2C_ADDR<<1, ICM20948_REG_ACCEL_X_H, 1, (uint8_t *)buffer, 6, 1000);
-	for(int i=0;i<3;i++){
-		buffer[i] = (int16_t*)__builtin_bswap16(buffer[i]);
-	}
+static void set_bank(uint8_t bank)
+{
+    icm_write(ICM20948_REG_BANK_SEL, bank << 4);
 }
 
-void tile_sense_i_9_get_raw_6dof(int16_t* buffer){
-	HAL_I2C_Mem_Read(sense_i_9_handle, ICM20948_I2C_ADDR<<1, ICM20948_REG_ACCEL_X_H, 1, (uint8_t *)buffer, 12, 1000);
-	for(int i=0;i<6;i++){
-		buffer[i] = (int16_t*)__builtin_bswap16(buffer[i]);
-	}
+/** @brief  Swap bytes in a buffer of int16_t values (big-endian → native). */
+static void swap16(int16_t* buf, uint8_t count)
+{
+    for (uint8_t i = 0; i < count; i++) {
+        buf[i] = (int16_t)__builtin_bswap16((uint16_t)buf[i]);
+    }
 }
 
-void tile_sense_i_9_get_raw_mags(int16_t* buffer){
-	uint8_t RX_Buffer[1];
+/* -------------------------------------------------------------- */
+/* Public API                                                      */
+/* -------------------------------------------------------------- */
 
-	HAL_I2C_Mem_Read(sense_i_9_handle, AK09916_I2C_ADDR<<1, AK09916_REG_HXL, 1, (uint8_t *)buffer, 6, 1000);
-	HAL_I2C_Mem_Read(sense_i_9_handle, AK09916_I2C_ADDR<<1, AK09916_REG_ST2, 1, RX_Buffer, 1, 1000);
+uint8_t tile_sense_i_9_find(kiln_hal_t* hal, uint8_t addr)
+{
+    return (hal->i2c_is_ready(hal->handle, addr) == 0) ? 1 : 0;
 }
 
-// PRIVATE FUNCTIONS
+uint8_t tile_sense_i_9_init(kiln_hal_t* hal, uint8_t addr)
+{
+    uint8_t whoami = 0;
 
-void icm20948_write(uint8_t reg, uint8_t value){
-	uint8_t TX_Buffer[1] = {value};
-	HAL_I2C_Mem_Write(sense_i_9_handle, ICM20948_I2C_ADDR<<1, reg, 1, (uint8_t *)TX_Buffer, 1, 1000);
+    hal_ptr = hal;
+    icm_addr = addr;
+
+    /* Verify chip identity */
+    set_bank(ICM20948_BANK_0);
+    icm_read(ICM20948_REG_WHOAMI, &whoami, 1);
+    if (whoami != ICM20948_WHOAMI_DEFAULT) {
+        return 0;
+    }
+
+    /* Software reset */
+    icm_write(ICM20948_REG_PWR_MGMT_1, 1 << 7);
+    hal_ptr->delay_ms(50);
+
+    /* Wake: auto clock select */
+    icm_write(ICM20948_REG_PWR_MGMT_1, 0x01);
+
+    /* Enable all accel + gyro axes */
+    icm_write(ICM20948_REG_PWR_MGMT_2, 0x00);
+
+    /* Enable I2C bypass so we can talk to the AK09916 directly */
+    icm_write(ICM20948_REG_INT_PIN_CFG, 0x02);
+
+    /* Return to bank 0 */
+    set_bank(ICM20948_BANK_0);
+
+    /* Initialize magnetometer: continuous 100 Hz */
+    ak_write(AK09916_REG_CNTL3, 0x01);  /* soft reset */
+    hal_ptr->delay_ms(1);
+    ak_write(AK09916_REG_CNTL2, MAG_CONTINUOUS_100HZ);
+
+    return 1;
 }
 
-void ak09916_write(uint8_t reg, uint8_t value){
-	uint8_t TX_Buffer[1] = {value};
-	HAL_I2C_Mem_Write(sense_i_9_handle, AK09916_I2C_ADDR<<1, reg, 1, (uint8_t *)TX_Buffer, 1, 1000);
+void tile_sense_i_9_set_accel_range(accel_range_t range)
+{
+    set_bank(ICM20948_BANK_2);
+    icm_write(ICM20948_REG_ACCEL_CONFIG, (uint8_t)range);
+    set_bank(ICM20948_BANK_0);
+}
 
+void tile_sense_i_9_set_gyro_range(gyro_range_t range)
+{
+    set_bank(ICM20948_BANK_2);
+    icm_write(ICM20948_REG_GYRO_CONFIG, (uint8_t)range);
+    set_bank(ICM20948_BANK_0);
+}
+
+void tile_sense_i_9_set_mag_mode(mag_mode_t mode)
+{
+    ak_write(AK09916_REG_CNTL2, (uint8_t)mode);
+}
+
+void tile_sense_i_9_set_accel_odr(uint16_t divider)
+{
+    uint8_t hi = (uint8_t)((divider >> 8) & 0x0F);
+    uint8_t lo = (uint8_t)(divider & 0xFF);
+
+    set_bank(ICM20948_BANK_2);
+    icm_write(ICM20948_REG_ACCEL_SMPLRT_H, hi);
+    icm_write(ICM20948_REG_ACCEL_SMPLRT_L, lo);
+    set_bank(ICM20948_BANK_0);
+}
+
+void tile_sense_i_9_set_gyro_odr(uint8_t divider)
+{
+    set_bank(ICM20948_BANK_2);
+    icm_write(ICM20948_REG_GYRO_SMPLRT, divider);
+    set_bank(ICM20948_BANK_0);
+}
+
+void tile_sense_i_9_get_raw_accels(int16_t* buffer)
+{
+    icm_read(ICM20948_REG_ACCEL_X_H, (uint8_t*)buffer, 6);
+    swap16(buffer, 3);
+}
+
+void tile_sense_i_9_get_raw_gyros(int16_t* buffer)
+{
+    icm_read(ICM20948_REG_GYRO_X_H, (uint8_t*)buffer, 6);
+    swap16(buffer, 3);
+}
+
+void tile_sense_i_9_get_raw_6dof(int16_t* buffer)
+{
+    icm_read(ICM20948_REG_ACCEL_X_H, (uint8_t*)buffer, 12);
+    swap16(buffer, 6);
+}
+
+void tile_sense_i_9_get_raw_mags(int16_t* buffer)
+{
+    uint8_t st2;
+
+    /* AK09916 data registers are little-endian — no swap needed */
+    ak_read(AK09916_REG_HXL, (uint8_t*)buffer, 6);
+
+    /* Reading ST2 releases the data lock for the next measurement */
+    ak_read(AK09916_REG_ST2, &st2, 1);
+}
+
+int16_t tile_sense_i_9_get_temperature(void)
+{
+    int16_t raw;
+    icm_read(ICM20948_REG_TEMP_H, (uint8_t*)&raw, 2);
+    raw = (int16_t)__builtin_bswap16((uint16_t)raw);
+    return raw;
+}
+
+void tile_sense_i_9_sleep(void)
+{
+    set_bank(ICM20948_BANK_0);
+    icm_write(ICM20948_REG_PWR_MGMT_1, 0x41);  /* SLEEP + auto clock */
+}
+
+void tile_sense_i_9_wake(void)
+{
+    set_bank(ICM20948_BANK_0);
+    icm_write(ICM20948_REG_PWR_MGMT_1, 0x01);  /* clear SLEEP, auto clock */
+}
+
+void tile_sense_i_9_reset(void)
+{
+    set_bank(ICM20948_BANK_0);
+    icm_write(ICM20948_REG_PWR_MGMT_1, 1 << 7);
+    hal_ptr->delay_ms(50);
 }
