@@ -130,10 +130,17 @@ uint16_t tile_drive_p_read(void)
     return bos_read();
 }
 
-uint16_t tile_drive_p_read_sense(void)
+int16_t tile_drive_p_read_sense(void)
 {
     bos_set_return_reg(BOS1921_REG_SENSE_VAL);
-    return bos_read();
+    uint16_t raw = bos_read();
+    /* Bits [15:12] are flags (POL_SENS, SENSE, GAIN, SENS_FLAG).
+     * Bits [11:0] are the 12-bit signed sense value. Mask then sign-extend. */
+    raw &= 0x0FFF;
+    if (raw & 0x0800) {
+        raw |= 0xF000;
+    }
+    return (int16_t)raw;
 }
 
 uint16_t tile_drive_p_read_status(void)
