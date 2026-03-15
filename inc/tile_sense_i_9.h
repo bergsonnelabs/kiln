@@ -6,26 +6,41 @@
  * magnetometer (3-axis), and temperature readings over I2C.
  *
  * Hardware:
- *   - ICM-20948 at I2C address 0x69 (accel, gyro, temp)
+ *   - ICM-20948 (accel, gyro, temp)
  *   - AK09916 magnetometer at I2C address 0x0C (accessed via I2C bypass)
+ *
+ * Tile pinout:
+ *   - Pads 5/6:  I2C SDA/SCL (default interface)
+ *   - Pad 2:     Address select — float/high = 0x69 (default), low = 0x68.
+ *                 Allows two Sense.I.9 tiles on the same I2C bus.
+ *   - Pad 3:     Interface select — float/high = I2C (default), low = SPI.
+ *                 SPI mode is not supported by this driver.
+ *   - Pad 9:     INT output (directly connected to ICM-20948 INT1).
+ *                 Active-high, usable for data-ready or wake-on-motion.
  *
  * Requires: kiln_hal.h platform abstraction.
  *
  * Quick start:
  * @code
  *   kiln_hal_t hal;
- *   kiln_hal_stm32_init(&hal, &hi2c1);          // or your platform's init
+ *   kiln_hal_stm32_init(&hal, &hi2c1);
  *
- *   if (tile_sense_i_9_init(&hal)) {
+ *   if (tile_sense_i_9_init(&hal, ICM20948_I2C_ADDR_DEFAULT)) {
  *       tile_sense_i_9_set_accel_range(ACCEL_2G);
  *       tile_sense_i_9_set_gyro_range(GYRO_250DPS);
  *       tile_sense_i_9_set_mag_mode(MAG_CONTINUOUS_100HZ);
  *
  *       int16_t accel[3], gyro[3], mag[3];
- *       tile_sense_i_9_get_raw_accels(accel);    // [X, Y, Z]
- *       tile_sense_i_9_get_raw_gyros(gyro);      // [X, Y, Z]
- *       tile_sense_i_9_get_raw_mags(mag);        // [X, Y, Z]
+ *       tile_sense_i_9_get_raw_accels(accel);
+ *       tile_sense_i_9_get_raw_gyros(gyro);
+ *       tile_sense_i_9_get_raw_mags(mag);
  *   }
+ * @endcode
+ *
+ * Two tiles on one bus:
+ * @code
+ *   tile_sense_i_9_init(&hal, ICM20948_I2C_ADDR_DEFAULT);  // pad 2 floating
+ *   tile_sense_i_9_init(&hal, ICM20948_I2C_ADDR_ALT);      // pad 2 pulled low
  * @endcode
  */
 
@@ -39,7 +54,13 @@
 /* I2C addresses                                                   */
 /* -------------------------------------------------------------- */
 
-#define ICM20948_I2C_ADDR           0x69
+/** @brief  Default I2C address (pad 2 floating or high). */
+#define ICM20948_I2C_ADDR_DEFAULT   0x69
+
+/** @brief  Alternate I2C address (pad 2 pulled low). */
+#define ICM20948_I2C_ADDR_ALT       0x68
+
+/** @brief  AK09916 magnetometer address (fixed, accessed via I2C bypass). */
 #define AK09916_I2C_ADDR            0x0C
 
 /* -------------------------------------------------------------- */
@@ -153,11 +174,13 @@ typedef enum {
  * @brief  Check whether an ICM-20948 is present on the I2C bus.
  *
  * Performs an address-level probe only (no register reads).
+ * Use ICM20948_I2C_ADDR_DEFAULT (0x69) or ICM20948_I2C_ADDR_ALT (0x68).
  *
- * @param  hal  Platform HAL handle
+ * @param  hal   Platform HAL handle
+ * @param  addr  7-bit I2C address of the ICM-20948
  * @return 1 if device ACKs, 0 otherwise
  */
-uint8_t tile_sense_i_9_find(kiln_hal_t* hal);
+uint8_t tile_sense_i_9_find(kiln_hal_t* hal, uint8_t addr);
 
 /**
  * @brief  Initialize the ICM-20948 and AK09916.
@@ -167,12 +190,15 @@ uint8_t tile_sense_i_9_find(kiln_hal_t* hal);
  * magnetometer access, and starts the magnetometer in continuous
  * 100 Hz mode.
  *
- * @param  hal  Platform HAL handle
+ * The selected address is stored internally for all subsequent calls.
+ *
+ * @param  hal   Platform HAL handle
+ * @param  addr  7-bit I2C address (ICM20948_I2C_ADDR_DEFAULT or _ALT)
  * @return 1 on success, 0 if WHO_AM_I check fails
  *
  * @note   Blocks for ~50 ms during reset. Call once at startup.
  */
-uint8_t tile_sense_i_9_init(kiln_hal_t* hal);
+uint8_t tile_sense_i_9_init(kiln_hal_t* hal, uint8_t addr);
 
 /**
  * @brief  Set the accelerometer full-scale range.

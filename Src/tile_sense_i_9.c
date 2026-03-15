@@ -10,6 +10,7 @@
 /* -------------------------------------------------------------- */
 
 static kiln_hal_t* hal_ptr = 0;
+static uint8_t icm_addr = ICM20948_I2C_ADDR_DEFAULT;
 
 /* -------------------------------------------------------------- */
 /* Private helpers                                                 */
@@ -17,12 +18,12 @@ static kiln_hal_t* hal_ptr = 0;
 
 static void icm_write(uint8_t reg, uint8_t value)
 {
-    hal_ptr->i2c_write(hal_ptr->handle, ICM20948_I2C_ADDR, reg, &value, 1);
+    hal_ptr->i2c_write(hal_ptr->handle, icm_addr, reg, &value, 1);
 }
 
 static void icm_read(uint8_t reg, uint8_t* data, uint16_t len)
 {
-    hal_ptr->i2c_read(hal_ptr->handle, ICM20948_I2C_ADDR, reg, data, len);
+    hal_ptr->i2c_read(hal_ptr->handle, icm_addr, reg, data, len);
 }
 
 static void ak_write(uint8_t reg, uint8_t value)
@@ -52,16 +53,17 @@ static void swap16(int16_t* buf, uint8_t count)
 /* Public API                                                      */
 /* -------------------------------------------------------------- */
 
-uint8_t tile_sense_i_9_find(kiln_hal_t* hal)
+uint8_t tile_sense_i_9_find(kiln_hal_t* hal, uint8_t addr)
 {
-    return (hal->i2c_is_ready(hal->handle, ICM20948_I2C_ADDR) == 0) ? 1 : 0;
+    return (hal->i2c_is_ready(hal->handle, addr) == 0) ? 1 : 0;
 }
 
-uint8_t tile_sense_i_9_init(kiln_hal_t* hal)
+uint8_t tile_sense_i_9_init(kiln_hal_t* hal, uint8_t addr)
 {
     uint8_t whoami = 0;
 
     hal_ptr = hal;
+    icm_addr = addr;
 
     /* Verify chip identity */
     set_bank(ICM20948_BANK_0);
