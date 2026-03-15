@@ -1,110 +1,159 @@
+/**
+ * @file   tile_drive_p.c
+ * @brief  Piezoelectric haptic driver implementation (BOS1921).
+ */
+
 #include "tile_drive_p.h"
 
-I2C_HandleTypeDef* drive_p_handle;
+/* -------------------------------------------------------------- */
+/* Private state                                                   */
+/* -------------------------------------------------------------- */
 
-uint8_t drive_p_return_reg = 0x00;
+static kiln_hal_t* hal_ptr = 0;
+static uint8_t bos_addr = BOS1921_I2C_ADDR_DEFAULT;
 
-static void bos1921_write(I2C_HandleTypeDef* hi2c, uint8_t reg, uint16_t value);
-static void bos1921_set_return_reg(I2C_HandleTypeDef* hi2c, uint8_t reg);
+/* -------------------------------------------------------------- */
+/* Private helpers                                                 */
+/* -------------------------------------------------------------- */
 
-uint8_t tile_drive_p_find(I2C_HandleTypeDef* hi2c)
+/**
+ * @brief  Write a 16-bit value to a BOS1921 register (big-endian).
+ */
+static void bos_write(uint8_t reg, uint16_t value)
 {
-	if(HAL_I2C_IsDeviceReady(hi2c, BOS1921_I2C_ADDR<<1, 3, 1000) == 0){ // HAL_StatusTypeDef = 0=okay, 1=error, 2=busy, 3=timeout
-		return 1;
-	} else {
-		return 0;
-	}
-
+    uint8_t buf[2];
+    buf[0] = (uint8_t)(value >> 8);
+    buf[1] = (uint8_t)(value & 0xFF);
+    hal_ptr->i2c_write(hal_ptr->handle, bos_addr, reg, buf, 2);
 }
 
-uint8_t tile_drive_p_init(I2C_HandleTypeDef* hi2c)
+/**
+ * @brief  Read a 16-bit value from the BOS1921 default return register.
+ *
+ * The BOS1921 always returns data from the register selected via
+ * BOS1921_REG_COMM, read from register address 0x00.
+ */
+static uint16_t bos_read(void)
 {
-	uint8_t TX_Buffer[2] = {0,0};
-	uint16_t temp = 0;
-//	drive_p_handle = hi2c;
-
-	// attempt to wake the chip
-	HAL_I2C_Mem_Write(hi2c, BOS1921_I2C_ADDR<<1, 0x00, 1, (uint8_t *)TX_Buffer, 2, 1000);
-
-	// reset
-	tile_drive_p_reset(hi2c);
-
-	// read the CHIP_ID register (default response)
-	temp = tile_drive_p_read(hi2c);
-	if( (temp & 0x0FFF) != 0x0781){
-		return 0;
-	}
-	return 1;
+    uint8_t buf[2] = {0, 0};
+    hal_ptr->i2c_read(hal_ptr->handle, bos_addr, 0x00, buf, 2);
+    return ((uint16_t)buf[0] << 8) | buf[1];
 }
 
-void tile_drive_p_reset(I2C_HandleTypeDef* hi2c){
-	bos1921_write(hi2c, BOS_REG_CONFIG, 0x0040);
-//	HAL_Delay(50);
+/**
+ * @brief  Set the return register for subsequent reads.
+ */
+static void bos_set_return_reg(uint8_t reg)
+{
+    bos_write(BOS1921_REG_COMM, (uint16_t)reg);
 }
 
-void tile_drive_p_set_mode(I2C_HandleTypeDef* hi2c, uint8_t mode){
-	switch(mode){
-		default:
-        case TILE_DRIVE_P_MODE_IDLE:
-            bos1921_write(hi2c,BOS_REG_CONFIG, 0x0000);
-            bos1921_set_return_reg(hi2c,BOS_REG_IC_STATUS);
-            break;
-        case TILE_DRIVE_P_MODE_SENSE_FINE:
-            bos1921_write(hi2c,BOS_REG_CONFIG, 0x3010);
-            // SENSE = 1 > enable sensing
-            // GAINS = 1 > sense resolution LSB = 7.6mV
-            // OE = 1 > enable output
-            bos1921_set_return_reg(hi2c,BOS_REG_SENSE_VAL);
-            break;
-        case TILE_DRIVE_P_MODE_SENSE_COARSE:
-            bos1921_write(hi2c,BOS_REG_CONFIG, 0x2010);
-            // SENSE = 1 > enable sensing
-            // GAINS = 0 > sense resolution LSB = 54.5mV
-            // OE = 1 > enable output
-            bos1921_set_return_reg(hi2c,BOS_REG_SENSE_VAL);
-            break;
-        case TILE_DRIVE_P_MODE_PLAY_FIFO:
-            bos1921_write(hi2c,BOS_REG_CONFIG, 0x0217);
-            // OE = 1 > enable output
-            // PLAY_MODE = 1 > FIFO
-            // PLAY_SRATE = 7 > 8ksps
-            bos1921_set_return_reg(hi2c,BOS_REG_IC_STATUS);
-            break;
-        case TILE_DRIVE_P_MODE_DEBUG:
-            bos1921_set_return_reg(hi2c,BOS_REG_CONFIG);
-        	break;
-	}
+/* -------------------------------------------------------------- */
+/* Public API                                                      */
+/* -------------------------------------------------------------- */
+
+uint8_t tile_drive_p_find(kiln_hal_t* hal, uint8_t addr)
+{
+    return (hal->i2c_is_ready(hal->handle, addr) == 0) ? 1 : 0;
 }
 
+uint8_t tile_drive_p_init(kiln_hal_t* hal, uint8_t addr)
+{
+    uint16_t chip_id;
 
-uint16_t tile_drive_p_read(I2C_HandleTypeDef* hi2c){
-	uint8_t RX_Buffer[2] = {0,0};
-	int *rx_ptr = (int *)RX_Buffer;
+    hal_ptr = hal;
+    bos_addr = addr;
 
-	HAL_I2C_Mem_Read(hi2c, BOS1921_I2C_ADDR<<1, 0x00, 1, (uint8_t *)RX_Buffer, 2, 1000);
+    /* Wake the chip by writing to REFERENCE register */
+    bos_write(BOS1921_REG_REFERENCE, 0x0000);
 
-	return __builtin_bswap16(*rx_ptr);
+    /* Software reset */
+    tile_drive_p_reset();
+
+    /* Read chip ID (default return register after reset) */
+    chip_id = bos_read();
+    if ((chip_id & 0x0FFF) != BOS1921_CHIP_ID_DEFAULT) {
+        return 0;
+    }
+
+    return 1;
 }
 
-void tile_drive_p_write(I2C_HandleTypeDef* hi2c, uint8_t reg, uint16_t value){
-	uint8_t TX_Buffer[2] = {0,0};
-	int *tx_ptr = (int *)TX_Buffer;
-
-	*tx_ptr = __builtin_bswap16(value);
-	HAL_I2C_Mem_Write(hi2c, BOS1921_I2C_ADDR<<1, reg, 1, (uint8_t *)TX_Buffer, 2, 1000);
+void tile_drive_p_select(kiln_hal_t* hal, uint8_t addr)
+{
+    hal_ptr = hal;
+    bos_addr = addr;
 }
 
-void bos1921_write(I2C_HandleTypeDef* hi2c, uint8_t reg, uint16_t value){
-	uint8_t TX_Buffer[2] = {0,0};
-	int *tx_ptr = (int *)TX_Buffer;
-
-	*tx_ptr = __builtin_bswap16(value);
-	HAL_I2C_Mem_Write(hi2c, BOS1921_I2C_ADDR<<1, reg, 1, (uint8_t *)TX_Buffer, 2, 1000);
+void tile_drive_p_reset(void)
+{
+    bos_write(BOS1921_REG_CONFIG, 0x0040);  /* RST bit */
 }
 
-void bos1921_set_return_reg(I2C_HandleTypeDef* hi2c, uint8_t reg){
-    bos1921_write(hi2c, BOS_REG_COMM, reg);
-    drive_p_return_reg = reg;
+void tile_drive_p_set_mode(drive_p_mode_t mode)
+{
+    switch (mode) {
+    default:
+    case DRIVE_P_MODE_IDLE:
+        bos_write(BOS1921_REG_CONFIG, 0x0000);
+        bos_set_return_reg(BOS1921_REG_IC_STATUS);
+        break;
+
+    case DRIVE_P_MODE_SENSE_FINE:
+        /* SENSE=1, GAINS=1 (7.6 mV/LSB), OE=1 */
+        bos_write(BOS1921_REG_CONFIG, 0x3010);
+        bos_set_return_reg(BOS1921_REG_SENSE_VAL);
+        break;
+
+    case DRIVE_P_MODE_SENSE_COARSE:
+        /* SENSE=1, GAINS=0 (54.5 mV/LSB), OE=1 */
+        bos_write(BOS1921_REG_CONFIG, 0x2010);
+        bos_set_return_reg(BOS1921_REG_SENSE_VAL);
+        break;
+
+    case DRIVE_P_MODE_PLAY_DIRECT:
+        /* OE=1, PLAY_MODE=0 (direct) */
+        bos_write(BOS1921_REG_CONFIG, 0x0010);
+        bos_set_return_reg(BOS1921_REG_IC_STATUS);
+        break;
+
+    case DRIVE_P_MODE_PLAY_FIFO:
+        /* OE=1, PLAY_MODE=1 (FIFO), PLAY_SRATE=7 (8 ksps) */
+        bos_write(BOS1921_REG_CONFIG, 0x0217);
+        bos_set_return_reg(BOS1921_REG_IC_STATUS);
+        break;
+    }
 }
 
+uint16_t tile_drive_p_read(void)
+{
+    return bos_read();
+}
 
+uint16_t tile_drive_p_read_sense(void)
+{
+    bos_set_return_reg(BOS1921_REG_SENSE_VAL);
+    return bos_read();
+}
+
+uint16_t tile_drive_p_read_status(void)
+{
+    bos_set_return_reg(BOS1921_REG_IC_STATUS);
+    return bos_read();
+}
+
+void tile_drive_p_write_fifo(int16_t sample)
+{
+    bos_write(BOS1921_REG_REFERENCE, (uint16_t)sample);
+}
+
+void tile_drive_p_write_reg(uint8_t reg, uint16_t value)
+{
+    bos_write(reg, value);
+}
+
+void tile_drive_p_sleep(void)
+{
+    /* DS=1 (deep sleep), everything else off */
+    bos_write(BOS1921_REG_CONFIG, 0x0008);
+}
