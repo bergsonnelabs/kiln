@@ -1,22 +1,37 @@
 /**
  * @file   tile_sense_i_9.h
- * @brief  9-DOF IMU driver for the Sense.I.9 tile (ICM-20948 + AK09916).
+ * @brief  9-DOF IMU driver for the Sense.I.9 tile (rev c).
  *
- * Provides accelerometer (±2/4/8/16 G), gyroscope (±250–2000 DPS),
- * magnetometer (3-axis), and temperature readings over I2C.
+ * Datasheet: https://www.bergsonne.io/tiles/sense/i9
+ * JSON API:  https://www.bergsonne.io/api/tile-json?family=Sense&name=I.9&rev=c
  *
- * Hardware:
- *   - ICM-20948 (accel, gyro, temp)
- *   - AK09916 magnetometer at I2C address 0x0C (accessed via I2C bypass)
+ * The Sense.I.9 embeds the TDK InvenSense ICM-20948 with a co-packaged
+ * 6-DOF IMU (accel + gyro) and AK09916 3-DOF magnetometer.
  *
- * Tile pinout:
- *   - Pads 5/6:  I2C SDA/SCL (default interface)
- *   - Pad 2:     Address select — float/high = 0x69 (default), low = 0x68.
- *                 Allows two Sense.I.9 tiles on the same I2C bus.
- *   - Pad 3:     Interface select — float/high = I2C (default), low = SPI.
- *                 SPI mode is not supported by this driver.
- *   - Pad 9:     INT output (directly connected to ICM-20948 INT1).
- *                 Active-high, usable for data-ready or wake-on-motion.
+ * Sensor specifications:
+ *   - Accelerometer:  16-bit, ±2/4/8/16 G, up to 4.5 kHz ODR
+ *   - Gyroscope:      16-bit, ±250/500/1000/2000 DPS, up to 9 kHz ODR
+ *   - Magnetometer:   16-bit, ±4900 µT, up to 100 Hz ODR
+ *   - Temperature:    on-chip sensor
+ *
+ * Tile hardware (T44-10 package, 4.0 × 4.0 mm):
+ *   - Supply:   1.71–1.95 V (typ. 1.8 V), 3.11 mA operating
+ *   - Pad 1:    GND
+ *   - Pad 2:    I2C.AD0 — weak pull-up sets address 0x69 (default).
+ *               Connect to GND for address 0x68. (SPI mode: MISO)
+ *   - Pad 3:    I2C.EN — weak pull-up enables I2C (default).
+ *               Connect to GND for SPI mode. (SPI mode: CS)
+ *   - Pad 4:    I2C.CLK / SPI.CLK (external pull-up required without Core)
+ *   - Pad 5:    I2C.DAT / SPI.MOSI (external pull-up required without Core)
+ *   - Pads 6–8: Unassigned
+ *   - Pad 9:    INT — programmable interrupt output
+ *   - Pad 10:   V+ (1.71–1.95 V)
+ *
+ * Sensor axes: origin at IC center, offset (-0.2, -0.2) mm from tile center.
+ * Z extends from the top surface; X points up between pads 1 and 10.
+ *
+ * I2C: 7-bit address, 8-bit data, up to 400 kHz.
+ * SPI: up to 7 MHz (not supported by this driver).
  *
  * Requires: kiln_hal.h platform abstraction.
  *
