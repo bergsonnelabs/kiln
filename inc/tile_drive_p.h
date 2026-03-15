@@ -202,15 +202,16 @@ uint16_t tile_drive_p_read(void);
  * @brief  Read the sensed piezo voltage.
  *
  * Must be in SENSE_FINE or SENSE_COARSE mode. Returns the raw ADC
- * value from the BOS1921 sensing circuitry.
+ * value from the BOS1921 sensing circuitry, sign-extended from the
+ * native 12-bit two's complement format to 16-bit.
  *
  * Convert to voltage:
  *   - Fine mode:   voltage = raw × 7.6 mV
  *   - Coarse mode: voltage = raw × 54.5 mV
  *
- * @return 16-bit raw sense value
+ * @return Signed 16-bit sense value (−2048 to +2047)
  */
-uint16_t tile_drive_p_read_sense(void);
+int16_t tile_drive_p_read_sense(void);
 
 /**
  * @brief  Read the IC status register.
