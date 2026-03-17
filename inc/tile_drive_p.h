@@ -124,7 +124,8 @@ typedef enum {
     DRIVE_P_MODE_SENSE_FINE   = 1,  /**< Piezo sensing, 7.6 mV/LSB resolution */
     DRIVE_P_MODE_SENSE_COARSE = 2,  /**< Piezo sensing, 54.5 mV/LSB resolution */
     DRIVE_P_MODE_PLAY_DIRECT  = 3,  /**< Direct waveform output */
-    DRIVE_P_MODE_PLAY_FIFO    = 4,  /**< FIFO-buffered playback, 8 ksps */
+    DRIVE_P_MODE_PLAY_FIFO    = 4,  /**< FIFO-buffered playback, 1024 sps */
+    DRIVE_P_MODE_PLAY_RAM_SYNTH = 5, /**< RAM Synthesis waveform playback */
 } drive_p_mode_t;
 
 /* -------------------------------------------------------------- */
@@ -242,11 +243,52 @@ void tile_drive_p_write_fifo(int16_t sample);
 void tile_drive_p_write_reg(uint8_t reg, uint16_t value);
 
 /**
+ * @brief  Write a multi-word WFS command to the BOS1921.
+ *
+ * Used for RAM Synthesis mode. Writes an array of 16-bit words
+ * to the REFERENCE register in a single I2C transaction. The
+ * first word is typically a WFS command (RAM_ACCESS or
+ * RAM_SYNTHESIS), followed by address and data words.
+ *
+ * @param  words  Array of 16-bit words (big-endian on wire)
+ * @param  count  Number of words (max 8)
+ */
+void tile_drive_p_wfs_write(const uint16_t* words, uint16_t count);
+
+/**
  * @brief  Enter low-power sleep mode.
  *
  * Sets the DS bit in CONFIG. The boost converter shuts down.
  * Call tile_drive_p_set_mode() to resume operation.
  */
 void tile_drive_p_sleep(void);
+
+/* -------------------------------------------------------------- */
+/* Status masks                                                    */
+/* -------------------------------------------------------------- */
+
+/** @brief  STATE field in IC_STATUS (bits 9:8). */
+#define BOS_STATUS_STATE_MASK       0x0300
+#define BOS_STATUS_STATE_IDLE       0x0000
+#define BOS_STATUS_STATE_CALIB      0x0100
+#define BOS_STATUS_STATE_RUNNING    0x0200
+#define BOS_STATUS_STATE_ERROR      0x0300
+
+/** @brief  Fault bits in IC_STATUS (bits 7:2, excluding FULL and PLAYST). */
+#define BOS_STATUS_FAULT_MASK       0x00FC  /* OVV|OCT|MXPWR|IDAC|UVLO|SC */
+
+/**
+ * @brief  Check the BOS1921 status and recover from error/fault states.
+ *
+ * Reads IC_STATUS. If the device is in ERROR state or any fault bits
+ * are set, cycles through IDLE → the given target mode to clear faults.
+ *
+ * The currently selected HAL/address context is used (set via
+ * tile_drive_p_select() before calling).
+ *
+ * @param  restore_mode  Mode to re-enter after recovery (e.g. PLAY_FIFO)
+ * @return 1 if recovery was performed, 0 if device was healthy
+ */
+uint8_t tile_drive_p_check_and_recover(drive_p_mode_t restore_mode);
 
 #endif /* INC_TILE_DRIVE_P_H_ */

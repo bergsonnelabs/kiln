@@ -9,7 +9,7 @@
 #include "kiln_hal.h"
 #include "i2c.h"        /* STM32 HAL: I2C_HandleTypeDef, HAL_I2C_* */
 
-#define KILN_I2C_TIMEOUT_MS  1000
+#define KILN_I2C_TIMEOUT_MS  200
 
 /* -------------------------------------------------------------- */
 /* Private: callbacks matching kiln_hal_t function pointer sigs    */

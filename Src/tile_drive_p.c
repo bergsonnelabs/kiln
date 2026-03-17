@@ -100,12 +100,24 @@ void tile_drive_p_set_mode(drive_p_mode_t mode)
         break;
 
     case DRIVE_P_MODE_SENSE_FINE:
+        /* Drive output to 0V while OE is still active (discharge piezo cap) */
+        bos_write(BOS1921_REG_CONFIG, 0x0010);  /* direct mode, OE=1 */
+        bos_write(BOS1921_REG_REFERENCE, 0x0000); /* output = 0V */
+        hal_ptr->delay_ms(5);  /* let piezo discharge to 0V */
+        /* Now go to IDLE (OE=0) — piezo is already at 0V */
+        bos_write(BOS1921_REG_CONFIG, 0x0000);
         /* SENSE=1, GAINS=1 (7.6 mV/LSB), OE=1 */
         bos_write(BOS1921_REG_CONFIG, 0x3010);
         bos_set_return_reg(BOS1921_REG_SENSE_VAL);
         break;
 
     case DRIVE_P_MODE_SENSE_COARSE:
+        /* Drive output to 0V while OE is still active (discharge piezo cap) */
+        bos_write(BOS1921_REG_CONFIG, 0x0010);  /* direct mode, OE=1 */
+        bos_write(BOS1921_REG_REFERENCE, 0x0000); /* output = 0V */
+        hal_ptr->delay_ms(5);  /* let piezo discharge to 0V */
+        /* Now go to IDLE (OE=0) — piezo is already at 0V */
+        bos_write(BOS1921_REG_CONFIG, 0x0000);
         /* SENSE=1, GAINS=0 (54.5 mV/LSB), OE=1 */
         bos_write(BOS1921_REG_CONFIG, 0x2010);
         bos_set_return_reg(BOS1921_REG_SENSE_VAL);
@@ -120,6 +132,12 @@ void tile_drive_p_set_mode(drive_p_mode_t mode)
     case DRIVE_P_MODE_PLAY_FIFO:
         /* OE=1, PLAY_MODE=1 (FIFO), PLAY_SRATE=7 (8 ksps) */
         bos_write(BOS1921_REG_CONFIG, 0x0217);
+        bos_set_return_reg(BOS1921_REG_IC_STATUS);
+        break;
+
+    case DRIVE_P_MODE_PLAY_RAM_SYNTH:
+        /* OE=1, PLAY_MODE=3 (RAM Synth) */
+        bos_write(BOS1921_REG_CONFIG, 0x0610);
         bos_set_return_reg(BOS1921_REG_IC_STATUS);
         break;
     }
@@ -159,8 +177,43 @@ void tile_drive_p_write_reg(uint8_t reg, uint16_t value)
     bos_write(reg, value);
 }
 
+void tile_drive_p_wfs_write(const uint16_t* words, uint16_t count)
+{
+    uint8_t buf[16]; /* max 8 words */
+    if (count > 8) count = 8;
+    for (uint16_t i = 0; i < count; i++) {
+        buf[i * 2]     = (uint8_t)(words[i] >> 8);
+        buf[i * 2 + 1] = (uint8_t)(words[i] & 0xFF);
+    }
+    hal_ptr->i2c_write(hal_ptr->handle, bos_addr,
+                       BOS1921_REG_REFERENCE, buf, count * 2);
+}
+
 void tile_drive_p_sleep(void)
 {
     /* DS=1 (deep sleep), everything else off */
     bos_write(BOS1921_REG_CONFIG, 0x0008);
+}
+
+uint8_t tile_drive_p_check_and_recover(drive_p_mode_t restore_mode)
+{
+    bos_set_return_reg(BOS1921_REG_IC_STATUS);
+    uint16_t status = bos_read();
+
+    uint8_t needs_recovery = 0;
+
+    if ((status & BOS_STATUS_STATE_MASK) == BOS_STATUS_STATE_ERROR) {
+        needs_recovery = 1;
+    }
+    if (status & BOS_STATUS_FAULT_MASK) {
+        needs_recovery = 1;
+    }
+
+    if (needs_recovery) {
+        /* Cycle through IDLE to clear faults, then restore target mode */
+        tile_drive_p_set_mode(DRIVE_P_MODE_IDLE);
+        tile_drive_p_set_mode(restore_mode);
+    }
+
+    return needs_recovery;
 }

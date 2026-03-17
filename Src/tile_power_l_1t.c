@@ -77,11 +77,14 @@ void tile_power_l_1t_select(kiln_hal_t* hal, uint8_t addr)
 
 uint16_t tile_power_l_1t_get_vbat(void)
 {
-    uint16_t result;
-    uint8_t msb = bq_read(BQ25150_REG_VBAT_MSB);
-    uint8_t lsb = bq_read(BQ25150_REG_VBAT_LSB);
-    result = ((uint16_t)msb << 8) | lsb;
-    return result;
+    if (!hal_ptr) return 0;
+    uint8_t msb = 0, lsb = 0;
+    int rc = hal_ptr->i2c_read(hal_ptr->handle, bq_addr,
+                                BQ25150_REG_VBAT_MSB, &msb, 1);
+    if (rc != 0) return 0;   /* chip not responding — bail out fast */
+    hal_ptr->i2c_read(hal_ptr->handle, bq_addr,
+                       BQ25150_REG_VBAT_LSB, &lsb, 1);
+    return ((uint16_t)msb << 8) | lsb;
 }
 
 uint8_t tile_power_l_1t_get_percent(void)
