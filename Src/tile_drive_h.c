@@ -1,62 +1,98 @@
+/**
+ * @file   tile_drive_h.c
+ * @brief  LRA haptic driver for the Drive.H tile (DRV2605L).
+ */
 
 #include "tile_drive_h.h"
 
-#define DRIVE_H_EN_GPIO_PORT        GPIOA
-#define DRIVE_H_EN_PIN              GPIO_PIN_1
+/* -------------------------------------------------------------- */
+/* Module state                                                    */
+/* -------------------------------------------------------------- */
+static kiln_hal_t* hal_ptr = 0;
+static uint8_t     dev_addr = 0;
 
-I2C_HandleTypeDef* drive_h_handle;
+/* -------------------------------------------------------------- */
+/* Internal helpers                                                */
+/* -------------------------------------------------------------- */
 
-uint8_t tile_drive_h_init(I2C_HandleTypeDef* hi2c)
-{
-	uint8_t RX_Buffer[1];
-	uint8_t TX_Buffer[1] = {0};
-
-	drive_h_handle = hi2c;
-
-	HAL_I2C_Mem_Read(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_STATUS, 1, (uint8_t *)RX_Buffer, 1, 1000);
-	if(RX_Buffer[0] != TILE_DRIVE_H_REG_STATUS_DEFAULT){
-		return 0;
-	}
-
-	HAL_GPIO_WritePin(DRIVE_H_EN_GPIO_PORT, DRIVE_H_EN_PIN, 1);
-
-	// EXIT STANDBY
-	TX_Buffer[0] = 0b00000000; // reset
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_MODE, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
-	HAL_Delay(400);
-
-	// FEEDBACK CONTROL
-	// 7 	1		N_ERM_LRA
-	// 6-4	011		FB_BRAKE_FACTOR
-	// 3-2	01		LOOP_GAIN
-	// 1-0	10		BEMF_GAIN
-	TX_Buffer[0] = 0b10110110; // 10110110
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_FEEDBACK_CTRL, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
-	HAL_Delay(100);
-
-	// CONTROL3
-	// 7-6	00		NG_THRESH
-	// 5	0		ERM_OPEN_LOOP
-	// ...
-	//	0	1		LRA_OPEN_LOOP
-
-	TX_Buffer[0] = 0x01; // 10110110
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_CONTROL3, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-
-	TX_Buffer[0] = 6; // LRA library
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_LIBRARY_SEL, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-
-	return 1; // success
+static void drv_write(uint8_t reg, uint8_t value) {
+    hal_ptr->i2c_write(hal_ptr->handle, dev_addr, reg, &value, 1);
 }
 
-void tile_drive_h_play(uint8_t index, uint8_t repeat){
-	uint8_t TX_Buffer[1] = {0};
-	TX_Buffer[0] = index; // 10110110
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_WAVE_SEQ_0, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-	TX_Buffer[0] = 0x01; // 10110110
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_GO, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-	for(int i=1; i<repeat; i++){
-		HAL_Delay(200);
-		HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_GO, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-	}
+static uint8_t drv_read(uint8_t reg) {
+    uint8_t val = 0;
+    hal_ptr->i2c_read(hal_ptr->handle, dev_addr, reg, &val, 1);
+    return val;
+}
+
+/* -------------------------------------------------------------- */
+/* Public API                                                      */
+/* -------------------------------------------------------------- */
+
+uint8_t tile_drive_h_find(kiln_hal_t* hal, uint8_t addr) {
+    return (hal->i2c_is_ready(hal->handle, addr) == 0) ? 1 : 0;
+}
+
+uint8_t tile_drive_h_init(kiln_hal_t* hal, uint8_t addr) {
+    hal_ptr  = hal;
+    dev_addr = addr;
+
+    /* Verify device is present */
+    uint8_t status = drv_read(DRV2605L_REG_STATUS);
+    if (status != DRV2605L_STATUS_DEFAULT) {
+        return 0;
+    }
+
+    /* Exit standby */
+    drv_write(DRV2605L_REG_MODE, 0x00);
+    hal_ptr->delay_ms(400);
+
+    /* LRA drive levels for VG0832013D (1.8Vrms rated, ~235Hz)
+     * RATED_VOLTAGE = Vrms * 255 / 5.36 = 0x56 (1.8V)
+     * OD_CLAMP      = Vpeak * 255 / 5.44 = 0x8C (3.0V overdrive)
+     */
+    drv_write(DRV2605L_REG_RATED_VOLTAGE, 0x56);
+    drv_write(DRV2605L_REG_OD_CLAMP, 0x8C);
+
+    /* Configure for LRA:
+     * FEEDBACK_CTRL = 0xB6
+     *   bit 7   = 1  N_ERM_LRA (LRA mode)
+     *   bit 6-4 = 011  FB_BRAKE_FACTOR
+     *   bit 3-2 = 01   LOOP_GAIN
+     *   bit 1-0 = 10   BEMF_GAIN
+     */
+    drv_write(DRV2605L_REG_FEEDBACK_CTRL, 0xB6);
+    hal_ptr->delay_ms(100);
+
+    /* CONTROL3: LRA open loop */
+    drv_write(DRV2605L_REG_CONTROL3, 0x01);
+
+    /* Select LRA waveform library */
+    drv_write(DRV2605L_REG_LIBRARY_SEL, 6);
+
+    return 1;
+}
+
+void tile_drive_h_select(kiln_hal_t* hal, uint8_t addr) {
+    hal_ptr  = hal;
+    dev_addr = addr;
+}
+
+void tile_drive_h_play(uint8_t index, uint8_t repeats) {
+    /* Load effect into sequence slot 0, terminate in slot 1 */
+    drv_write(DRV2605L_REG_WAVE_SEQ_0, index);
+    drv_write(DRV2605L_REG_WAVE_SEQ_1, 0);
+
+    /* Trigger */
+    drv_write(DRV2605L_REG_GO, 0x01);
+
+    /* Repeat with gap */
+    for (uint8_t i = 1; i < repeats; i++) {
+        hal_ptr->delay_ms(200);
+        drv_write(DRV2605L_REG_GO, 0x01);
+    }
+}
+
+void tile_drive_h_stop(void) {
+    drv_write(DRV2605L_REG_GO, 0x00);
 }
