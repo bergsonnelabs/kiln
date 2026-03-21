@@ -126,4 +126,30 @@ void tile_drive_h_play(uint8_t index, uint8_t repeats);
  */
 void tile_drive_h_stop(void);
 
+/**
+ * @brief  Enter RTP (Real-Time Playback) mode.
+ *
+ * Sets DRV2605L MODE register to 0x05 (RTP). The chip drives
+ * the LRA at its resonant frequency with amplitude controlled
+ * by tile_drive_h_rtp_write(). Call tile_drive_h_rtp_stop()
+ * to return to internal trigger mode.
+ */
+void tile_drive_h_rtp_start(void);
+
+/**
+ * @brief  Write an amplitude value in RTP mode.
+ *
+ * @param  amplitude  Unsigned 8-bit amplitude (0 = off, 127 = max).
+ *                    Values are interpreted as unsigned when
+ *                    CONTROL3.DATA_FORMAT_RTP = 0 (default).
+ */
+void tile_drive_h_rtp_write(uint8_t amplitude);
+
+/**
+ * @brief  Exit RTP mode and return to internal trigger mode.
+ *
+ * Writes 0 to RTP register (silence), then sets MODE back to 0x00.
+ */
+void tile_drive_h_rtp_stop(void);
+
 #endif /* INC_TILE_DRIVE_H_H_ */

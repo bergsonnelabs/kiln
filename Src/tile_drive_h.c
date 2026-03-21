@@ -96,3 +96,21 @@ void tile_drive_h_play(uint8_t index, uint8_t repeats) {
 void tile_drive_h_stop(void) {
     drv_write(DRV2605L_REG_GO, 0x00);
 }
+
+void tile_drive_h_rtp_start(void) {
+    /* Set MODE = 0x05 (RTP mode) */
+    drv_write(DRV2605L_REG_MODE, 0x05);
+    /* Write 0 to RTP register initially (silent) */
+    drv_write(DRV2605L_REG_RTP, 0x00);
+}
+
+void tile_drive_h_rtp_write(uint8_t amplitude) {
+    drv_write(DRV2605L_REG_RTP, amplitude);
+}
+
+void tile_drive_h_rtp_stop(void) {
+    /* Silence the output */
+    drv_write(DRV2605L_REG_RTP, 0x00);
+    /* Return to internal trigger mode (library playback) */
+    drv_write(DRV2605L_REG_MODE, 0x00);
+}
