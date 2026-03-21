@@ -13,7 +13,7 @@
 #include "i2c.h"        /* STM32 HAL: I2C_HandleTypeDef, HAL_I2C_* */
 #include "diag.h"       /* Runtime diagnostic counters */
 
-#define KILN_I2C_TIMEOUT_MS  200
+#define KILN_I2C_TIMEOUT_MS  5   /* BLE-safe: normal I2C write <1ms at 100kHz */
 
 /* -------------------------------------------------------------- */
 /* Private: identify bus number (1 or 3) for diagnostic counters   */

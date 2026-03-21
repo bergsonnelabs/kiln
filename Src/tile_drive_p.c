@@ -210,8 +210,10 @@ uint8_t tile_drive_p_check_and_recover(drive_p_mode_t restore_mode)
     }
 
     if (needs_recovery) {
-        /* Cycle through IDLE to clear faults, then restore target mode */
-        tile_drive_p_set_mode(DRIVE_P_MODE_IDLE);
+        /* Software reset to clear all faults including IDAC
+         * (IDAC does NOT self-clear — requires CONFIG.RST per datasheet) */
+        tile_drive_p_reset();               /* CONFIG.RST = 1 */
+        hal_ptr->delay_ms(1);               /* wait for reset to complete */
         tile_drive_p_set_mode(restore_mode);
     }
 
