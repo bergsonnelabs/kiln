@@ -76,6 +76,22 @@ uint8_t tile_drive_p_init(kiln_hal_t* hal, uint8_t addr)
         return 0;
     }
 
+    /* Configure for 260nF piezo, L1=10µH, Rsense=0.2Ω, VDD=3.7V LiPo
+     *
+     * PARCAP (0x06): enable CCM (bit 10) for L1=10µH — more drive capacity.
+     *   Default PARCAP[7:0]=0x3A (keep — C_SW is board-specific).
+     *   CCM=1, UPI=0: 0x043A
+     *
+     * SUP_RISE (0x07): set VDD and TI_RISE for actual supply + components.
+     *   I2C_ADDR[15:12] = 0x4 (default, don't change)
+     *   LP = 1 (bit 11, default)
+     *   VDD[4:0] = 0x07 for 3.7V: ((3.7/0.026)-128)/2 = 7.15 → 7
+     *   TI_RISE[5:0] = 0x22 (34): (70ns×31.25/10µH)×(31/0.2) ≈ 34
+     *   Full register: 0x4800 | (0x07 << 6) | 0x22 = 0x49E2
+     */
+    bos_write(BOS1921_REG_PARCAP,   0x043A);  /* CCM=1, PARCAP=default */
+    bos_write(BOS1921_REG_SUP_RISE, 0x49E2);  /* VDD=3.7V, TI_RISE=34, LP=1 */
+
     return 1;
 }
 
