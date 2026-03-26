@@ -1,62 +1,151 @@
+/**
+ * @file   tile_drive_h.c
+ * @brief  LRA haptic driver implementation (DRV2605L).
+ */
 
 #include "tile_drive_h.h"
 
-#define DRIVE_H_EN_GPIO_PORT        GPIOA
-#define DRIVE_H_EN_PIN              GPIO_PIN_1
+/* -------------------------------------------------------------- */
+/* Instance mapping                                                */
+/* -------------------------------------------------------------- */
 
-I2C_HandleTypeDef* drive_h_handle;
+static const uint8_t id_table[] = {
+    DRV2605L_I2C_ADDR_DEFAULT,   /* instance 0 — fixed address (0x5A) */
+};
 
-uint8_t tile_drive_h_init(I2C_HandleTypeDef* hi2c)
+#define ID_TABLE_LEN  (sizeof(id_table) / sizeof(id_table[0]))
+
+static uint8_t resolve_id(uint8_t instance)
 {
-	uint8_t RX_Buffer[1];
-	uint8_t TX_Buffer[1] = {0};
-
-	drive_h_handle = hi2c;
-
-	HAL_I2C_Mem_Read(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_STATUS, 1, (uint8_t *)RX_Buffer, 1, 1000);
-	if(RX_Buffer[0] != TILE_DRIVE_H_REG_STATUS_DEFAULT){
-		return 0;
-	}
-
-	HAL_GPIO_WritePin(DRIVE_H_EN_GPIO_PORT, DRIVE_H_EN_PIN, 1);
-
-	// EXIT STANDBY
-	TX_Buffer[0] = 0b00000000; // reset
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_MODE, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
-	HAL_Delay(400);
-
-	// FEEDBACK CONTROL
-	// 7 	1		N_ERM_LRA
-	// 6-4	011		FB_BRAKE_FACTOR
-	// 3-2	01		LOOP_GAIN
-	// 1-0	10		BEMF_GAIN
-	TX_Buffer[0] = 0b10110110; // 10110110
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_FEEDBACK_CTRL, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
-	HAL_Delay(100);
-
-	// CONTROL3
-	// 7-6	00		NG_THRESH
-	// 5	0		ERM_OPEN_LOOP
-	// ...
-	//	0	1		LRA_OPEN_LOOP
-
-	TX_Buffer[0] = 0x01; // 10110110
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_CONTROL3, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-
-	TX_Buffer[0] = 6; // LRA library
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_LIBRARY_SEL, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-
-	return 1; // success
+    if (instance >= ID_TABLE_LEN) return 0x00;
+    return id_table[instance];
 }
 
-void tile_drive_h_play(uint8_t index, uint8_t repeat){
-	uint8_t TX_Buffer[1] = {0};
-	TX_Buffer[0] = index; // 10110110
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_WAVE_SEQ_0, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-	TX_Buffer[0] = 0x01; // 10110110
-	HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_GO, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-	for(int i=1; i<repeat; i++){
-		HAL_Delay(200);
-		HAL_I2C_Mem_Write(drive_h_handle, TILE_DRIVE_H_I2C_ADDR<<1, TILE_DRIVE_H_REG_GO, I2C_MEMADD_SIZE_8BIT, (uint8_t *)TX_Buffer, 1, 1000);
-	}
+/* -------------------------------------------------------------- */
+/* Private helpers                                                 */
+/* -------------------------------------------------------------- */
+
+static void drv_write(tile_t* tile, uint8_t reg, uint8_t value)
+{
+    tile->hal->i2c_write(tile->hal->handle, tile->id, reg, &value, 1);
+}
+
+static uint8_t drv_read(tile_t* tile, uint8_t reg)
+{
+    uint8_t val = 0;
+    tile->hal->i2c_read(tile->hal->handle, tile->id, reg, &val, 1);
+    return val;
+}
+
+/* -------------------------------------------------------------- */
+/* Public API                                                      */
+/* -------------------------------------------------------------- */
+
+uint8_t tile_drive_h_find(tiles_hal_t* hal, uint8_t instance)
+{
+    uint8_t id = resolve_id(instance);
+    if (id == 0x00) return 0;
+    return (hal->i2c_is_ready(hal->handle, id) == 0) ? 1 : 0;
+}
+
+void tile_drive_h_init(tiles_hal_t* hal, uint8_t instance, tile_t* tile)
+{
+    tile->hal      = NULL;
+    tile->id       = 0;
+    tile->state    = TILE_STATE_NONE;
+    tile->flags    = 0;
+    tile->callback = NULL;
+    tile->cb_ctx   = NULL;
+
+    uint8_t id = resolve_id(instance);
+    if (id == 0x00) {
+        TILE_ON_ERROR(tile, "init: invalid instance");
+        tile->state = TILE_STATE_ERROR;
+        return;
+    }
+
+    tile->hal = hal;
+    tile->id  = id;
+
+    /* Verify device is on bus */
+    if (hal->i2c_is_ready(hal->handle, id) != 0) {
+        TILE_ON_ERROR(tile, "init: device not found on bus");
+        tile->state = TILE_STATE_ERROR;
+        return;
+    }
+
+    /* Verify status register */
+    uint8_t status = drv_read(tile, DRV2605L_REG_STATUS);
+    if (status != DRV2605L_STATUS_DEFAULT) {
+        TILE_ON_ERROR(tile, "init: unexpected status register");
+        tile->state = TILE_STATE_ERROR;
+        return;
+    }
+
+    /* Exit standby */
+    drv_write(tile, DRV2605L_REG_MODE, 0x00);
+    hal->delay_ms(400);
+
+    /* LRA drive levels for VG0832013D (1.8Vrms rated, ~235Hz) */
+    drv_write(tile, DRV2605L_REG_RATED_VOLTAGE, 0x56);
+    drv_write(tile, DRV2605L_REG_OD_CLAMP, 0x8C);
+
+    /* Configure for LRA: FEEDBACK_CTRL = 0xB6 */
+    drv_write(tile, DRV2605L_REG_FEEDBACK_CTRL, 0xB6);
+    hal->delay_ms(100);
+
+    /* CONTROL3: LRA open loop */
+    drv_write(tile, DRV2605L_REG_CONTROL3, 0x01);
+
+    /* Select LRA waveform library */
+    drv_write(tile, DRV2605L_REG_LIBRARY_SEL, 6);
+
+    tile->state = TILE_STATE_READY;
+}
+
+void tile_drive_h_play(tile_t* tile, uint8_t index, uint8_t repeats)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "play: not ready");
+        return;
+    }
+
+    /* Load effect into sequence slot 0, terminate in slot 1 */
+    drv_write(tile, DRV2605L_REG_WAVE_SEQ_0, index);
+    drv_write(tile, DRV2605L_REG_WAVE_SEQ_1, 0);
+
+    /* Trigger */
+    drv_write(tile, DRV2605L_REG_GO, 0x01);
+
+    /* Repeat with gap */
+    for (uint8_t i = 1; i < repeats; i++) {
+        tile->hal->delay_ms(200);
+        drv_write(tile, DRV2605L_REG_GO, 0x01);
+    }
+}
+
+void tile_drive_h_stop(tile_t* tile)
+{
+    drv_write(tile, DRV2605L_REG_GO, 0x00);
+}
+
+void tile_drive_h_rtp_start(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "rtp_start: not ready");
+        return;
+    }
+    drv_write(tile, DRV2605L_REG_MODE, 0x05);
+    drv_write(tile, DRV2605L_REG_RTP, 0x00);
+}
+
+void tile_drive_h_rtp_write(tile_t* tile, uint8_t amplitude)
+{
+    drv_write(tile, DRV2605L_REG_RTP, amplitude);
+}
+
+void tile_drive_h_rtp_stop(tile_t* tile)
+{
+    drv_write(tile, DRV2605L_REG_RTP, 0x00);
+    drv_write(tile, DRV2605L_REG_MODE, 0x00);
 }
