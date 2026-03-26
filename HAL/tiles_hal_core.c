@@ -1,102 +1,147 @@
 /**
  * @file   tiles_hal_core.c
- * @brief  Core tile HAL implementation.
+ * @brief  Core tile HAL — native Cores SDK implementation.
  *
- * Currently wraps the STM32 HAL — identical callbacks to tiles_hal_stm32.c.
- * Kept as a separate file so that Core tiles can evolve independently
- * (DMA, multi-bus, non-STM32 variants) without affecting the generic
- * STM32 HAL.
+ * Implements tiles_hal_t callbacks using the Cores firmware SDK's
+ * LL/HAL layer directly.  No CubeIDE HAL dependency.
+ *
+ * I2C:  Wraps hal_i2c_read_reg / hal_i2c_write_reg / hal_i2c_probe.
+ * SPI:  Wraps hal_spi_select / hal_spi_write / hal_spi_read / hal_spi_deselect
+ *       with per-CS pin management via ll_gpio.
+ * Delay: Uses ll_delay_ms (SysTick-based).
+ *
+ * The Cores SDK I2C functions take 7-bit addresses directly (no shifting)
+ * and handle START/STOP/repeated-START internally.
  */
 
 #include "tiles_hal_core.h"
 
-#define CORE_HAL_TIMEOUT_MS  50
+/* Cores SDK headers */
+#include "hal_i2c.h"
+#include "hal_spi.h"
+#include "ll_gpio.h"
+#include "ll_systick.h"
+
+/* ------------------------------------------------------------------ */
+/* Static config reference                                             */
+/* ------------------------------------------------------------------ */
 
 static const tiles_hal_core_cfg_t* s_cfg;
 
-/* -------------------------------------------------------------- */
-/* I2C callbacks                                                   */
-/* -------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* I2C callbacks                                                       */
+/* ------------------------------------------------------------------ */
 
+/**
+ * Register read via Cores SDK I2C.
+ * Cores hal_i2c_read_reg takes 7-bit addr directly — no shift needed.
+ */
 static int core_i2c_read(void* handle, uint8_t addr, uint8_t reg,
-                          uint8_t* data, uint16_t len)
+                         uint8_t* data, uint16_t len)
 {
-    I2C_HandleTypeDef* hi2c = (I2C_HandleTypeDef*)handle;
-    return (int)HAL_I2C_Mem_Read(hi2c, (uint16_t)(addr << 1), reg, 1,
-                                  data, len, CORE_HAL_TIMEOUT_MS);
+    hal_i2c_t* h = (hal_i2c_t*)handle;
+    return (hal_i2c_read_reg(h, addr, reg, data, (uint32_t)len) == HAL_OK)
+           ? 0 : -1;
 }
 
+/**
+ * Register write via Cores SDK I2C.
+ */
 static int core_i2c_write(void* handle, uint8_t addr, uint8_t reg,
-                           const uint8_t* data, uint16_t len)
+                          const uint8_t* data, uint16_t len)
 {
-    I2C_HandleTypeDef* hi2c = (I2C_HandleTypeDef*)handle;
-    return (int)HAL_I2C_Mem_Write(hi2c, (uint16_t)(addr << 1), reg, 1,
-                                   (uint8_t*)data, len, CORE_HAL_TIMEOUT_MS);
+    hal_i2c_t* h = (hal_i2c_t*)handle;
+    return (hal_i2c_write_reg(h, addr, reg, data, (uint32_t)len) == HAL_OK)
+           ? 0 : -1;
 }
 
+/**
+ * Device presence check via Cores SDK I2C probe.
+ */
 static int core_i2c_is_ready(void* handle, uint8_t addr)
 {
-    I2C_HandleTypeDef* hi2c = (I2C_HandleTypeDef*)handle;
-    return (int)HAL_I2C_IsDeviceReady(hi2c, (uint16_t)(addr << 1), 3,
-                                       CORE_HAL_TIMEOUT_MS);
+    hal_i2c_t* h = (hal_i2c_t*)handle;
+    return (hal_i2c_probe(h, addr) == HAL_OK) ? 0 : -1;
 }
 
-/* -------------------------------------------------------------- */
-/* SPI callbacks                                                   */
-/* -------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* SPI callbacks                                                       */
+/* ------------------------------------------------------------------ */
 
+/**
+ * SPI register read with per-CS pin management.
+ *
+ * Protocol: pull CS low → send (reg | 0x80) → read N bytes → CS high.
+ * The 0x80 bit signals a read to most SPI peripherals.
+ */
 static int core_spi_read(void* handle, uint8_t cs, uint8_t reg,
-                          uint8_t* data, uint16_t len)
+                         uint8_t* data, uint16_t len)
 {
     (void)handle;
-    SPI_HandleTypeDef* hspi = s_cfg->spi;
+    hal_spi_t* h = s_cfg->spi;
 
-    HAL_GPIO_WritePin(s_cfg->spi_cs_ports[cs], s_cfg->spi_cs_pins[cs],
-                      GPIO_PIN_RESET);
+    /* Assert CS */
+    ll_gpio_clear((GPIO_TypeDef*)s_cfg->cs[cs].port,
+                  1UL << s_cfg->cs[cs].pin);
 
+    /* Send read command (register | read bit) */
     uint8_t cmd = reg | 0x80;
-    HAL_SPI_Transmit(hspi, &cmd, 1, CORE_HAL_TIMEOUT_MS);
-    HAL_StatusTypeDef status = HAL_SPI_Receive(hspi, data, len,
-                                                CORE_HAL_TIMEOUT_MS);
+    hal_spi_write(h, &cmd, 1);
 
-    HAL_GPIO_WritePin(s_cfg->spi_cs_ports[cs], s_cfg->spi_cs_pins[cs],
-                      GPIO_PIN_SET);
+    /* Clock in data */
+    hal_spi_read(h, data, (uint32_t)len);
 
-    return (int)status;
+    /* Deassert CS */
+    ll_gpio_set((GPIO_TypeDef*)s_cfg->cs[cs].port,
+                1UL << s_cfg->cs[cs].pin);
+
+    return 0;
 }
 
+/**
+ * SPI register write with per-CS pin management.
+ *
+ * Protocol: pull CS low → send (reg & 0x7F) → write N bytes → CS high.
+ */
 static int core_spi_write(void* handle, uint8_t cs, uint8_t reg,
-                           const uint8_t* data, uint16_t len)
+                          const uint8_t* data, uint16_t len)
 {
     (void)handle;
-    SPI_HandleTypeDef* hspi = s_cfg->spi;
+    hal_spi_t* h = s_cfg->spi;
 
-    HAL_GPIO_WritePin(s_cfg->spi_cs_ports[cs], s_cfg->spi_cs_pins[cs],
-                      GPIO_PIN_RESET);
+    /* Assert CS */
+    ll_gpio_clear((GPIO_TypeDef*)s_cfg->cs[cs].port,
+                  1UL << s_cfg->cs[cs].pin);
 
+    /* Send write command (register with read bit cleared) */
     uint8_t cmd = reg & 0x7F;
-    HAL_SPI_Transmit(hspi, &cmd, 1, CORE_HAL_TIMEOUT_MS);
-    HAL_StatusTypeDef status = HAL_SPI_Transmit(hspi, (uint8_t*)data, len,
-                                                 CORE_HAL_TIMEOUT_MS);
+    hal_spi_write(h, &cmd, 1);
 
-    HAL_GPIO_WritePin(s_cfg->spi_cs_ports[cs], s_cfg->spi_cs_pins[cs],
-                      GPIO_PIN_SET);
+    /* Send data */
+    hal_spi_write(h, data, (uint32_t)len);
 
-    return (int)status;
+    /* Deassert CS */
+    ll_gpio_set((GPIO_TypeDef*)s_cfg->cs[cs].port,
+                1UL << s_cfg->cs[cs].pin);
+
+    return 0;
 }
 
-/* -------------------------------------------------------------- */
-/* Delay                                                           */
-/* -------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* Delay                                                               */
+/* ------------------------------------------------------------------ */
 
+/**
+ * Millisecond delay via Cores SDK SysTick.
+ */
 static void core_delay_ms(uint32_t ms)
 {
-    HAL_Delay(ms);
+    ll_delay_ms(ms);
 }
 
-/* -------------------------------------------------------------- */
-/* Public init                                                      */
-/* -------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* Public init                                                         */
+/* ------------------------------------------------------------------ */
 
 void tiles_hal_core_init(tiles_hal_t* hal, const tiles_hal_core_cfg_t* cfg)
 {
@@ -109,10 +154,10 @@ void tiles_hal_core_init(tiles_hal_t* hal, const tiles_hal_core_cfg_t* cfg)
         hal->i2c_is_ready = core_i2c_is_ready;
         hal->handle       = (void*)cfg->i2c;
     } else {
-        hal->i2c_read     = NULL;
-        hal->i2c_write    = NULL;
-        hal->i2c_is_ready = NULL;
-        hal->handle       = NULL;
+        hal->i2c_read     = (void*)0;
+        hal->i2c_write    = (void*)0;
+        hal->i2c_is_ready = (void*)0;
+        hal->handle       = (void*)0;
     }
 
     /* SPI */
@@ -120,12 +165,12 @@ void tiles_hal_core_init(tiles_hal_t* hal, const tiles_hal_core_cfg_t* cfg)
         hal->spi_read  = core_spi_read;
         hal->spi_write = core_spi_write;
     } else {
-        hal->spi_read  = NULL;
-        hal->spi_write = NULL;
+        hal->spi_read  = (void*)0;
+        hal->spi_write = (void*)0;
     }
 
     /* Shared */
     hal->delay_ms = core_delay_ms;
-    hal->on_error = NULL;
+    hal->on_error = (void*)0;
     hal->buses    = cfg->buses;
 }
