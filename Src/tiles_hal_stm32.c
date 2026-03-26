@@ -1,15 +1,15 @@
 /**
- * @file   kiln_hal_stm32.c
+ * @file   tiles_hal_stm32.c
  * @brief  STM32 HAL reference implementation of the Kiln platform layer.
  *
- * Bridges kiln_hal_t function pointers to the STM32 HAL I2C API.
+ * Bridges tiles_hal_t function pointers to the STM32 HAL I2C API.
  * Uses DMA transfers with synchronous completion wait — the CPU is
  * free to service interrupts (BLE, timers) during each I2C transfer.
  *
  * This is the only file in Kiln that includes STM32-specific headers.
  */
 
-#include "kiln_hal.h"
+#include "tiles_hal.h"
 #include "i2c.h"        /* STM32 HAL: I2C_HandleTypeDef, HAL_I2C_* */
 #include "diag.h"       /* Runtime diagnostic counters */
 
@@ -42,7 +42,7 @@ static int i2c_wait_ready(I2C_HandleTypeDef* hi2c)
 }
 
 /* -------------------------------------------------------------- */
-/* Private: callbacks matching kiln_hal_t function pointer sigs    */
+/* Private: callbacks matching tiles_hal_t function pointer sigs    */
 /* -------------------------------------------------------------- */
 
 static int stm32_i2c_read(void* handle, uint8_t addr, uint8_t reg,
@@ -110,12 +110,12 @@ static void stm32_delay_ms(uint32_t ms)
 /* -------------------------------------------------------------- */
 
 /**
- * @brief  Initialize a kiln_hal_t for use with an STM32 I2C peripheral.
+ * @brief  Initialize a tiles_hal_t for use with an STM32 I2C peripheral.
  *
- * @param  hal    Pointer to the kiln_hal_t to populate
+ * @param  hal    Pointer to the tiles_hal_t to populate
  * @param  hi2c   STM32 HAL I2C handle (e.g. &hi2c1)
  */
-void kiln_hal_stm32_init(kiln_hal_t* hal, I2C_HandleTypeDef* hi2c)
+void tiles_hal_stm32_init(tiles_hal_t* hal, I2C_HandleTypeDef* hi2c)
 {
     hal->i2c_read     = stm32_i2c_read;
     hal->i2c_write    = stm32_i2c_write;

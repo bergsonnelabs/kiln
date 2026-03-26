@@ -6,39 +6,49 @@
 #include "tile_sense_i_9.h"
 
 /* -------------------------------------------------------------- */
-/* Private state                                                   */
+/* Instance mapping                                                */
 /* -------------------------------------------------------------- */
 
-static kiln_hal_t* hal_ptr = 0;
-static uint8_t icm_addr = ICM20948_I2C_ADDR_DEFAULT;
+static const uint8_t id_table[] = {
+    ICM20948_I2C_ADDR_DEFAULT,   /* instance 0 — pad 2 floating (0x69) */
+    ICM20948_I2C_ADDR_ALT,       /* instance 1 — pad 2 to GND  (0x68) */
+};
+
+#define ID_TABLE_LEN  (sizeof(id_table) / sizeof(id_table[0]))
+
+static uint8_t resolve_id(uint8_t instance)
+{
+    if (instance >= ID_TABLE_LEN) return 0x00;
+    return id_table[instance];
+}
 
 /* -------------------------------------------------------------- */
 /* Private helpers                                                 */
 /* -------------------------------------------------------------- */
 
-static void icm_write(uint8_t reg, uint8_t value)
+static void icm_write(tile_t* tile, uint8_t reg, uint8_t value)
 {
-    hal_ptr->i2c_write(hal_ptr->handle, icm_addr, reg, &value, 1);
+    tile->hal->i2c_write(tile->hal->handle, tile->id, reg, &value, 1);
 }
 
-static void icm_read(uint8_t reg, uint8_t* data, uint16_t len)
+static void icm_read(tile_t* tile, uint8_t reg, uint8_t* data, uint16_t len)
 {
-    hal_ptr->i2c_read(hal_ptr->handle, icm_addr, reg, data, len);
+    tile->hal->i2c_read(tile->hal->handle, tile->id, reg, data, len);
 }
 
-static void ak_write(uint8_t reg, uint8_t value)
+static void ak_write(tile_t* tile, uint8_t reg, uint8_t value)
 {
-    hal_ptr->i2c_write(hal_ptr->handle, AK09916_I2C_ADDR, reg, &value, 1);
+    tile->hal->i2c_write(tile->hal->handle, AK09916_I2C_ADDR, reg, &value, 1);
 }
 
-static void ak_read(uint8_t reg, uint8_t* data, uint16_t len)
+static void ak_read(tile_t* tile, uint8_t reg, uint8_t* data, uint16_t len)
 {
-    hal_ptr->i2c_read(hal_ptr->handle, AK09916_I2C_ADDR, reg, data, len);
+    tile->hal->i2c_read(tile->hal->handle, AK09916_I2C_ADDR, reg, data, len);
 }
 
-static void set_bank(uint8_t bank)
+static void set_bank(tile_t* tile, uint8_t bank)
 {
-    icm_write(ICM20948_REG_BANK_SEL, bank << 4);
+    icm_write(tile, ICM20948_REG_BANK_SEL, bank << 4);
 }
 
 /** @brief  Swap bytes in a buffer of int16_t values (big-endian → native). */
@@ -53,138 +63,172 @@ static void swap16(int16_t* buf, uint8_t count)
 /* Public API                                                      */
 /* -------------------------------------------------------------- */
 
-uint8_t tile_sense_i_9_find(kiln_hal_t* hal, uint8_t addr)
+uint8_t tile_sense_i_9_find(tiles_hal_t* hal, uint8_t instance)
 {
-    return (hal->i2c_is_ready(hal->handle, addr) == 0) ? 1 : 0;
+    uint8_t id = resolve_id(instance);
+    if (id == 0x00) return 0;
+    return (hal->i2c_is_ready(hal->handle, id) == 0) ? 1 : 0;
 }
 
-uint8_t tile_sense_i_9_init(kiln_hal_t* hal, uint8_t addr)
+void tile_sense_i_9_init(tiles_hal_t* hal, uint8_t instance, tile_t* tile)
 {
-    uint8_t whoami = 0;
+    tile->hal      = NULL;
+    tile->id       = 0;
+    tile->state    = TILE_STATE_NONE;
+    tile->flags    = 0;
+    tile->callback = NULL;
+    tile->cb_ctx   = NULL;
 
-    hal_ptr = hal;
-    icm_addr = addr;
+    uint8_t id = resolve_id(instance);
+    if (id == 0x00) {
+        TILE_ON_ERROR(tile, "init: invalid instance");
+        tile->state = TILE_STATE_ERROR;
+        return;
+    }
+
+    tile->hal = hal;
+    tile->id  = id;
+
+    /* Verify device is on bus */
+    if (hal->i2c_is_ready(hal->handle, id) != 0) {
+        TILE_ON_ERROR(tile, "init: device not found on bus");
+        tile->state = TILE_STATE_ERROR;
+        return;
+    }
 
     /* Verify chip identity */
-    set_bank(ICM20948_BANK_0);
-    icm_read(ICM20948_REG_WHOAMI, &whoami, 1);
+    uint8_t whoami = 0;
+    set_bank(tile, ICM20948_BANK_0);
+    icm_read(tile, ICM20948_REG_WHOAMI, &whoami, 1);
     if (whoami != ICM20948_WHOAMI_DEFAULT) {
-        return 0;
+        TILE_ON_ERROR(tile, "init: unexpected chip ID");
+        tile->state = TILE_STATE_ERROR;
+        return;
     }
 
     /* Software reset */
-    icm_write(ICM20948_REG_PWR_MGMT_1, 1 << 7);
-    hal_ptr->delay_ms(50);
+    icm_write(tile, ICM20948_REG_PWR_MGMT_1, 1 << 7);
+    hal->delay_ms(50);
 
     /* Wake: auto clock select */
-    icm_write(ICM20948_REG_PWR_MGMT_1, 0x01);
+    icm_write(tile, ICM20948_REG_PWR_MGMT_1, 0x01);
 
     /* Enable all accel + gyro axes */
-    icm_write(ICM20948_REG_PWR_MGMT_2, 0x00);
+    icm_write(tile, ICM20948_REG_PWR_MGMT_2, 0x00);
 
     /* Enable I2C bypass so we can talk to the AK09916 directly */
-    icm_write(ICM20948_REG_INT_PIN_CFG, 0x02);
+    icm_write(tile, ICM20948_REG_INT_PIN_CFG, 0x02);
 
     /* Return to bank 0 */
-    set_bank(ICM20948_BANK_0);
+    set_bank(tile, ICM20948_BANK_0);
 
     /* Initialize magnetometer: continuous 100 Hz */
-    ak_write(AK09916_REG_CNTL3, 0x01);  /* soft reset */
-    hal_ptr->delay_ms(1);
-    ak_write(AK09916_REG_CNTL2, MAG_CONTINUOUS_100HZ);
+    ak_write(tile, AK09916_REG_CNTL3, 0x01);  /* soft reset */
+    hal->delay_ms(1);
+    ak_write(tile, AK09916_REG_CNTL2, SENSE_I_9_MAG_CONTINUOUS_100HZ);
 
-    return 1;
+    tile->state = TILE_STATE_READY;
 }
 
-void tile_sense_i_9_set_accel_range(accel_range_t range)
+uint8_t tile_sense_i_9_data_ready(tile_t* tile)
 {
-    set_bank(ICM20948_BANK_2);
-    icm_write(ICM20948_REG_ACCEL_CONFIG, (uint8_t)range);
-    set_bank(ICM20948_BANK_0);
+    uint8_t status = 0;
+    icm_read(tile, ICM20948_REG_INT_STATUS_1, &status, 1);
+    return (status & 0x01) ? 1 : 0;  /* RAW_DATA_0_RDY_INT */
 }
 
-void tile_sense_i_9_set_gyro_range(gyro_range_t range)
+void tile_sense_i_9_set_accel_range(tile_t* tile, sense_i_9_accel_range_t range)
 {
-    set_bank(ICM20948_BANK_2);
-    icm_write(ICM20948_REG_GYRO_CONFIG, (uint8_t)range);
-    set_bank(ICM20948_BANK_0);
+    set_bank(tile, ICM20948_BANK_2);
+    icm_write(tile, ICM20948_REG_ACCEL_CONFIG, (uint8_t)range);
+    set_bank(tile, ICM20948_BANK_0);
 }
 
-void tile_sense_i_9_set_mag_mode(mag_mode_t mode)
+void tile_sense_i_9_set_gyro_range(tile_t* tile, sense_i_9_gyro_range_t range)
 {
-    ak_write(AK09916_REG_CNTL2, (uint8_t)mode);
+    set_bank(tile, ICM20948_BANK_2);
+    icm_write(tile, ICM20948_REG_GYRO_CONFIG, (uint8_t)range);
+    set_bank(tile, ICM20948_BANK_0);
 }
 
-void tile_sense_i_9_set_accel_odr(uint16_t divider)
+void tile_sense_i_9_set_mag_mode(tile_t* tile, sense_i_9_mag_mode_t mode)
+{
+    ak_write(tile, AK09916_REG_CNTL2, (uint8_t)mode);
+}
+
+void tile_sense_i_9_set_accel_odr(tile_t* tile, uint16_t divider)
 {
     uint8_t hi = (uint8_t)((divider >> 8) & 0x0F);
     uint8_t lo = (uint8_t)(divider & 0xFF);
 
-    set_bank(ICM20948_BANK_2);
-    icm_write(ICM20948_REG_ACCEL_SMPLRT_H, hi);
-    icm_write(ICM20948_REG_ACCEL_SMPLRT_L, lo);
-    set_bank(ICM20948_BANK_0);
+    set_bank(tile, ICM20948_BANK_2);
+    icm_write(tile, ICM20948_REG_ACCEL_SMPLRT_H, hi);
+    icm_write(tile, ICM20948_REG_ACCEL_SMPLRT_L, lo);
+    set_bank(tile, ICM20948_BANK_0);
 }
 
-void tile_sense_i_9_set_gyro_odr(uint8_t divider)
+void tile_sense_i_9_set_gyro_odr(tile_t* tile, uint8_t divider)
 {
-    set_bank(ICM20948_BANK_2);
-    icm_write(ICM20948_REG_GYRO_SMPLRT, divider);
-    set_bank(ICM20948_BANK_0);
+    set_bank(tile, ICM20948_BANK_2);
+    icm_write(tile, ICM20948_REG_GYRO_SMPLRT, divider);
+    set_bank(tile, ICM20948_BANK_0);
 }
 
-void tile_sense_i_9_get_raw_accels(int16_t* buffer)
+void tile_sense_i_9_get_raw_accels(tile_t* tile, int16_t* buffer)
 {
-    icm_read(ICM20948_REG_ACCEL_X_H, (uint8_t*)buffer, 6);
+    icm_read(tile, ICM20948_REG_ACCEL_X_H, (uint8_t*)buffer, 6);
     swap16(buffer, 3);
 }
 
-void tile_sense_i_9_get_raw_gyros(int16_t* buffer)
+void tile_sense_i_9_get_raw_gyros(tile_t* tile, int16_t* buffer)
 {
-    icm_read(ICM20948_REG_GYRO_X_H, (uint8_t*)buffer, 6);
+    icm_read(tile, ICM20948_REG_GYRO_X_H, (uint8_t*)buffer, 6);
     swap16(buffer, 3);
 }
 
-void tile_sense_i_9_get_raw_6dof(int16_t* buffer)
+void tile_sense_i_9_get_raw_6dof(tile_t* tile, int16_t* buffer)
 {
-    icm_read(ICM20948_REG_ACCEL_X_H, (uint8_t*)buffer, 12);
+    icm_read(tile, ICM20948_REG_ACCEL_X_H, (uint8_t*)buffer, 12);
     swap16(buffer, 6);
 }
 
-void tile_sense_i_9_get_raw_mags(int16_t* buffer)
+void tile_sense_i_9_get_raw_mags(tile_t* tile, int16_t* buffer)
 {
     uint8_t st2;
 
     /* AK09916 data registers are little-endian — no swap needed */
-    ak_read(AK09916_REG_HXL, (uint8_t*)buffer, 6);
+    ak_read(tile, AK09916_REG_HXL, (uint8_t*)buffer, 6);
 
     /* Reading ST2 releases the data lock for the next measurement */
-    ak_read(AK09916_REG_ST2, &st2, 1);
+    ak_read(tile, AK09916_REG_ST2, &st2, 1);
 }
 
-int16_t tile_sense_i_9_get_temperature(void)
+int16_t tile_sense_i_9_get_temperature(tile_t* tile)
 {
     int16_t raw;
-    icm_read(ICM20948_REG_TEMP_H, (uint8_t*)&raw, 2);
+    icm_read(tile, ICM20948_REG_TEMP_H, (uint8_t*)&raw, 2);
     raw = (int16_t)__builtin_bswap16((uint16_t)raw);
     return raw;
 }
 
-void tile_sense_i_9_sleep(void)
+void tile_sense_i_9_sleep(tile_t* tile)
 {
-    set_bank(ICM20948_BANK_0);
-    icm_write(ICM20948_REG_PWR_MGMT_1, 0x41);  /* SLEEP + auto clock */
+    set_bank(tile, ICM20948_BANK_0);
+    icm_write(tile, ICM20948_REG_PWR_MGMT_1, 0x41);  /* SLEEP + auto clock */
+    tile->state = TILE_STATE_SLEEPING;
 }
 
-void tile_sense_i_9_wake(void)
+void tile_sense_i_9_wake(tile_t* tile)
 {
-    set_bank(ICM20948_BANK_0);
-    icm_write(ICM20948_REG_PWR_MGMT_1, 0x01);  /* clear SLEEP, auto clock */
+    set_bank(tile, ICM20948_BANK_0);
+    icm_write(tile, ICM20948_REG_PWR_MGMT_1, 0x01);  /* clear SLEEP, auto clock */
+    tile->state = TILE_STATE_READY;
 }
 
-void tile_sense_i_9_reset(void)
+void tile_sense_i_9_reset(tile_t* tile)
 {
-    set_bank(ICM20948_BANK_0);
-    icm_write(ICM20948_REG_PWR_MGMT_1, 1 << 7);
-    hal_ptr->delay_ms(50);
+    set_bank(tile, ICM20948_BANK_0);
+    icm_write(tile, ICM20948_REG_PWR_MGMT_1, 1 << 7);
+    tile->hal->delay_ms(50);
+    tile->state = TILE_STATE_NONE;
 }
