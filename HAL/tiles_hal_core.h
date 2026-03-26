@@ -1,11 +1,10 @@
 /**
  * @file   tiles_hal_core.h
- * @brief  Core tile HAL — for use when a Core tile is the host platform.
+ * @brief  Core tile HAL — native implementation using the Cores SDK.
  *
- * Provides a HAL init for projects running on Mosaic Core tiles.
- * All Core tiles currently use STM32 processors, so this wraps the
- * STM32 HAL internally. As Core expands to other MCU families, this
- * header remains the same — only the implementation changes.
+ * Provides a HAL init for projects running on Mosaic Core tiles,
+ * using the Cores firmware SDK's LL/HAL layer directly.  No CubeIDE
+ * HAL dependency — just our lightweight register-level drivers.
  *
  * Supported Core tiles:
  *   - Core.L  — STM32L011 (Cortex-M0+)
@@ -19,14 +18,16 @@
  *   #include "tiles_hal_core.h"
  *   #include "tile_sense_i_9.h"
  *
+ *   // Assumes I2C1 and SPI1 are initialized via tile_init() / project.json
  *   tiles_hal_core_cfg_t cfg = {
- *       .i2c = &hi2c1,
+ *       .i2c = &my_i2c,          // hal_i2c_t from Cores SDK
  *       .buses = TILES_BUS_I2C,
  *   };
  *   tiles_hal_t hal;
  *   tiles_hal_core_init(&hal, &cfg);
  *
- *   tile_t imu = tile_sense_i_9_init(&hal, 0);
+ *   tile_t imu;
+ *   tile_sense_i_9_init(&hal, 0, &imu);
  * @endcode
  */
 
@@ -35,34 +36,49 @@
 
 #include "tiles.h"
 
-/* Pull in the right STM32 HAL header based on the Core tile variant */
-#if defined(CORE_W) || defined(STM32WBxx)
-#include "stm32wbxx_hal.h"
-#elif defined(CORE_H) || defined(STM32H5xx)
-#include "stm32h5xx_hal.h"
-#elif defined(CORE_U) || defined(STM32L4xx)
-#include "stm32l4xx_hal.h"
-#elif defined(CORE_L) || defined(STM32L0xx)
-#include "stm32l0xx_hal.h"
-#else
-/* Fallback — your project must provide the correct HAL include */
-#endif
+/* Cores SDK HAL types — forward declared to avoid pulling in
+   the full Cores headers into every driver. */
+typedef struct hal_i2c hal_i2c_t;
+typedef struct hal_spi hal_spi_t;
+
+/* GPIO type for SPI chip-select — matches Cores SDK ll_common.h */
+typedef struct {
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
+} tiles_gpio_t;
+
+/**
+ * @brief  SPI chip-select descriptor.
+ *
+ * Each SPI tile needs a CS pin.  The index in the cs[] array
+ * matches the instance number used in driver init calls.
+ */
+typedef struct {
+    tiles_gpio_t*  port;    /**< GPIO port (e.g., GPIOA)   */
+    uint32_t       pin;     /**< Pin number (0–15)         */
+} tiles_hal_core_cs_t;
 
 /**
  * @brief  Core tile HAL configuration.
  *
  * Set the bus handles for the peripherals your Core tile exposes.
- * Bus peripherals must be initialized before calling tiles_hal_core_init.
- *
- * Note: Core tiles have fixed I2C/SPI peripheral assignments per variant.
- * Refer to the Core tile documentation for which peripheral maps to which pads.
+ * Bus peripherals must be initialized (via tile_init / project.json
+ * or manual hal_i2c_init / hal_spi_init) before calling
+ * tiles_hal_core_init.
  */
 typedef struct {
-    I2C_HandleTypeDef*  i2c;              /**< I2C peripheral handle             */
-    SPI_HandleTypeDef*  spi;              /**< SPI peripheral handle (if used)   */
-    GPIO_TypeDef*       spi_cs_ports[8];  /**< GPIO port for each CS line        */
-    uint16_t            spi_cs_pins[8];   /**< GPIO pin for each CS line         */
-    uint8_t             buses;            /**< TILES_BUS_I2C | TILES_BUS_SPI     */
+    hal_i2c_t*           i2c;       /**< Cores SDK I2C handle          */
+    hal_spi_t*           spi;       /**< Cores SDK SPI handle          */
+    tiles_hal_core_cs_t  cs[8];     /**< SPI chip-select pins          */
+    uint8_t              buses;     /**< TILES_BUS_I2C | TILES_BUS_SPI */
 } tiles_hal_core_cfg_t;
 
 /**
