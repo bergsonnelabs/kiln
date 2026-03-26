@@ -18,19 +18,21 @@ static const tiles_hal_stm32_cfg_t* s_cfg;
 /* I2C callbacks                                                   */
 /* -------------------------------------------------------------- */
 
-static int stm32_i2c_read(void* handle, uint8_t addr, uint8_t reg,
+static int stm32_i2c_read(void* handle, uint8_t addr, uint16_t reg,
                            uint8_t* data, uint16_t len)
 {
     I2C_HandleTypeDef* hi2c = (I2C_HandleTypeDef*)handle;
-    return (int)HAL_I2C_Mem_Read(hi2c, (uint16_t)(addr << 1), reg, 1,
+    uint16_t mem_size = (reg > 0xFF) ? 2 : 1;
+    return (int)HAL_I2C_Mem_Read(hi2c, (uint16_t)(addr << 1), reg, mem_size,
                                   data, len, STM32_HAL_TIMEOUT_MS);
 }
 
-static int stm32_i2c_write(void* handle, uint8_t addr, uint8_t reg,
+static int stm32_i2c_write(void* handle, uint8_t addr, uint16_t reg,
                             const uint8_t* data, uint16_t len)
 {
     I2C_HandleTypeDef* hi2c = (I2C_HandleTypeDef*)handle;
-    return (int)HAL_I2C_Mem_Write(hi2c, (uint16_t)(addr << 1), reg, 1,
+    uint16_t mem_size = (reg > 0xFF) ? 2 : 1;
+    return (int)HAL_I2C_Mem_Write(hi2c, (uint16_t)(addr << 1), reg, mem_size,
                                    (uint8_t*)data, len, STM32_HAL_TIMEOUT_MS);
 }
 
@@ -39,6 +41,22 @@ static int stm32_i2c_is_ready(void* handle, uint8_t addr)
     I2C_HandleTypeDef* hi2c = (I2C_HandleTypeDef*)handle;
     return (int)HAL_I2C_IsDeviceReady(hi2c, (uint16_t)(addr << 1), 3,
                                        STM32_HAL_TIMEOUT_MS);
+}
+
+static int stm32_i2c_write_raw(void* handle, uint8_t addr,
+                                const uint8_t* data, uint16_t len)
+{
+    I2C_HandleTypeDef* hi2c = (I2C_HandleTypeDef*)handle;
+    return (int)HAL_I2C_Master_Transmit(hi2c, (uint16_t)(addr << 1),
+                                         (uint8_t*)data, len, STM32_HAL_TIMEOUT_MS);
+}
+
+static int stm32_i2c_read_raw(void* handle, uint8_t addr,
+                               uint8_t* data, uint16_t len)
+{
+    I2C_HandleTypeDef* hi2c = (I2C_HandleTypeDef*)handle;
+    return (int)HAL_I2C_Master_Receive(hi2c, (uint16_t)(addr << 1),
+                                        data, len, STM32_HAL_TIMEOUT_MS);
 }
 
 /* -------------------------------------------------------------- */
@@ -104,15 +122,19 @@ void tiles_hal_stm32_init(tiles_hal_t* hal, const tiles_hal_stm32_cfg_t* cfg)
 
     /* I2C */
     if (cfg->buses & TILES_BUS_I2C) {
-        hal->i2c_read     = stm32_i2c_read;
-        hal->i2c_write    = stm32_i2c_write;
-        hal->i2c_is_ready = stm32_i2c_is_ready;
-        hal->handle       = (void*)cfg->i2c;
+        hal->i2c_read      = stm32_i2c_read;
+        hal->i2c_write     = stm32_i2c_write;
+        hal->i2c_is_ready  = stm32_i2c_is_ready;
+        hal->i2c_write_raw = stm32_i2c_write_raw;
+        hal->i2c_read_raw  = stm32_i2c_read_raw;
+        hal->handle        = (void*)cfg->i2c;
     } else {
-        hal->i2c_read     = NULL;
-        hal->i2c_write    = NULL;
-        hal->i2c_is_ready = NULL;
-        hal->handle       = NULL;
+        hal->i2c_read      = NULL;
+        hal->i2c_write     = NULL;
+        hal->i2c_is_ready  = NULL;
+        hal->i2c_write_raw = NULL;
+        hal->i2c_read_raw  = NULL;
+        hal->handle        = NULL;
     }
 
     /* SPI */
