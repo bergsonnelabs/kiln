@@ -1,32 +1,32 @@
-#include "tile_drive_dc_i.h"
+#include "tile_drive_dc_h.h"
 #include "main.h"
 
 
-static I2C_HandleTypeDef* tile_drive_dc_i_handle;
+static I2C_HandleTypeDef* tile_drive_dc_h_handle;
 
 // ---------------------------------------------------------
 // PUBLIC FUNCTIONS
 // ---------------------------------------------------------
 
-uint8_t tile_drive_dc_i_find(I2C_HandleTypeDef* hi2c)
+uint8_t tile_drive_dc_h_find(I2C_HandleTypeDef* hi2c)
 {
 	uint8_t RX_Buffer[1];
 	HAL_I2C_Mem_Read(hi2c, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG3, 1, (uint8_t *)RX_Buffer, 1, 1000);
 
 	//NOTE: if we decide to change CONFIG3, then this default check won't work!
 	if(RX_Buffer[0] == DRV8214_REG_CONFIG3_DEFAULT){
-		tile_drive_dc_i_handle = hi2c;
+		tile_drive_dc_h_handle = hi2c;
 		return 1;
 	} else {
 		return 0;
 	}
 }
 
-void tile_drive_dc_i_config(uint8_t mode)
+void tile_drive_dc_h_config(uint8_t mode)
 {
 	uint8_t TX_Buffer[1] = {0};
 
-	if(mode == TILE_DRIVE_DC_I_MODE_I2C){
+	if(mode == TILE_DRIVE_DC_H_MODE_I2C){
 		// ----------------------------------------------------------------------
 		// REGISTER: CONFIG4
 		// ----------------------------------------------------------------------
@@ -40,7 +40,7 @@ void tile_drive_dc_i_config(uint8_t mode)
 		//	1		I2C_EN_IN1		0			0
 		//	0		I2C_PH_IN2		0			0
 		TX_Buffer[0] = 0b00110100;
-		HAL_I2C_Mem_Write(tile_drive_dc_i_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG4, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
+		HAL_I2C_Mem_Write(tile_drive_dc_h_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG4, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
 	}
 
 	// ----------------------------------------------------------------------
@@ -57,7 +57,7 @@ void tile_drive_dc_i_config(uint8_t mode)
 	//	1		CLR_FLT			0			0
 	//	0		DUTY_CTRL		0			0
 	TX_Buffer[0] = 0b11100000;
-	HAL_I2C_Mem_Write(tile_drive_dc_i_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG0, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
+	HAL_I2C_Mem_Write(tile_drive_dc_h_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG0, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
 
 	// ----------------------------------------------------------------------
 	// REGISTER: CTRL0
@@ -70,19 +70,19 @@ void tile_drive_dc_i_config(uint8_t mode)
 	//	2		PWM_FREQ		1			1		25kHz
 	//	1:0		W_SCALE			11			11		128
 	TX_Buffer[0] = 0b00111111;
-	HAL_I2C_Mem_Write(tile_drive_dc_i_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CTRL0, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
+	HAL_I2C_Mem_Write(tile_drive_dc_h_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CTRL0, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
 
 	// set TINRUSH
 	TX_Buffer[0] = 0x1F;
-	HAL_I2C_Mem_Write(tile_drive_dc_i_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG1, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
+	HAL_I2C_Mem_Write(tile_drive_dc_h_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG1, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
 
 	// set target motor voltage to 3.92 * 180/255 = 2.8V
 	TX_Buffer[0] = 180;
-	HAL_I2C_Mem_Write(tile_drive_dc_i_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CTRL1, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
+	HAL_I2C_Mem_Write(tile_drive_dc_h_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CTRL1, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
 }
 
 
-void tile_drive_dc_i_output(uint8_t en, uint8_t dir)
+void tile_drive_dc_h_output(uint8_t en, uint8_t dir)
 {
 	uint8_t TX_Buffer[1] = {0};
 	// ----------------------------------------------------------------------
@@ -99,6 +99,6 @@ void tile_drive_dc_i_output(uint8_t en, uint8_t dir)
 	//	0		I2C_PH_IN2		0			<dir>
 	TX_Buffer[0] = 0b00110100 + (en<1) + dir;//TX_Buffer[0] = 0b00110100 + (en<1) + dir;
 
-	HAL_I2C_Mem_Write(tile_drive_dc_i_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG4, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
+	HAL_I2C_Mem_Write(tile_drive_dc_h_handle, DRV8214_I2C_ADDR<<1, DRV8214_REG_CONFIG4, I2C_MEMADD_SIZE_8BIT, TX_Buffer, 1, 1000);
 
 }
