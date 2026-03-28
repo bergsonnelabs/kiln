@@ -1,0 +1,675 @@
+{
+  "family": "Core",
+  "name": "U.1",
+  "rev": "a",
+  "tile_id": 1,
+  "json_version": "0.19",
+  "updated_at": "2026-03-21T16:58:48.000Z",
+  "headline": "USB-programmable Cortex-M4",
+  "description": "The USB-programmable Core.U.1 is based on the 80-MHz 32-bit Cortex-M4 STM32L422 with 128KB flash, 40KB SRAM, and a CoreMark score of 273.55.  The exposed pads provide a user-configurable combination of two fast-mode-plus I2C ports, one SPI port, three 12-bit ADCs, multiple timers, USART, an onboard comparator, and capacitive-touch input.  A programmable onboard LED provides a convenient status indicator.  If more I/O is needed, consider the larger Core.U.2 in a T48-22 package.",
+  "application_notes": [
+    {
+      "details": "When the chip is blank, it will default into the bootloader when connected over USB.  Once there is code in the program space, you need to hold the BOOT0 pin low during reset (either power-on or via the NRST pin) to enter the bootloader.",
+      "heading": "Bootloading"
+    },
+    {
+      "details": "The onboard LED is connected to PA8 in an active-high configuration.",
+      "heading": "LED"
+    }
+  ],
+  "package": {
+    "pads": 12,
+    "type": "T44",
+    "size_x": 4000,
+    "size_y": 4000,
+    "size_z": 0
+  },
+  "power": [
+    {
+      "max": 3.6,
+      "min": 1.71,
+      "type": "system",
+      "notes": "minimum of 3.0V for USB communications",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "10"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32l422tb.html",
+      "part": "STM32L422TB",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/1/ST_Microelectronics-STM32L422TB.pdf",
+      "manufacturer": "ST Microelectronics"
+    }
+  ],
+  "pads": [
+    {
+      "pad": "1",
+      "geometry": {
+        "size_x": 1000,
+        "size_y": 400,
+        "center_x": -1500,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "type": "power",
+          "function": "GND"
+        }
+      ]
+    },
+    {
+      "pad": "2",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A7",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C3.CLK",
+          "direction": "bidirectional",
+          "af": 4
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.M0SI",
+          "direction": "bidirectional",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC12",
+          "direction": "input"
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.1N",
+          "direction": "output",
+          "af": 1
+        }
+      ]
+    },
+    {
+      "pad": "3",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A1",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "optional SMBus alert",
+          "type": "interface",
+          "function": "I2C1.SMBA",
+          "direction": "",
+          "af": 4
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.CLK",
+          "direction": "bidirectional",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC6",
+          "direction": "input"
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM2.2",
+          "direction": "output",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM15.1N",
+          "direction": "output",
+          "af": 14
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "COMP1.+",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "4",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "type": "digital",
+          "function": "B6",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "type": "interface",
+          "function": "I2C1.CLK",
+          "direction": "bidirectional",
+          "af": 4
+        },
+        {
+          "type": "timer",
+          "function": "TIM16.1N",
+          "direction": "output",
+          "af": 14
+        },
+        {
+          "note": "external trigger",
+          "type": "timer",
+          "function": "LPTIM1.ETR",
+          "direction": "input",
+          "af": 1
+        },
+        {
+          "type": "interface",
+          "function": "USART1.TX",
+          "direction": "output",
+          "af": 7
+        }
+      ]
+    },
+    {
+      "pad": "5",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "type": "digital",
+          "function": "B7",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "type": "interface",
+          "function": "I2C1.DAT",
+          "direction": "bidirectional",
+          "af": 4
+        },
+        {
+          "type": "timer",
+          "function": "LPTIM1.2",
+          "direction": "output",
+          "af": 1
+        },
+        {
+          "type": "interface",
+          "function": "USART1.RX",
+          "direction": "input",
+          "af": 7
+        }
+      ]
+    },
+    {
+      "pad": "6",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A12",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "type": "interface",
+          "function": "SPI1.MOSI",
+          "direction": "output",
+          "af": 5
+        },
+        {
+          "note": "external trigger",
+          "type": "timer",
+          "function": "TIM1.ETR",
+          "direction": "input",
+          "af": 1
+        },
+        {
+          "note": "RS232 ready-to-send / RS485 driver-enable",
+          "type": "interface",
+          "function": "USART1.RTS_DE",
+          "direction": "bidirectional",
+          "af": 7
+        },
+        {
+          "type": "interface",
+          "function": "USB.DP",
+          "direction": "bidirectional",
+          "af": 10
+        }
+      ]
+    },
+    {
+      "pad": "7",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A11",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "type": "interface",
+          "function": "SPI1.MISO",
+          "direction": "output",
+          "af": 5
+        },
+        {
+          "type": "timer",
+          "function": "TIM1.4",
+          "direction": "output",
+          "af": 1
+        },
+        {
+          "note": "break input to disable PWM output",
+          "type": "timer",
+          "function": "TIM1.BKIN2",
+          "direction": "input",
+          "af": 2
+        },
+        {
+          "note": "break input to disable PWM output based on COMP1 output",
+          "type": "timer",
+          "function": "TIM1.BKIN2_COMP1",
+          "direction": "input",
+          "af": 12
+        },
+        {
+          "note": "RS232 clear-to-send",
+          "type": "interface",
+          "function": "USART1.CTS",
+          "direction": "bidirectional",
+          "af": 7
+        },
+        {
+          "type": "other",
+          "function": "COMP1.OUT",
+          "direction": "output",
+          "af": 6
+        },
+        {
+          "type": "interface",
+          "function": "USB.DM",
+          "direction": "bidirectional",
+          "af": 10
+        }
+      ]
+    },
+    {
+      "pad": "8",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "B4",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "type": "interface",
+          "function": "I2C3.DAT",
+          "direction": "bidirectional",
+          "af": 4
+        },
+        {
+          "type": "interface",
+          "function": "SPI1.MISO",
+          "direction": "output",
+          "af": 5
+        },
+        {
+          "note": "RS232 clear-to-send",
+          "type": "interface",
+          "function": "USART1.CTS",
+          "direction": "bidirectional",
+          "af": 7
+        }
+      ]
+    },
+    {
+      "pad": "9",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A4",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "type": "interface",
+          "function": "SPI1.CS",
+          "direction": "bidirectional",
+          "af": 5
+        },
+        {
+          "note": "break input to disable PWM output",
+          "type": "timer",
+          "function": "LPTIM2.OUT",
+          "direction": "output",
+          "af": 14
+        },
+        {
+          "type": "other",
+          "function": "COMP1.-",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "10",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "1.71-3.6V (>=3.3V for USB)",
+          "type": "power",
+          "function": "V+",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "11",
+      "geometry": {
+        "size_x": 400,
+        "size_y": 800,
+        "center_x": 400,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "internal pull-down defaults to run mode, hold high during reset to enter bootloader",
+          "type": "system",
+          "function": "BOOT0",
+          "direction": "input",
+          "is_default": true
+        },
+        {
+          "type": "digital",
+          "function": "H3",
+          "direction": "bidirectional"
+        }
+      ]
+    },
+    {
+      "pad": "12",
+      "geometry": {
+        "size_x": 400,
+        "size_y": 800,
+        "center_x": -400,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "active-low reset with internal pull-up",
+          "type": "system",
+          "function": "NRST",
+          "direction": "input"
+        }
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "I2C1",
+      "type": "I2C",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ],
+        "addresses": [
+          {
+            "address": "programmable"
+          }
+        ],
+        "address_bits": [
+          7
+        ],
+        "max_clock_speed": "1MHz"
+      },
+      "pad_assignments": [
+        {
+          "pad": "3",
+          "function": "I2C1.SMBA"
+        },
+        {
+          "pad": "4",
+          "function": "I2C1.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "I2C1.DAT",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "I2C3",
+      "type": "I2C",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ],
+        "addresses": [
+          {
+            "address": "programmable"
+          }
+        ],
+        "address_bits": [
+          7
+        ],
+        "max_clock_speed": "1MHz"
+      },
+      "pad_assignments": [
+        {
+          "pad": "2",
+          "function": "I2C3.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "8",
+          "function": "I2C3.DAT",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "SPI1",
+      "type": "SPI",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ],
+        "max_clock_speed": "40Mhz (master), 20MHz (slave)"
+      },
+      "pad_assignments": [
+        {
+          "pad": "3",
+          "function": "SPI1.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "7",
+          "function": "SPI1.MISO"
+        },
+        {
+          "pad": "8",
+          "function": "SPI1.MISO"
+        },
+        {
+          "pad": "9",
+          "function": "SPI1.CS"
+        },
+        {
+          "pad": "2",
+          "function": "SPI1.MOSI"
+        },
+        {
+          "pad": "6",
+          "function": "SPI1.MOSI"
+        }
+      ]
+    },
+    {
+      "name": "USB",
+      "type": "USB",
+      "parameters": {
+        "modes": []
+      },
+      "pad_assignments": [
+        {
+          "pad": "6",
+          "function": "USB.DP",
+          "is_required": true
+        },
+        {
+          "pad": "7",
+          "function": "USB.DM",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "USART1",
+      "type": "USART",
+      "parameters": {
+        "modes": []
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "TX",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "RX",
+          "is_required": true
+        },
+        {
+          "pad": "6",
+          "function": "RTS_DE"
+        },
+        {
+          "pad": "7",
+          "function": "CTS"
+        },
+        {
+          "pad": "8",
+          "function": "CTS"
+        }
+      ]
+    }
+  ],
+  "thresholds": {
+    "input_low": "",
+    "input_max": "",
+    "input_high": "",
+    "output_low": "",
+    "output_high": "",
+    "pin_sink_current": "",
+    "pin_source_current": ""
+  },
+  "clock": {
+    "sources": [
+      {
+        "type": "hsi16",
+        "frequency_mhz": 16,
+        "description": "16MHz internal RC"
+      },
+      {
+        "type": "msi",
+        "frequency_mhz": 4,
+        "description": "Multi-speed internal RC (100kHz-48MHz)"
+      },
+      {
+        "type": "hsi48",
+        "frequency_mhz": 48,
+        "description": "48MHz internal RC (USB)"
+      }
+    ],
+    "default": "hsi16",
+    "configurations": [
+      { "name": "low",     "sysclk_mhz": 16, "source": "hsi16" },
+      { "name": "default", "sysclk_mhz": 16, "source": "hsi16" },
+      { "name": "high",    "sysclk_mhz": 48, "source": "hsi16", "pll": true },
+      { "name": "max",     "sysclk_mhz": 80, "source": "hsi16", "pll": true }
+    ]
+  }
+}

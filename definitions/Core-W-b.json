@@ -1,0 +1,1012 @@
+{
+  "family": "Core",
+  "name": "W",
+  "rev": "b",
+  "tile_id": 8,
+  "json_version": "0.26",
+  "updated_at": "2026-03-21T16:58:48.000Z",
+  "headline": "BLE-enabled 100MHz Cortex M33",
+  "description": "The Core.W tile combines the powerful STM32WBA55 100-MHz 32-bit Cortex-M33 processor together with an integrated 2.4GHz antenna on double-size T48 (4.0 x 8.0 mm) SMD package.  The tile provides a user-configurable combination of: SW debug & bootloading; 1MB flash & 128KB SRAM; wireless communications (BLE 5.4, Thread, Matter, Zigbee, proprietary); two FM+ (1MHz) I2C ports; two SPI ports; one USART; five 12-bit 2.5Msps ADC inputs (16-bit with oversampling); many timers; ten capacitive touch inputs; one serial-audio interface; IR output; and an on-board LED",
+  "application_notes": [
+    {
+      "sort": 0,
+      "details": "The single-wire debug port is available on pads 13 (SWCLK) and 14 (SWDIO). While not absolutely required, it is often helpful to have the ability to hold pads 22 (NRST) low when connecting to the debugger. You can likely also use BOOT0 to help the debugger connect.",
+      "heading": "Single-Wire Debug & Bootloading",
+      "image_url": ""
+    },
+    {
+      "sort": 1,
+      "details": "For the best wireless performance, the antenna-end of the Tile (the end without any pads) should not have any copper traces or planes above or below it.",
+      "heading": "Antenna Clearance",
+      "image_url": ""
+    },
+    {
+      "sort": 2,
+      "details": "The onboard LED is connected to PB12 in an active-high configuration.",
+      "heading": "LED",
+      "image_url": ""
+    }
+  ],
+  "package": {
+    "pads": 16,
+    "type": "T48",
+    "size_x": 4000,
+    "size_y": 8000,
+    "size_z": 0
+  },
+  "power": [
+    {
+      "max": 3.6,
+      "min": 1.8,
+      "type": "system",
+      "notes": "",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "14"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32wba55hg.html",
+      "part": "STM32WBA55HGF6",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/8/ST_Microelectronics-STM32WBA55.pdf",
+      "manufacturer": "ST Microelectronics"
+    }
+  ],
+  "pads": [
+    {
+      "pad": "1",
+      "geometry": {
+        "size_x": 1000,
+        "size_y": 400,
+        "center_x": -1500,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "power",
+          "function": "GND",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "2",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A0",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI3.CLK",
+          "direction": "",
+          "af": 6
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC9",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.2N",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM3.3",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM3.ETR",
+          "direction": "",
+          "af": 14
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "LPTIM1.IN1",
+          "direction": "",
+          "af": 0
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G2.IO2",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "3",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A5",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI3.CS",
+          "direction": "",
+          "af": 6
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC4",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM2.1",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "LPTIM2.ETR",
+          "direction": "",
+          "af": 14
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SAI1.D2",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G1.IO4",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "4",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A6",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C3.CLK",
+          "direction": "",
+          "af": 4
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC3",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM2.4",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SAI1.CK2",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SAI1.MCLK_A",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G1.IO3",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "5",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A7",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C3.DAT",
+          "direction": "",
+          "af": 4
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC2",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM2.3",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SAI1.SCK_A",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G1.IO2",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "6",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -2400
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "B8",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI3.MOSI",
+          "direction": "",
+          "af": 6
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.1",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM3.ETR",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM16.1N",
+          "direction": "",
+          "af": 14
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "LPTIM1.ETR",
+          "direction": "",
+          "af": 0
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "USART2.RX",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G2.IO4",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "7",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -3200
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "B9",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI3.MISO",
+          "direction": "",
+          "af": 6
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC10",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.3N",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM3.4",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM16.1",
+          "direction": "",
+          "af": 14
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "LPTIM2.IN1",
+          "direction": "",
+          "af": 13
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G2.IO3",
+          "direction": "",
+          "af": 9
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "IR_OUT",
+          "direction": "",
+          "af": 3
+        }
+      ]
+    },
+    {
+      "pad": "8",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -3200
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A12",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.CS",
+          "direction": "",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.2",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "USART2.TX",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G3.IO4",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "9",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -2400
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "B4",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.CLK",
+          "direction": "",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.3",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM17.1",
+          "direction": "",
+          "af": 14
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "LPTIM2.IN2",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "USART2.RX",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SAI1.MCLK_B",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G3.IO1",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "10",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A15",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C1.CLK",
+          "direction": "",
+          "af": 4
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.MOSI",
+          "direction": "",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.ETR",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "LPTIM1.2",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "USART2.RTS_DE",
+          "direction": "",
+          "af": 3
+        }
+      ]
+    },
+    {
+      "pad": "11",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "B3",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C1.DAT",
+          "direction": "",
+          "af": 4
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.MISO",
+          "direction": "",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.4",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM171.N",
+          "direction": "",
+          "af": 14
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "LPTIM1.IN2",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "USART2.CK",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G3.IO2",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "12",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A13",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "system",
+          "function": "SWDIO",
+          "direction": "",
+          "af": 0
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM17.BKIN",
+          "direction": "",
+          "af": 14
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "G3.IO3",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "13",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A14",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "system",
+          "function": "SWCLK",
+          "direction": "",
+          "af": 0
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "USART2.TX",
+          "direction": "",
+          "af": 3
+        }
+      ]
+    },
+    {
+      "pad": "14",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "1.6-3.6V",
+          "type": "power",
+          "function": "V+",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "15",
+      "geometry": {
+        "size_x": 400,
+        "size_y": 800,
+        "center_x": 400,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "system",
+          "function": "BOOT0",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "digital",
+          "function": "H3",
+          "direction": "bidirectional"
+        }
+      ]
+    },
+    {
+      "pad": "16",
+      "geometry": {
+        "size_x": 400,
+        "size_y": 800,
+        "center_x": -400,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "system",
+          "function": "NRST",
+          "direction": ""
+        }
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "I2C1",
+      "type": "I2C",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ],
+        "addresses": [
+          {
+            "address": "programmable"
+          }
+        ],
+        "max_clock_speed": "1MHz"
+      },
+      "pad_assignments": [
+        {
+          "pad": "10",
+          "function": "I2C1.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "11",
+          "function": "I2C1.DAT",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "I2C3",
+      "type": "I2C",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ],
+        "addresses": [
+          {
+            "address": "programmable"
+          }
+        ],
+        "max_clock_speed": "1MHz"
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "I2C3.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "I2C3.DAT",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "SPI1",
+      "type": "SPI",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ]
+      },
+      "pad_assignments": [
+        {
+          "pad": "8",
+          "function": "SPI1.CS"
+        },
+        {
+          "pad": "9",
+          "function": "SPI1.CLK"
+        },
+        {
+          "pad": "10",
+          "function": "SPI1.MOSI"
+        },
+        {
+          "pad": "11",
+          "function": "SPI1.MISO"
+        }
+      ]
+    },
+    {
+      "name": "SPI3",
+      "type": "SPI",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ]
+      },
+      "pad_assignments": [
+        {
+          "pad": "2",
+          "function": "SPI3.CLK"
+        },
+        {
+          "pad": "3",
+          "function": "SPI3.CS"
+        },
+        {
+          "pad": "6",
+          "function": "SPI3.MOSI"
+        },
+        {
+          "pad": "7",
+          "function": "SPI3.MISO"
+        }
+      ]
+    },
+    {
+      "name": "USART2",
+      "type": "USART",
+      "parameters": {
+        "modes": []
+      },
+      "pad_assignments": [
+        {
+          "pad": "6",
+          "function": "USART2.RX"
+        },
+        {
+          "pad": "8",
+          "function": "USART2.TX"
+        },
+        {
+          "pad": "9",
+          "function": "USART2.RX"
+        },
+        {
+          "pad": "10",
+          "function": "USART2.RTS_DE"
+        },
+        {
+          "pad": "11",
+          "function": "USART2.CK"
+        },
+        {
+          "pad": "13",
+          "function": "USART2.TX"
+        }
+      ]
+    },
+    {
+      "name": "SAI1",
+      "type": "SAI",
+      "parameters": {
+        "modes": []
+      },
+      "pad_assignments": [
+        {
+          "pad": "3",
+          "function": "SAI1.D2"
+        },
+        {
+          "pad": "4",
+          "function": "SAI1.CK2"
+        },
+        {
+          "pad": "4",
+          "function": "SAI1.MCLK_A"
+        },
+        {
+          "pad": "5",
+          "function": "SAI1.SCK_A"
+        },
+        {
+          "pad": "9",
+          "function": "SAI1.MCLK_B"
+        }
+      ]
+    }
+  ],
+  "clock": {
+    "sources": [
+      {
+        "type": "hsi16",
+        "frequency_mhz": 16,
+        "description": "16MHz internal RC"
+      },
+      {
+        "type": "hse",
+        "frequency_mhz": 32,
+        "description": "32MHz crystal (on-board)"
+      }
+    ],
+    "default": "hsi16",
+    "configurations": [
+      { "name": "low",     "sysclk_mhz": 16,  "source": "hsi16" },
+      { "name": "default", "sysclk_mhz": 32,  "source": "hse" },
+      { "name": "high",    "sysclk_mhz": 64,  "source": "hse", "pll": true },
+      { "name": "max",     "sysclk_mhz": 100, "source": "hse", "pll": true }
+    ]
+  }
+}

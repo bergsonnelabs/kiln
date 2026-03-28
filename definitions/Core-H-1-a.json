@@ -1,0 +1,833 @@
+{
+  "family": "Core",
+  "name": "H.1",
+  "rev": "a",
+  "tile_id": 11,
+  "json_version": "0.29",
+  "updated_at": "2026-03-21T16:58:48.000Z",
+  "headline": "250MHz Cortex-M33",
+  "description": "The Core.H.1 is built around the high-performance STM32H523 250-MHz 32-bit Cortex-M33 processor into a single T44 tile, providing a user-configurable combination of multiple communication interfaces (USB 2.0 full-speed, I2C/I3C, SPI, FDCAN, and UART), along with two 12-bit 5-Msps ADC inputs, one DAC output, and multiple timers.",
+  "application_notes": [
+    {
+      "sort": 0,
+      "details": "To utilize the USB 2.0 Full-Speed (12Mbit/s) port, the supply voltage needs to be at least 3.0V.  The Core.H.1 can serve as either a peripheral or a host.",
+      "heading": "USB 2.0 Full-Speed Port",
+      "image_url": ""
+    },
+    {
+      "sort": 1,
+      "details": "Similar to the Core.U tiles, when the chip is blank, it will default into the bootloader when connected over USB. Once there is code in the program space, you need to hold the BOOT0 pin low during reset (either power-on or via the NRST pin) to enter the bootloader.",
+      "heading": "USB Bootloading",
+      "image_url": ""
+    },
+    {
+      "sort": 2,
+      "details": "The single-wire debug port is available on pads 13 (SWCLK) and 14 (SWDIO). While not absolutely required, it is often helpful to have the ability to hold pad 12 (NRST) low when connecting to the debugger. You can likely also use BOOT0 to help the debugger connect.",
+      "heading": "Single-Wire Debug & Bootloading",
+      "image_url": ""
+    },
+    {
+      "sort": 3,
+      "details": "The onboard LED is connected to PA15 in an active-high configuration.",
+      "heading": "LED",
+      "image_url": ""
+    }
+  ],
+  "package": {
+    "pads": 14,
+    "type": "T44",
+    "size_x": 4000,
+    "size_y": 4000,
+    "size_z": 0
+  },
+  "power": [
+    {
+      "max": 3.6,
+      "min": 1.71,
+      "type": "system",
+      "notes": "note that a voltage of at least 3.0V is required for USB communications",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "10"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32h523he.html",
+      "part": "STM32H523HE",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/11/ST_Microelectronics-STM32H523HE.pdf",
+      "manufacturer": "ST Microelectronics"
+    }
+  ],
+  "pads": [
+    {
+      "pad": "1",
+      "geometry": {
+        "size_x": 1000,
+        "size_y": 400,
+        "center_x": -1500,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "power",
+          "function": "GND",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "2",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "B4",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C3.DAT",
+          "direction": "",
+          "af": 9
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I3C2.DAT",
+          "direction": "",
+          "af": 10
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.MISO",
+          "direction": "",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM3.1",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "LPTIM1.2",
+          "direction": "",
+          "af": 4
+        }
+      ]
+    },
+    {
+      "pad": "3",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A8",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "USB.SOF",
+          "direction": "",
+          "af": 10
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C3.CLK",
+          "direction": "",
+          "af": 4
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I3C2.CLK",
+          "direction": "",
+          "af": 9
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.RDY",
+          "direction": "",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.1",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM8.BKIN2",
+          "direction": "",
+          "af": 3
+        }
+      ]
+    },
+    {
+      "pad": "4",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "B8",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C1.CLK",
+          "direction": "",
+          "af": 4
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I3C1.CLK",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM4.3",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "UART4.RX",
+          "direction": "",
+          "af": 8
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "FDCAN1.RX",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "5",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "B7",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C1.DAT",
+          "direction": "",
+          "af": 4
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I3C1.DAT",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM4.2",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "FDCAN1.TX",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "6",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A12",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "USB.DP",
+          "direction": "",
+          "af": 10
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.ETR",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "UART4.TX",
+          "direction": "",
+          "af": 6
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "FDCAN1.TX",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "7",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A11",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "USB.DM",
+          "direction": "",
+          "af": 10
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.4",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "UART4.RX",
+          "direction": "",
+          "af": 6
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "FDCAN1.RX",
+          "direction": "",
+          "af": 9
+        }
+      ]
+    },
+    {
+      "pad": "8",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A7",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.MOSI",
+          "direction": "",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC7+",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC3-",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM1.1N",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM3.2",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM8.1N",
+          "direction": "",
+          "af": 3
+        }
+      ]
+    },
+    {
+      "pad": "9",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A5",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.SCK",
+          "direction": "",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC19+",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "analog",
+          "function": "ADC18-",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM2.1",
+          "direction": "",
+          "af": 1
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM8.1N",
+          "direction": "",
+          "af": 3
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM2.ETR",
+          "direction": "",
+          "af": 14
+        },
+        {
+          "note": "",
+          "type": "other",
+          "function": "DAC1.OUT",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "10",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "power",
+          "function": "V+",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "11",
+      "geometry": {
+        "size_x": 400,
+        "size_y": 800,
+        "center_x": 400,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "system",
+          "function": "BOOT0",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "12",
+      "geometry": {
+        "size_x": 400,
+        "size_y": 800,
+        "center_x": -400,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "system",
+          "function": "NRST",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "13",
+      "geometry": {
+        "size_x": 400,
+        "size_y": 800,
+        "center_x": -400,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A14",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "system",
+          "function": "SWCLK",
+          "direction": "",
+          "af": 0
+        }
+      ]
+    },
+    {
+      "pad": "14",
+      "geometry": {
+        "size_x": 400,
+        "size_y": 800,
+        "center_x": 400,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "A13",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "system",
+          "function": "SWDIO",
+          "direction": "",
+          "af": 0
+        }
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "I2C1",
+      "type": "I2C",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ],
+        "addresses": [
+          {
+            "address": "programmable"
+          }
+        ]
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "I2C1.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "I2C1.DAT",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "I2C3",
+      "type": "I2C",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ],
+        "addresses": [
+          {
+            "address": "programmable"
+          }
+        ]
+      },
+      "pad_assignments": [
+        {
+          "pad": "2",
+          "function": "I2C3.DAT",
+          "is_required": true
+        },
+        {
+          "pad": "3",
+          "function": "I2C3.CLK",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "SPI1",
+      "type": "SPI",
+      "parameters": {
+        "modes": [
+          "master"
+        ],
+        "max_clock_speed": "45MHz"
+      },
+      "pad_assignments": [
+        {
+          "pad": "2",
+          "function": "SPI1.MISO",
+          "is_required": true
+        },
+        {
+          "pad": "3",
+          "function": "SPI1.RDY"
+        },
+        {
+          "pad": "8",
+          "function": "SPI1.MOSI",
+          "is_required": true
+        },
+        {
+          "pad": "9",
+          "function": "SPI1.CLK",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "UART4",
+      "type": "UART",
+      "parameters": {
+        "modes": []
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "UART4.RX"
+        },
+        {
+          "pad": "6",
+          "function": "UART4.TX"
+        },
+        {
+          "pad": "7",
+          "function": "UART4.RX"
+        }
+      ]
+    },
+    {
+      "name": "FDCAN1",
+      "type": "FD CAN",
+      "parameters": {
+        "modes": []
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "FDCAN1.RX"
+        },
+        {
+          "pad": "5",
+          "function": "FDCAN1.TX"
+        },
+        {
+          "pad": "6",
+          "function": "FDCAN1.TX"
+        },
+        {
+          "pad": "7",
+          "function": "FDCAN1.RX"
+        }
+      ]
+    },
+    {
+      "name": "USB",
+      "type": "USB",
+      "parameters": {
+        "modes": []
+      },
+      "pad_assignments": [
+        {
+          "pad": "6",
+          "function": "USB.DP",
+          "is_required": true
+        },
+        {
+          "pad": "7",
+          "function": "USB.DM",
+          "is_required": true
+        },
+        {
+          "pad": "3",
+          "function": "USB.SOF"
+        }
+      ]
+    },
+    {
+      "name": "I3C2",
+      "type": "I3C",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ]
+      },
+      "pad_assignments": [
+        {
+          "pad": "2",
+          "function": "I3C2.DAT",
+          "is_required": true
+        },
+        {
+          "pad": "3",
+          "function": "I3C2.CLK",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "I3C1",
+      "type": "I3C",
+      "parameters": {
+        "modes": [
+          "master, slave"
+        ],
+        "address_bits": []
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "I3C1.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "I3C1.DAT",
+          "is_required": true
+        }
+      ]
+    }
+  ],
+  "clock": {
+    "sources": [
+      {
+        "type": "hsi48",
+        "frequency_mhz": 48,
+        "description": "48MHz internal RC"
+      },
+      {
+        "type": "csi",
+        "frequency_mhz": 4,
+        "description": "4MHz low-power internal RC"
+      }
+    ],
+    "default": "hsi48",
+    "configurations": [
+      { "name": "low",     "sysclk_mhz": 48,  "source": "hsi48" },
+      { "name": "default", "sysclk_mhz": 150, "source": "hsi48", "pll": true },
+      { "name": "high",    "sysclk_mhz": 200, "source": "hsi48", "pll": true },
+      { "name": "max",     "sysclk_mhz": 250, "source": "hsi48", "pll": true }
+    ]
+  }
+}
