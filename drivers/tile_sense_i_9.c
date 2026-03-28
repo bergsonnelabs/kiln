@@ -4,6 +4,7 @@
  */
 
 #include "tile_sense_i_9.h"
+#include <stddef.h>
 
 /* -------------------------------------------------------------- */
 /* Instance mapping                                                */
