@@ -34,9 +34,9 @@ static const tiles_hal_core_cfg_t* s_cfg;
 
 /**
  * Register read via Cores SDK I2C.
- * Cores hal_i2c_read_reg takes 7-bit addr directly — no shift needed.
+ * Supports 8-bit and 16-bit register addresses (auto-detected by LL).
  */
-static int core_i2c_read(void* handle, uint8_t addr, uint8_t reg,
+static int core_i2c_read(void* handle, uint8_t addr, uint16_t reg,
                          uint8_t* data, uint16_t len)
 {
     hal_i2c_t* h = (hal_i2c_t*)handle;
@@ -46,8 +46,9 @@ static int core_i2c_read(void* handle, uint8_t addr, uint8_t reg,
 
 /**
  * Register write via Cores SDK I2C.
+ * Supports 8-bit and 16-bit register addresses (auto-detected by LL).
  */
-static int core_i2c_write(void* handle, uint8_t addr, uint8_t reg,
+static int core_i2c_write(void* handle, uint8_t addr, uint16_t reg,
                           const uint8_t* data, uint16_t len)
 {
     hal_i2c_t* h = (hal_i2c_t*)handle;
@@ -62,6 +63,29 @@ static int core_i2c_is_ready(void* handle, uint8_t addr)
 {
     hal_i2c_t* h = (hal_i2c_t*)handle;
     return (hal_i2c_probe(h, addr) == HAL_OK) ? 0 : -1;
+}
+
+/**
+ * Raw I2C write — no register address, just data bytes after address.
+ * For command-based devices (STC31-C, MAX11644, etc.).
+ */
+static int core_i2c_write_raw(void* handle, uint8_t addr,
+                              const uint8_t* data, uint16_t len)
+{
+    hal_i2c_t* h = (hal_i2c_t*)handle;
+    return (hal_i2c_write(h, addr, data, (uint32_t)len) == HAL_OK)
+           ? 0 : -1;
+}
+
+/**
+ * Raw I2C read — no register address, just receive data.
+ */
+static int core_i2c_read_raw(void* handle, uint8_t addr,
+                             uint8_t* data, uint16_t len)
+{
+    hal_i2c_t* h = (hal_i2c_t*)handle;
+    return (hal_i2c_read(h, addr, data, (uint32_t)len) == HAL_OK)
+           ? 0 : -1;
 }
 
 /* ------------------------------------------------------------------ */
@@ -149,15 +173,19 @@ void tiles_hal_core_init(tiles_hal_t* hal, const tiles_hal_core_cfg_t* cfg)
 
     /* I2C */
     if (cfg->buses & TILES_BUS_I2C) {
-        hal->i2c_read     = core_i2c_read;
-        hal->i2c_write    = core_i2c_write;
-        hal->i2c_is_ready = core_i2c_is_ready;
-        hal->handle       = (void*)cfg->i2c;
+        hal->i2c_read      = core_i2c_read;
+        hal->i2c_write     = core_i2c_write;
+        hal->i2c_is_ready  = core_i2c_is_ready;
+        hal->i2c_write_raw = core_i2c_write_raw;
+        hal->i2c_read_raw  = core_i2c_read_raw;
+        hal->handle        = (void*)cfg->i2c;
     } else {
-        hal->i2c_read     = (void*)0;
-        hal->i2c_write    = (void*)0;
-        hal->i2c_is_ready = (void*)0;
-        hal->handle       = (void*)0;
+        hal->i2c_read      = (void*)0;
+        hal->i2c_write     = (void*)0;
+        hal->i2c_is_ready  = (void*)0;
+        hal->i2c_write_raw = (void*)0;
+        hal->i2c_read_raw  = (void*)0;
+        hal->handle        = (void*)0;
     }
 
     /* SPI */

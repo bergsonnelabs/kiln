@@ -62,12 +62,13 @@ typedef struct {
      *
      * @param  handle   Opaque platform handle (stored in tiles_hal_t.handle)
      * @param  addr     7-bit I2C device address (unshifted)
-     * @param  reg      Register address to read from
+     * @param  reg      Register address (8-bit or 16-bit; if > 0xFF, two
+     *                  address bytes are sent MSB-first on the wire)
      * @param  data     Output buffer
      * @param  len      Number of bytes to read
      * @return 0 on success, non-zero on error
      */
-    int (*i2c_read)(void* handle, uint8_t addr, uint8_t reg,
+    int (*i2c_read)(void* handle, uint8_t addr, uint16_t reg,
                     uint8_t* data, uint16_t len);
 
     /**
@@ -75,12 +76,13 @@ typedef struct {
      *
      * @param  handle   Opaque platform handle (stored in tiles_hal_t.handle)
      * @param  addr     7-bit I2C device address (unshifted)
-     * @param  reg      Register address to write to
+     * @param  reg      Register address (8-bit or 16-bit; if > 0xFF, two
+     *                  address bytes are sent MSB-first on the wire)
      * @param  data     Input buffer
      * @param  len      Number of bytes to write
      * @return 0 on success, non-zero on error
      */
-    int (*i2c_write)(void* handle, uint8_t addr, uint8_t reg,
+    int (*i2c_write)(void* handle, uint8_t addr, uint16_t reg,
                      const uint8_t* data, uint16_t len);
 
     /**
@@ -91,6 +93,34 @@ typedef struct {
      * @return 0 if device is present, non-zero otherwise
      */
     int (*i2c_is_ready)(void* handle, uint8_t addr);
+
+    /**
+     * @brief  Raw I2C write — no register address, just data bytes.
+     *
+     * For devices that use command-based protocols (e.g., Sensirion STC31-C)
+     * or config-byte patterns (e.g., MAX11644 ADC) where there is no
+     * register address in the transaction.
+     *
+     * @param  handle   Opaque platform handle
+     * @param  addr     7-bit I2C device address (unshifted)
+     * @param  data     Bytes to send after the address
+     * @param  len      Number of bytes
+     * @return 0 on success, non-zero on error.  NULL if not supported.
+     */
+    int (*i2c_write_raw)(void* handle, uint8_t addr,
+                         const uint8_t* data, uint16_t len);
+
+    /**
+     * @brief  Raw I2C read — no register address, just receive data.
+     *
+     * @param  handle   Opaque platform handle
+     * @param  addr     7-bit I2C device address (unshifted)
+     * @param  data     Output buffer
+     * @param  len      Number of bytes to read
+     * @return 0 on success, non-zero on error.  NULL if not supported.
+     */
+    int (*i2c_read_raw)(void* handle, uint8_t addr,
+                        uint8_t* data, uint16_t len);
 
     /* --- SPI --- */
 

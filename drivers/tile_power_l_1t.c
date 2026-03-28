@@ -4,6 +4,7 @@
  */
 
 #include "tile_power_l_1t.h"
+#include <stddef.h>
 
 /* -------------------------------------------------------------- */
 /* Instance mapping                                                */
