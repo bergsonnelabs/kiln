@@ -1,4 +1,4 @@
-#include "tile_power_l1_n.h"
+#include "tile_power_l_1n.h"
 
 static I2C_HandleTypeDef* power_l1_n_handle;
 
@@ -6,7 +6,7 @@ static I2C_HandleTypeDef* power_l1_n_handle;
 // PUBLIC FUNCTIONS
 // ---------------------------------------------------------
 
-uint8_t tile_power_l1_n_find(I2C_HandleTypeDef* hi2c)
+uint8_t tile_power_l_1n_find(I2C_HandleTypeDef* hi2c)
 {
 	if(HAL_I2C_IsDeviceReady(hi2c, NPM1300_I2C_ADDR<<1, 3, 1000) == 0){ // HAL_StatusTypeDef = 0=okay, 1=error, 2=busy, 3=timeout
 		return 1;
@@ -15,7 +15,7 @@ uint8_t tile_power_l1_n_find(I2C_HandleTypeDef* hi2c)
 	}
 }
 
-uint8_t tile_power_l1_n_init(I2C_HandleTypeDef* hi2c)
+uint8_t tile_power_l_1n_init(I2C_HandleTypeDef* hi2c)
 {
 	power_l1_n_handle = hi2c;
 
@@ -97,7 +97,7 @@ uint8_t tile_power_l1_n_init(I2C_HandleTypeDef* hi2c)
 	return 1;
 }
 
-uint16_t tile_power_l1_n_get_status(void)
+uint16_t tile_power_l_1n_get_status(void)
 {
 	uint8_t RX_Buffer[1] = {0};
 	uint16_t result = 0;
@@ -126,7 +126,7 @@ uint16_t tile_power_l1_n_get_status(void)
 
 }
 
-uint16_t tile_power_l1_n_get_vbat(void)
+uint16_t tile_power_l_1n_get_vbat(void)
 {
 
 	uint8_t TX_Buffer[1];

@@ -1,5 +1,5 @@
-#ifndef INC_TILE_POWER_L1_N_
-#define INC_TILE_POWER_L1_N_
+#ifndef INC_TILE_POWER_L_1N_
+#define INC_TILE_POWER_L_1N_
 
 #include "main.h"
 #include "stdint.h"
@@ -60,7 +60,7 @@
 	success		1 = success, 0 = error
 
 **********************************************************/
-uint8_t tile_power_l1_n_find(I2C_HandleTypeDef* hi2c);
+uint8_t tile_power_l_1n_find(I2C_HandleTypeDef* hi2c);
 
 /**********************************************************
 
@@ -75,10 +75,10 @@ uint8_t tile_power_l1_n_find(I2C_HandleTypeDef* hi2c);
 	success		1 = success, 0 = error
 
 **********************************************************/
-uint8_t tile_power_l1_n_init(I2C_HandleTypeDef* hi2c);
+uint8_t tile_power_l_1n_init(I2C_HandleTypeDef* hi2c);
 
-uint16_t tile_power_l1_n_get_status(void);
+uint16_t tile_power_l_1n_get_status(void);
 
-uint16_t tile_power_l1_n_get_vbat(void);
+uint16_t tile_power_l_1n_get_vbat(void);
 
 #endif
