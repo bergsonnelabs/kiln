@@ -1,0 +1,313 @@
+{
+  "rev": "a",
+  "name": "O.128",
+  "pads": [
+    {
+      "pad": "1",
+      "geometry": {
+        "size_x": 1000,
+        "size_y": 400,
+        "center_x": -1500,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "power",
+          "function": "GND",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "2",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI.MOSI",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "QSPI.IO0",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "3",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI.CS",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "QSPI.CS",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "4",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI.CLK"
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "QSPI.CLK",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "5",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI.MISO"
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "QSPI.IO1",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "6",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "WP",
+          "direction": "input"
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "QSPI.IO2",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "7",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -800
+      },
+      "functions": []
+    },
+    {
+      "pad": "8",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 0
+      },
+      "functions": []
+    },
+    {
+      "pad": "9",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "HOLD",
+          "direction": ""
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "QSPI.IO3",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "10",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "1.71-2.0V",
+          "type": "power",
+          "function": "V+",
+          "direction": "input"
+        }
+      ]
+    }
+  ],
+  "power": [
+    {
+      "max": 2,
+      "min": 1.71,
+      "type": "system",
+      "notes": "",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "10"
+      ]
+    }
+  ],
+  "family": "Store",
+  "package": {
+    "pads": 10,
+    "type": "T44",
+    "size_x": 4000,
+    "size_y": 4000,
+    "size_z": 0
+  },
+  "tile_id": 15,
+  "headline": "128Mbit NOR flash",
+  "components": [
+    {
+      "url": "https://www.renesas.com/en/products/at25ql128a",
+      "part": "AT25QL128A",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/15/Renesas-AT25QL128A.pdf",
+      "manufacturer": "Renesas"
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "SPI",
+      "type": "SPI",
+      "parameters": {
+        "modes": [
+          "slave"
+        ],
+        "max_clock_speed": "104MHz"
+      },
+      "pad_assignments": [
+        {
+          "pad": "2",
+          "function": "SPI.MOSI",
+          "is_required": true
+        },
+        {
+          "pad": "3",
+          "function": "SPI.CS",
+          "is_required": true
+        },
+        {
+          "pad": "4",
+          "function": "SPI.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "SPI.MISO",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "QSPI",
+      "type": "QSPI",
+      "parameters": {
+        "modes": [
+          "slave"
+        ],
+        "max_clock_speed": "104MHz"
+      },
+      "pad_assignments": [
+        {
+          "pad": "2",
+          "function": "QSPI.IO0"
+        },
+        {
+          "pad": "3",
+          "function": "QSPI.CS"
+        },
+        {
+          "pad": "4",
+          "function": "QSPI.CLK"
+        },
+        {
+          "pad": "5",
+          "function": "QSPI.IO1"
+        },
+        {
+          "pad": "6",
+          "function": "QSPI.IO2"
+        },
+        {
+          "pad": "9",
+          "function": "QSPI.IO3"
+        }
+      ]
+    }
+  ],
+  "updated_at": "2026-02-20T09:24:44.268Z",
+  "description": "The Store.M contains 128Mbits of NOR flash memory for non-volatile code and data storage with support for single, dual, or quad SPI communications at bus-clock rates of up to 104MHz.",
+  "json_version": "0.6",
+  "application_notes": [
+    {
+      "sort": 0,
+      "details": "",
+      "heading": "",
+      "image_url": ""
+    }
+  ]
+}

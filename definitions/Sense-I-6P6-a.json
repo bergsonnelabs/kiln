@@ -1,0 +1,338 @@
+{
+  "rev": "a",
+  "name": "I.6P6",
+  "pads": [
+    {
+      "pad": "1",
+      "geometry": {
+        "size_x": 1000,
+        "size_y": 400,
+        "center_x": -1500,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "power",
+          "function": "GND",
+          "direction": ""
+        }
+      ]
+    },
+    {
+      "pad": "2",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "internal pull-up sets the I2C address to 0x69, ground for 0x68",
+          "type": "digital",
+          "function": "I2C.ADO",
+          "direction": "input",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI.MISO",
+          "direction": "output"
+        }
+      ]
+    },
+    {
+      "pad": "3",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "internal pull-up enables I2C/I3C, ground for SPI",
+          "type": "digital",
+          "function": "I2C.EN",
+          "direction": "input",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI.CS",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "4",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C.CLK",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI.CLK",
+          "direction": "input"
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I3C.CLK",
+          "direction": "bidirectional"
+        }
+      ]
+    },
+    {
+      "pad": "5",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C.DAT",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI.MOSI",
+          "direction": "input"
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I3C.DAT",
+          "direction": "bidirectional"
+        }
+      ]
+    },
+    {
+      "pad": "6",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -1600
+      },
+      "functions": []
+    },
+    {
+      "pad": "7",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -800
+      },
+      "functions": []
+    },
+    {
+      "pad": "8",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "INT2",
+          "direction": "output"
+        }
+      ]
+    },
+    {
+      "pad": "9",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "INT1",
+          "direction": "output"
+        }
+      ]
+    },
+    {
+      "pad": "10",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "1.8-3.6V",
+          "type": "power",
+          "function": "V+",
+          "direction": "input"
+        }
+      ]
+    }
+  ],
+  "power": [
+    {
+      "max": 3.6,
+      "min": 1.8,
+      "type": "system",
+      "notes": "",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "10"
+      ]
+    }
+  ],
+  "family": "Sense",
+  "package": {
+    "pads": 10,
+    "type": "T44",
+    "size_x": 4000,
+    "size_y": 4000,
+    "size_z": 0
+  },
+  "tile_id": 22,
+  "headline": "extended-range 6-DOF IMU",
+  "components": [
+    {
+      "url": "https://invensense.tdk.com/products/motion-tracking/6-axis/icm-42686-p/",
+      "part": "ICM-42686P",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/22/TDK_Invensense-ICM-42686P.pdf",
+      "manufacturer": "TDK Invensense"
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "I2C",
+      "type": "I2C",
+      "parameters": {
+        "modes": [
+          "slave"
+        ],
+        "addresses": [
+          {
+            "address": "0x69",
+            "is_default": true
+          },
+          {
+            "address": "0x68"
+          }
+        ],
+        "address_bits": [
+          7
+        ]
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "I2C.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "I2C.DAT",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "I3C",
+      "type": "I3C",
+      "parameters": {
+        "modes": [
+          "slave"
+        ],
+        "max_clock_speed": "12.5MHz (SDR)"
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "I3C.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "I3C.DAT",
+          "is_required": true
+        }
+      ]
+    },
+    {
+      "name": "SPI",
+      "type": "SPI",
+      "parameters": {
+        "modes": [
+          "slave"
+        ],
+        "max_clock_speed": "24MHz"
+      },
+      "pad_assignments": [
+        {
+          "pad": "2",
+          "function": "SPI.MISO",
+          "is_required": true
+        },
+        {
+          "pad": "3",
+          "function": "SPI.CS",
+          "is_required": true
+        },
+        {
+          "pad": "4",
+          "function": "SPI.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "SPI.MOSI",
+          "is_required": true
+        }
+      ]
+    }
+  ],
+  "updated_at": "2026-02-19T14:42:45.439Z",
+  "description": "The Sense.I.6P is a precision 6-DOF inertial measurement unit based on the extended-range TDK Invensense ICM-42686P.  The 16-bit accelerometer full-scale range can be set to +/- 2g, 4g, 8g, 16g, or 32g with an output data rate of up between 1.5Hz and 32kHz, while the 16-bit gyro range can be set to +/- 15.6, 31.5, 62.5, 125, 250, 500, 1000, 2000, or 4000 degrees per second with an output data rate of 12.5Hz and 32kHz.  The sensor includes a user-programmable filters, on-board motion functions (pedometer, tilt, tap, raise, etc.), and a 2kB FIFO.  This IMU is functionally very similar to the Sense.I.6P8, which has lower gyro noise and better temperature stability but with lower max ranges of 16g and 2000 degrees per second.",
+  "json_version": "0.10",
+  "application_notes": [
+    {
+      "sort": 0,
+      "details": "The Z axis of the IMU protrudes through the center of the tile, while the XY plane is approximately 1.0mm from the bottom surface of the tile, with the X axis pointing toward the left side (pads 1-5), as shown.",
+      "heading": "Sensor Axes",
+      "image_url": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/22/app-note-0.png"
+    }
+  ]
+}

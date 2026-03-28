@@ -1,0 +1,308 @@
+{
+  "rev": "b",
+  "name": "L.1T",
+  "pads": [
+    {
+      "pad": "1",
+      "geometry": {
+        "size_x": 1000,
+        "size_y": 400,
+        "center_x": -1500,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "type": "power",
+          "function": "GND",
+          "direction": "output"
+        }
+      ]
+    },
+    {
+      "pad": "2",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "drive greater than 1.35V to exit low-power mode when in battery-powered mode (internal 900k pull-down).",
+          "type": "digital",
+          "function": "LP",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "3",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "connect to GND to disable the LDO output (battery charging will be unaffected).",
+          "type": "digital",
+          "function": "SW",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "pad": "4",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C.CLK",
+          "direction": "bidirectional",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "5",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C.DAT",
+          "direction": "bidirectional",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "6",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "power",
+          "function": "BATT-",
+          "direction": "bidirectional",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "7",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "power",
+          "function": "BATT+",
+          "direction": "bidirectional",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "8",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "3.15-5.5V, up to 500mA",
+          "type": "power",
+          "function": "SUPPLY+",
+          "direction": "input",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "9",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "power",
+          "function": "SUPPLY-",
+          "direction": "input",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "10",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "1.8V, up to 10mA",
+          "type": "power",
+          "function": "V+",
+          "direction": "output"
+        }
+      ]
+    }
+  ],
+  "power": [
+    {
+      "max": 1.8,
+      "min": 1.8,
+      "type": "",
+      "notes": "",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "output",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "10"
+      ]
+    },
+    {
+      "max": 5.5,
+      "min": 3.4,
+      "type": "charge",
+      "notes": "",
+      "gnd_pad": [
+        "9"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": false,
+      "max_current": "500mA",
+      "positive_pad": [
+        "8"
+      ]
+    },
+    {
+      "max": 4.6,
+      "min": 3.6,
+      "type": "rechargeable battery",
+      "notes": "",
+      "gnd_pad": [
+        "6"
+      ],
+      "function": "single-cell Li-Ion battery",
+      "direction": "input",
+      "is_required": false,
+      "max_current": "500mA (charge)",
+      "positive_pad": [
+        "7"
+      ]
+    }
+  ],
+  "family": "Power",
+  "package": {
+    "pads": 10,
+    "type": "T44",
+    "size_x": 4000,
+    "size_y": 4000,
+    "size_z": 0
+  },
+  "tile_id": 6,
+  "headline": "single-cell Li-Ion charge controller with 1.8V LDO",
+  "components": [
+    {
+      "url": "https://www.ti.com/product/BQ25150",
+      "part": "BQ25150",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/6/Texas_Instruments-BQ25150.pdf",
+      "manufacturer": "Texas Instruments"
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "I2C",
+      "type": "I2C",
+      "parameters": {
+        "modes": [
+          "slave"
+        ],
+        "addresses": [
+          {
+            "address": "0x6B",
+            "is_default": true
+          }
+        ],
+        "data_bits": [
+          8
+        ],
+        "address_bits": [
+          7
+        ],
+        "max_clock_speed": ""
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "I2C.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "I2C.DAT",
+          "is_required": true
+        }
+      ]
+    }
+  ],
+  "updated_at": "2026-03-07T11:55:31.661Z",
+  "description": "Perfect for wearables and compact battery-powered devices, the Power.L1.T tile integrates a single-cell Lithium-Ion battery charger with a max charge current of 500mA with a programmable LDO output and a 12-bit ADC for battery and system monitoring.",
+  "json_version": "0.6",
+  "application_notes": [
+    {
+      "sort": 0,
+      "details": "When a battery is first connected, the IC will enter the ultra-low-current ship mode, which it will exit when voltage is first applied to the SUPPLY pads.  Ship mode can be re-entered either programmatically or by disconnecting/reconnecting the battery.",
+      "heading": "Existing Ship Mode",
+      "image_url": ""
+    },
+    {
+      "sort": 1,
+      "details": "When the SW pad is floating, the LDO output will be connected.  Connect SW to GND/SUPPLY- to turn off the output.",
+      "heading": "Normally-On Operation",
+      "image_url": ""
+    },
+    {
+      "sort": 2,
+      "details": "In the default low-power mode, the I2C interface is disabled.  To exit low-power mode, drive the LP to greater than 1.35V.",
+      "heading": "Low-Power Mode",
+      "image_url": ""
+    }
+  ]
+}

@@ -1,0 +1,272 @@
+{
+  "rev": "a",
+  "name": "H",
+  "pads": [
+    {
+      "pad": "1",
+      "geometry": {
+        "size_x": 1000,
+        "size_y": 400,
+        "center_x": -1500,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "type": "power",
+          "function": "GND"
+        }
+      ]
+    },
+    {
+      "pad": "2",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "TRIG",
+          "direction": "input",
+          "thresholds": {
+            "logic_low": "0.3 * V+",
+            "logic_high": "0.7 * V+"
+          }
+        }
+      ]
+    },
+    {
+      "pad": "3",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "an internal pull-up resistor enables the output by default; connect to GND to disable",
+          "type": "digital",
+          "function": "EN",
+          "direction": "input",
+          "thresholds": {
+            "logic_low": "0.3 * V+",
+            "logic_high": "0.7 * V+"
+          }
+        }
+      ]
+    },
+    {
+      "pad": "4",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "if using a non-Core processor, ensure adequate external pull-up resistance",
+          "type": "interface",
+          "function": "I2C.CLK",
+          "direction": "bidirectional",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "5",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": -1600
+      },
+      "functions": [
+        {
+          "note": "if using a non-Core processor, ensure adequate external pull-up resistance",
+          "type": "interface",
+          "function": "I2C.DAT",
+          "direction": "bidirectional",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "6",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -1600
+      },
+      "functions": []
+    },
+    {
+      "pad": "7",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": -800
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "drive",
+          "function": "OUT+",
+          "direction": "output",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "8",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "drive",
+          "function": "OUT-",
+          "direction": "output",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "9",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 800
+      },
+      "functions": [
+        {
+          "note": "2.5-5.5V supply for the motor driver",
+          "type": "power",
+          "function": "V_MOTOR",
+          "direction": "input",
+          "is_default": true
+        }
+      ]
+    },
+    {
+      "pad": "10",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": 1600,
+        "center_y": 1600
+      },
+      "functions": [
+        {
+          "note": "1.8-5.0V",
+          "type": "power",
+          "function": "V+",
+          "direction": "input"
+        }
+      ]
+    }
+  ],
+  "power": [
+    {
+      "max": 5,
+      "min": 1.8,
+      "type": "system",
+      "notes": "",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "10"
+      ]
+    },
+    {
+      "max": 5.5,
+      "min": 2.5,
+      "type": "drive",
+      "notes": "",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "9"
+      ]
+    }
+  ],
+  "family": "Drive",
+  "package": {
+    "pads": 10,
+    "type": "T44",
+    "size_x": 4000,
+    "size_y": 4000,
+    "size_z": 0
+  },
+  "tile_id": 4,
+  "headline": "haptic ERM/LRA driver",
+  "components": [
+    {
+      "url": "https://www.ti.com/product/DRV2605",
+      "part": "DRV2605",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/4/Texas_Instruments-DRV2605.pdf",
+      "manufacturer": "Texas Instruments"
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "I2C",
+      "type": "I2C",
+      "parameters": {
+        "modes": [
+          "slave"
+        ],
+        "addresses": [
+          {
+            "address": "0x5A",
+            "is_default": true
+          }
+        ],
+        "data_bits": [
+          8
+        ],
+        "address_bits": [
+          7
+        ],
+        "max_clock_speed": "400kHz"
+      },
+      "pad_assignments": [
+        {
+          "pad": "4",
+          "function": "I2C.CLK",
+          "is_required": true
+        },
+        {
+          "pad": "5",
+          "function": "I2C.DAT",
+          "is_required": true
+        }
+      ]
+    }
+  ],
+  "updated_at": "2026-03-07T11:48:58.860Z",
+  "description": "The Drive.H tile is designed for driving linear-resonant actuators (LRAs) or eccentric rotating-mass motors (ERMs) using the Texas Instruments DRV2605 IC.\u00a0 Haptic signals can be generated either from an internal effects library, streamed in real time over I2C, or input as a high-speed pulse-width modulation (PWM) signal.\u00a0 Additionally, an optional hardware trigger can be used to play back pre-configured effects.\u00a0 Separate logic and motor supply connections allows for digital interfacing with logic down to 1.8V.",
+  "json_version": "0.2",
+  "application_notes": []
+}

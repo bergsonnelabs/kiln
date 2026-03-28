@@ -1,0 +1,20 @@
+{
+  "rev": "a",
+  "name": "F.I",
+  "pads": [],
+  "power": [],
+  "family": "Sense",
+  "package": {
+    "pads": 10,
+    "type": "T44",
+    "size_x": 4000,
+    "size_y": 4000,
+    "size_z": 0
+  },
+  "tile_id": 69,
+  "headline": "integrated impedance-based force sensor",
+  "components": [],
+  "interfaces": [],
+  "description": "",
+  "application_notes": []
+}
