@@ -666,9 +666,9 @@
     ],
     "default": "hsi16",
     "configurations": [
-      { "name": "low",     "sysclk_mhz": 16, "source": "hsi16" },
-      { "name": "default", "sysclk_mhz": 16, "source": "hsi16" },
-      { "name": "high",    "sysclk_mhz": 48, "source": "hsi16", "pll": true },
+      { "name": "low",     "sysclk_mhz": 8,  "source": "msi" },
+      { "name": "default", "sysclk_mhz": 16, "source": "msi" },
+      { "name": "high",    "sysclk_mhz": 48, "source": "msi" },
       { "name": "max",     "sysclk_mhz": 80, "source": "hsi16", "pll": true }
     ]
   }

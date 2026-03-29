@@ -3,7 +3,7 @@
   "name": "L.1",
   "rev": "a",
   "tile_id": 12,
-  "json_version": "0.23",
+  "json_version": "0.24",
   "updated_at": "2026-03-21T16:58:48.000Z",
   "headline": "ultra-low-power Cortex-M0+",
   "description": "Ultra-low-power ARM Cortex-M0+ core tile built around the STM32L011E4 with 16KB flash, 2KB RAM, and 512 bytes of data EEPROM. Optimized for battery-powered and energy-harvesting applications, with flexible I/O across 14 pads including I2C, USART, and LPUART interfaces, 6 ADC inputs, multiple timer channels, and dual analog comparators. Runs from 1.8\u20133.6V with bootloading and hardware debug via SWD.",
@@ -863,16 +863,21 @@
   "clock": {
     "sources": [
       {
+        "type": "msi",
+        "frequency_mhz": 4,
+        "description": "Multi-speed internal RC (65kHz–4.194MHz)"
+      },
+      {
         "type": "hsi16",
         "frequency_mhz": 16,
         "description": "16MHz internal RC"
       }
     ],
-    "default": "hsi16",
+    "default": "msi",
     "configurations": [
-      { "name": "low",     "sysclk_mhz": 16, "source": "hsi16" },
-      { "name": "default", "sysclk_mhz": 16, "source": "hsi16" },
-      { "name": "high",    "sysclk_mhz": 32, "source": "hsi16", "pll": true },
+      { "name": "low",     "sysclk_mhz": 1,  "source": "msi", "lp_run": true },
+      { "name": "default", "sysclk_mhz": 4,  "source": "msi" },
+      { "name": "high",    "sysclk_mhz": 16, "source": "hsi16" },
       { "name": "max",     "sysclk_mhz": 32, "source": "hsi16", "pll": true }
     ]
   }

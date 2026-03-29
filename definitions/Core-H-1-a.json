@@ -812,6 +812,11 @@
   "clock": {
     "sources": [
       {
+        "type": "hsi16",
+        "frequency_mhz": 16,
+        "description": "16MHz internal RC"
+      },
+      {
         "type": "hsi48",
         "frequency_mhz": 48,
         "description": "48MHz internal RC"
@@ -824,10 +829,10 @@
     ],
     "default": "hsi48",
     "configurations": [
-      { "name": "low",     "sysclk_mhz": 48,  "source": "hsi48" },
-      { "name": "default", "sysclk_mhz": 150, "source": "hsi48", "pll": true },
-      { "name": "high",    "sysclk_mhz": 200, "source": "hsi48", "pll": true },
-      { "name": "max",     "sysclk_mhz": 250, "source": "hsi48", "pll": true }
+      { "name": "low",     "sysclk_mhz": 16,  "source": "hsi16" },
+      { "name": "default", "sysclk_mhz": 48,  "source": "hsi48" },
+      { "name": "high",    "sysclk_mhz": 144, "source": "hsi48", "pll": true },
+      { "name": "max",     "sysclk_mhz": 240, "source": "hsi48", "pll": true }
     ]
   }
 }

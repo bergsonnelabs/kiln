@@ -4,6 +4,7 @@
  */
 
 #include "tile_drive_h.h"
+#include <stddef.h>
 
 /* -------------------------------------------------------------- */
 /* Instance mapping                                                */
