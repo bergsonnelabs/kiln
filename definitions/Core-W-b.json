@@ -1,65 +1,6 @@
 {
-  "family": "Core",
-  "name": "W",
   "rev": "b",
-  "tile_id": 8,
-  "json_version": "0.26",
-  "updated_at": "2026-03-21T16:58:48.000Z",
-  "headline": "BLE-enabled 100MHz Cortex M33",
-  "description": "The Core.W tile combines the powerful STM32WBA55 100-MHz 32-bit Cortex-M33 processor together with an integrated 2.4GHz antenna on double-size T48 (4.0 x 8.0 mm) SMD package.  The tile provides a user-configurable combination of: SW debug & bootloading; 1MB flash & 128KB SRAM; wireless communications (BLE 5.4, Thread, Matter, Zigbee, proprietary); two FM+ (1MHz) I2C ports; two SPI ports; one USART; five 12-bit 2.5Msps ADC inputs (16-bit with oversampling); many timers; ten capacitive touch inputs; one serial-audio interface; IR output; and an on-board LED",
-  "application_notes": [
-    {
-      "sort": 0,
-      "details": "The single-wire debug port is available on pads 13 (SWCLK) and 14 (SWDIO). While not absolutely required, it is often helpful to have the ability to hold pads 22 (NRST) low when connecting to the debugger. You can likely also use BOOT0 to help the debugger connect.",
-      "heading": "Single-Wire Debug & Bootloading",
-      "image_url": ""
-    },
-    {
-      "sort": 1,
-      "details": "For the best wireless performance, the antenna-end of the Tile (the end without any pads) should not have any copper traces or planes above or below it.",
-      "heading": "Antenna Clearance",
-      "image_url": ""
-    },
-    {
-      "sort": 2,
-      "details": "The onboard LED is connected to PB12 in an active-high configuration.",
-      "heading": "LED",
-      "image_url": ""
-    }
-  ],
-  "package": {
-    "pads": 16,
-    "type": "T48",
-    "size_x": 4000,
-    "size_y": 8000,
-    "size_z": 0
-  },
-  "power": [
-    {
-      "max": 3.6,
-      "min": 1.8,
-      "type": "system",
-      "notes": "",
-      "gnd_pad": [
-        "1"
-      ],
-      "function": "",
-      "direction": "input",
-      "is_required": true,
-      "max_current": "",
-      "positive_pad": [
-        "14"
-      ]
-    }
-  ],
-  "components": [
-    {
-      "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32wba55hg.html",
-      "part": "STM32WBA55HGF6",
-      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/8/ST_Microelectronics-STM32WBA55.pdf",
-      "manufacturer": "ST Microelectronics"
-    }
-  ],
+  "name": "W",
   "pads": [
     {
       "pad": "1",
@@ -95,11 +36,11 @@
           "is_default": true
         },
         {
+          "af": 6,
           "note": "",
           "type": "interface",
           "function": "SPI3.CLK",
-          "direction": "",
-          "af": 6
+          "direction": ""
         },
         {
           "note": "",
@@ -108,39 +49,39 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.2N",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 2,
           "note": "",
           "type": "timer",
           "function": "TIM3.3",
-          "direction": "",
-          "af": 2
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM3.ETR",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 0,
           "note": "",
           "type": "timer",
           "function": "LPTIM1.IN1",
-          "direction": "",
-          "af": 0
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G2.IO2",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -161,11 +102,11 @@
           "is_default": true
         },
         {
+          "af": 6,
           "note": "",
           "type": "interface",
           "function": "SPI3.CS",
-          "direction": "",
-          "af": 6
+          "direction": ""
         },
         {
           "note": "",
@@ -174,32 +115,32 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.1",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "LPTIM2.ETR",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "SAI1.D2",
-          "direction": "",
-          "af": 3
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G1.IO4",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -220,11 +161,11 @@
           "is_default": true
         },
         {
+          "af": 4,
           "note": "",
           "type": "interface",
           "function": "I2C3.CLK",
-          "direction": "",
-          "af": 4
+          "direction": ""
         },
         {
           "note": "",
@@ -233,32 +174,32 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.4",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "SAI1.CK2",
-          "direction": "",
-          "af": 3
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "SAI1.MCLK_A",
-          "direction": "",
-          "af": 3
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G1.IO3",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -279,11 +220,11 @@
           "is_default": true
         },
         {
+          "af": 4,
           "note": "",
           "type": "interface",
           "function": "I2C3.DAT",
-          "direction": "",
-          "af": 4
+          "direction": ""
         },
         {
           "note": "",
@@ -292,25 +233,25 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.3",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "SAI1.SCK_A",
-          "direction": "",
-          "af": 3
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G1.IO2",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -331,53 +272,53 @@
           "is_default": true
         },
         {
+          "af": 6,
           "note": "",
           "type": "interface",
           "function": "SPI3.MOSI",
-          "direction": "",
-          "af": 6
+          "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.1",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 2,
           "note": "",
           "type": "timer",
           "function": "TIM3.ETR",
-          "direction": "",
-          "af": 2
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM16.1N",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 0,
           "note": "",
           "type": "timer",
           "function": "LPTIM1.ETR",
-          "direction": "",
-          "af": 0
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "USART2.RX",
-          "direction": "",
-          "af": 3
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G2.IO4",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -398,11 +339,11 @@
           "is_default": true
         },
         {
+          "af": 6,
           "note": "",
           "type": "interface",
           "function": "SPI3.MISO",
-          "direction": "",
-          "af": 6
+          "direction": ""
         },
         {
           "note": "",
@@ -411,46 +352,46 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.3N",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 2,
           "note": "",
           "type": "timer",
           "function": "TIM3.4",
-          "direction": "",
-          "af": 2
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM16.1",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 13,
           "note": "",
           "type": "timer",
           "function": "LPTIM2.IN1",
-          "direction": "",
-          "af": 13
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G2.IO3",
-          "direction": "",
-          "af": 9
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "IR_OUT",
-          "direction": "",
-          "af": 3
+          "direction": ""
         }
       ]
     },
@@ -471,32 +412,32 @@
           "is_default": true
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.CS",
-          "direction": "",
-          "af": 5
+          "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.2",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "USART2.TX",
-          "direction": "",
-          "af": 3
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G3.IO4",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -517,53 +458,53 @@
           "is_default": true
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.CLK",
-          "direction": "",
-          "af": 5
+          "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.3",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM17.1",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 2,
           "note": "",
           "type": "timer",
           "function": "LPTIM2.IN2",
-          "direction": "",
-          "af": 2
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "USART2.RX",
-          "direction": "",
-          "af": 3
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "SAI1.MCLK_B",
-          "direction": "",
-          "af": 3
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G3.IO1",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -584,39 +525,46 @@
           "is_default": true
         },
         {
+          "af": 4,
           "note": "",
           "type": "interface",
           "function": "I2C1.CLK",
-          "direction": "",
-          "af": 4
+          "direction": ""
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.MOSI",
-          "direction": "",
-          "af": 5
+          "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.ETR",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 2,
           "note": "",
           "type": "timer",
           "function": "LPTIM1.2",
-          "direction": "",
-          "af": 2
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "USART2.RTS_DE",
-          "direction": "",
-          "af": 3
+          "direction": ""
+        },
+        {
+          "af": 14,
+          "note": "",
+          "type": "timer",
+          "function": "TIM17.BKIN",
+          "direction": "input"
         }
       ]
     },
@@ -637,53 +585,53 @@
           "is_default": true
         },
         {
+          "af": 4,
           "note": "",
           "type": "interface",
           "function": "I2C1.DAT",
-          "direction": "",
-          "af": 4
+          "direction": ""
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.MISO",
-          "direction": "",
-          "af": 5
+          "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.4",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM171.N",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 2,
           "note": "",
           "type": "timer",
           "function": "LPTIM1.IN2",
-          "direction": "",
-          "af": 2
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "USART2.CK",
-          "direction": "",
-          "af": 3
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G3.IO2",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -704,25 +652,25 @@
           "is_default": true
         },
         {
+          "af": 0,
           "note": "",
           "type": "system",
           "function": "SWDIO",
-          "direction": "",
-          "af": 0
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM17.BKIN",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G3.IO3",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -743,18 +691,18 @@
           "is_default": true
         },
         {
+          "af": 0,
           "note": "",
           "type": "system",
           "function": "SWCLK",
-          "direction": "",
-          "af": 0
+          "direction": ""
         },
         {
+          "af": 3,
           "note": "",
           "type": "interface",
           "function": "USART2.TX",
-          "direction": "",
-          "af": 3
+          "direction": ""
         }
       ]
     },
@@ -816,6 +764,81 @@
       ]
     }
   ],
+  "clock": {
+    "default": "hsi16",
+    "sources": [
+      {
+        "type": "hsi16",
+        "description": "16MHz internal RC",
+        "frequency_mhz": 16
+      },
+      {
+        "type": "hse",
+        "description": "32MHz crystal (on-board)",
+        "frequency_mhz": 32
+      }
+    ],
+    "configurations": [
+      {
+        "name": "low",
+        "source": "hsi16",
+        "sysclk_mhz": 16
+      },
+      {
+        "name": "default",
+        "source": "hse",
+        "sysclk_mhz": 32
+      },
+      {
+        "pll": true,
+        "name": "high",
+        "source": "hse",
+        "sysclk_mhz": 64
+      },
+      {
+        "pll": true,
+        "name": "max",
+        "source": "hse",
+        "sysclk_mhz": 100
+      }
+    ]
+  },
+  "power": [
+    {
+      "max": 3.6,
+      "min": 1.8,
+      "type": "system",
+      "notes": "",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "14"
+      ]
+    }
+  ],
+  "family": "Core",
+  "package": {
+    "pads": 16,
+    "type": "T48",
+    "size_x": 4000,
+    "size_y": 8000,
+    "size_z": 0
+  },
+  "tile_id": 8,
+  "headline": "BLE-enabled 100MHz Cortex M33",
+  "components": [
+    {
+      "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32wba55hg.html",
+      "part": "STM32WBA55HGF6",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/8/ST_Microelectronics-STM32WBA55.pdf",
+      "manufacturer": "ST Microelectronics"
+    }
+  ],
   "interfaces": [
     {
       "name": "I2C1",
@@ -829,7 +852,8 @@
             "address": "programmable"
           }
         ],
-        "max_clock_speed": "1MHz"
+        "max_clock_speed": "1MHz",
+        "kernel_clk_mhz": 16
       },
       "pad_assignments": [
         {
@@ -856,7 +880,8 @@
             "address": "programmable"
           }
         ],
-        "max_clock_speed": "1MHz"
+        "max_clock_speed": "1MHz",
+        "kernel_clk_mhz": 16
       },
       "pad_assignments": [
         {
@@ -988,25 +1013,27 @@
       ]
     }
   ],
-  "clock": {
-    "sources": [
-      {
-        "type": "hsi16",
-        "frequency_mhz": 16,
-        "description": "16MHz internal RC"
-      },
-      {
-        "type": "hse",
-        "frequency_mhz": 32,
-        "description": "32MHz crystal (on-board)"
-      }
-    ],
-    "default": "hsi16",
-    "configurations": [
-      { "name": "low",     "sysclk_mhz": 16,  "source": "hsi16" },
-      { "name": "default", "sysclk_mhz": 32,  "source": "hse" },
-      { "name": "high",    "sysclk_mhz": 64,  "source": "hse", "pll": true },
-      { "name": "max",     "sysclk_mhz": 100, "source": "hse", "pll": true }
-    ]
-  }
+  "updated_at": "2026-03-30T04:19:35.991Z",
+  "description": "The Core.W tile combines the powerful STM32WBA55 100-MHz 32-bit Cortex-M33 processor together with an integrated 2.4GHz antenna on double-size T48 (4.0 x 8.0 mm) SMD package.  The tile provides a user-configurable combination of: SW debug & bootloading; 1MB flash & 128KB SRAM; wireless communications (BLE 5.4, Thread, Matter, Zigbee, proprietary); two FM+ (1MHz) I2C ports; two SPI ports; one USART; five 12-bit 2.5Msps ADC inputs (16-bit with oversampling); many timers; ten capacitive touch inputs; one serial-audio interface; IR output; and an on-board LED",
+  "json_version": "0.28",
+  "application_notes": [
+    {
+      "sort": 0,
+      "details": "The single-wire debug port is available on pads 13 (SWCLK) and 14 (SWDIO). While not absolutely required, it is often helpful to have the ability to hold pads 22 (NRST) low when connecting to the debugger. You can likely also use BOOT0 to help the debugger connect.",
+      "heading": "Single-Wire Debug & Bootloading",
+      "image_url": ""
+    },
+    {
+      "sort": 1,
+      "details": "For the best wireless performance, the antenna-end of the Tile (the end without any pads) should not have any copper traces or planes above or below it.",
+      "heading": "Antenna Clearance",
+      "image_url": ""
+    },
+    {
+      "sort": 2,
+      "details": "The onboard LED is connected to PB12 in an active-high configuration.",
+      "heading": "LED",
+      "image_url": ""
+    }
+  ]
 }

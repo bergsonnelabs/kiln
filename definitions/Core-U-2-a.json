@@ -1,71 +1,6 @@
 {
-  "family": "Core",
-  "name": "U.2",
   "rev": "a",
-  "tile_id": 7,
-  "json_version": "0.40",
-  "updated_at": "2026-03-21T16:58:48.000Z",
-  "headline": "expanded-I/0 USB-prog. Cortex-M4",
-  "description": "The expanded-I/O USB-programmable Core.U.2 is based on the same 80-MHz Cortex-M4 STM32L422 as the smaller Core.U.1, with the top 12 pads (1-5 and 16-22) matching the pad layout of the Core.U.1.  The additional I/O pads provide a user-configurable combination of single-wire and trace debugging, two I2C ports, one SPI port, one quad SPI port, ten 12-bit ADC inputs, multiple timers, capacitive-touch inputs, and an on-board comparator.  The board also includes an onboard LED and a physical button for reset and bootloading (see Application Notes).",
-  "application_notes": [
-    {
-      "sort": 0,
-      "details": "Similar to the Core.U.1, when the chip is blank, it will default into the bootloader when connected over USB.  Once there is code in the program space, you need to hold the BOOT0 pin low during reset (either power-on or via the NRST pin) to enter the bootloader.  The physical button will also execute this behavior.",
-      "heading": "USB Bootloading",
-      "image_url": ""
-    },
-    {
-      "sort": 1,
-      "details": "The single-wire debug port is available on pads 13 (SWCLK) and 14 (SWDIO).  While not absolutely required, it is often helpful to have the ability to hold pads 22 (NRST) low when connecting to the debugger.  You can likely also use BOOT0 (via either the pad or the button) to help the debugger connect.",
-      "heading": "Single-Wire Debug & Bootloading",
-      "image_url": ""
-    },
-    {
-      "sort": 2,
-      "details": "The board button will issue a software reset via the NRST pin when pressed for a short (less than ~1sec) time.  When held for more than ~2 seconds and released, the system will enter the bootloader.",
-      "heading": "Button",
-      "image_url": ""
-    },
-    {
-      "sort": 3,
-      "details": "The onboard LED is connected to PA8 in an active-high configuration.",
-      "heading": "LED",
-      "image_url": ""
-    }
-  ],
-  "package": {
-    "pads": 22,
-    "type": "T48",
-    "size_x": 4000,
-    "size_y": 8000,
-    "size_z": 0
-  },
-  "power": [
-    {
-      "max": 3.6,
-      "min": 1.8,
-      "type": "system",
-      "notes": "for USB communications, the supply voltage should be greater than 3.0V",
-      "gnd_pad": [
-        "1"
-      ],
-      "function": "",
-      "direction": "input",
-      "is_required": true,
-      "max_current": "",
-      "positive_pad": [
-        "20"
-      ]
-    }
-  ],
-  "components": [
-    {
-      "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32l422tb.html",
-      "part": "STM32L422TB",
-      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/7/ST_Microelectronics-STM32L422TB.pdf",
-      "manufacturer": "ST Microelectronics"
-    }
-  ],
+  "name": "U.2",
   "pads": [
     {
       "pad": "1",
@@ -101,18 +36,18 @@
           "is_default": true
         },
         {
+          "af": 4,
           "note": "",
           "type": "interface",
           "function": "I2C3.CLK",
-          "direction": "bidirectional",
-          "af": 4
+          "direction": "bidirectional"
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.M0SI",
-          "direction": "bidirectional",
-          "af": 5
+          "direction": "bidirectional"
         },
         {
           "note": "",
@@ -121,18 +56,18 @@
           "direction": "input"
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.1N",
-          "direction": "output",
-          "af": 1
+          "direction": "output"
         },
         {
+          "af": 10,
           "note": "",
           "type": "interface",
           "function": "QSPI.IO2",
-          "direction": "bidirectional",
-          "af": 10
+          "direction": "bidirectional"
         }
       ]
     },
@@ -153,18 +88,18 @@
           "is_default": true
         },
         {
+          "af": 4,
           "note": "optional SMBus alert",
           "type": "interface",
           "function": "I2C1.SMBA",
-          "direction": "",
-          "af": 4
+          "direction": ""
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.CLK",
-          "direction": "bidirectional",
-          "af": 5
+          "direction": "bidirectional"
         },
         {
           "note": "",
@@ -173,18 +108,18 @@
           "direction": "input"
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.2",
-          "direction": "output",
-          "af": 1
+          "direction": "output"
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM15.1N",
-          "direction": "output",
-          "af": 14
+          "direction": "output"
         },
         {
           "note": "",
@@ -193,11 +128,11 @@
           "direction": "input"
         },
         {
+          "af": 7,
           "note": "",
           "type": "interface",
           "function": "USART2.RTS_DE",
-          "direction": "bidirectional",
-          "af": 7
+          "direction": "bidirectional"
         }
       ]
     },
@@ -217,42 +152,42 @@
           "is_default": true
         },
         {
+          "af": 4,
           "type": "interface",
           "function": "I2C1.CLK",
-          "direction": "bidirectional",
-          "af": 4
+          "direction": "bidirectional"
         },
         {
+          "af": 14,
           "type": "timer",
           "function": "TIM16.1N",
-          "direction": "output",
-          "af": 14
+          "direction": "output"
         },
         {
+          "af": 1,
           "note": "external trigger",
           "type": "timer",
           "function": "LPTIM1.ETR",
-          "direction": "input",
-          "af": 1
+          "direction": "input"
         },
         {
+          "af": 7,
           "type": "interface",
           "function": "USART1.TX",
-          "direction": "output",
-          "af": 7
+          "direction": "output"
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
-          "function": "G3.IO3",
-          "af": 9
+          "function": "G2.IO3"
         },
         {
+          "af": 0,
           "note": "",
           "type": "system",
           "function": "TRACE.D3",
-          "direction": "",
-          "af": 0
+          "direction": ""
         }
       ]
     },
@@ -272,36 +207,36 @@
           "is_default": true
         },
         {
+          "af": 4,
           "type": "interface",
           "function": "I2C1.DAT",
-          "direction": "bidirectional",
-          "af": 4
+          "direction": "bidirectional"
         },
         {
+          "af": 1,
           "type": "timer",
           "function": "LPTIM1.2",
-          "direction": "output",
-          "af": 1
+          "direction": "output"
         },
         {
+          "af": 7,
           "type": "interface",
           "function": "USART1.RX",
-          "direction": "input",
-          "af": 7
+          "direction": "input"
         },
         {
+          "af": 0,
           "note": "",
           "type": "system",
           "function": "TRACE.CK",
-          "direction": "",
-          "af": 0
+          "direction": ""
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G2.IO4",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -322,11 +257,11 @@
           "is_default": true
         },
         {
+          "af": 10,
           "note": "",
           "type": "interface",
           "function": "QSPI.CLK",
-          "direction": "bidirectional",
-          "af": 10
+          "direction": "bidirectional"
         },
         {
           "note": "",
@@ -335,32 +270,32 @@
           "direction": "input"
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.4",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM15.2",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 7,
           "note": "",
           "type": "interface",
           "function": "USART2.RX",
-          "direction": "",
-          "af": 7
+          "direction": ""
         },
         {
+          "af": 8,
           "note": "",
           "type": "interface",
           "function": "LPUART1.RX",
-          "direction": "",
-          "af": 8
+          "direction": ""
         }
       ]
     },
@@ -381,11 +316,11 @@
           "is_default": true
         },
         {
+          "af": 10,
           "note": "",
           "type": "interface",
           "function": "QSPI.CS",
-          "direction": "",
-          "af": 10
+          "direction": ""
         },
         {
           "note": "",
@@ -394,32 +329,32 @@
           "direction": "input"
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.3",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM15.1",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 7,
           "note": "",
           "type": "interface",
           "function": "USART2.TX",
-          "direction": "",
-          "af": 7
+          "direction": ""
         },
         {
+          "af": 8,
           "note": "",
           "type": "interface",
-          "function": "LPUART1.RX",
-          "direction": "",
-          "af": 8
+          "function": "LPUART1.TX",
+          "direction": ""
         }
       ]
     },
@@ -446,25 +381,25 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.1",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM2.ETR",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 7,
           "note": "",
           "type": "interface",
           "function": "USART2.CTS",
-          "direction": "",
-          "af": 7
+          "direction": ""
         },
         {
           "note": "",
@@ -473,11 +408,11 @@
           "direction": ""
         },
         {
+          "af": 12,
           "note": "",
           "type": "other",
           "function": "COMP1.OUT",
-          "direction": "",
-          "af": 12
+          "direction": ""
         }
       ]
     },
@@ -498,18 +433,18 @@
           "is_default": true
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.MISO",
-          "direction": "output",
-          "af": 5
+          "direction": "output"
         },
         {
+          "af": 10,
           "note": "",
           "type": "interface",
           "function": "QSPI.IO3",
-          "direction": "",
-          "af": 10
+          "direction": ""
         },
         {
           "note": "",
@@ -518,32 +453,32 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.BKIN",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM16.1",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
+          "af": 8,
           "note": "",
           "type": "interface",
           "function": "LPUART1.CTS",
-          "direction": "",
-          "af": 8
+          "direction": ""
         },
         {
+          "af": 6,
           "note": "",
           "type": "other",
           "function": "COMP1.OUT",
-          "direction": "",
-          "af": 6
+          "direction": ""
         }
       ]
     },
@@ -564,11 +499,11 @@
           "is_default": true
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.CLK",
-          "direction": "",
-          "af": 5
+          "direction": ""
         },
         {
           "note": "",
@@ -577,25 +512,25 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.1",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 2,
           "note": "",
           "type": "timer",
           "function": "TIM2.ETR",
-          "direction": "",
-          "af": 2
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "LPTIM2.ETR",
-          "direction": "",
-          "af": 14
+          "direction": ""
         },
         {
           "note": "",
@@ -622,25 +557,25 @@
           "is_default": true
         },
         {
+          "af": 0,
           "note": "",
           "type": "system",
           "function": "TRACE.D1",
-          "direction": "",
-          "af": 0
+          "direction": ""
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.CS",
-          "direction": "",
-          "af": 5
+          "direction": ""
         },
         {
+          "af": 10,
           "note": "",
           "type": "interface",
           "function": "QSPI.IO1",
-          "direction": "",
-          "af": 10
+          "direction": ""
         },
         {
           "note": "",
@@ -649,18 +584,18 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.2N",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 12,
           "note": "",
           "type": "other",
           "function": "COMP1.OUT",
-          "direction": "",
-          "af": 12
+          "direction": ""
         }
       ]
     },
@@ -681,32 +616,32 @@
           "is_default": true
         },
         {
+          "af": 0,
           "note": "",
           "type": "system",
           "function": "TRACE.SWO",
-          "direction": "",
-          "af": 0
+          "direction": ""
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.CLK",
-          "direction": "",
-          "af": 5
+          "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.2",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 7,
           "note": "",
           "type": "interface",
           "function": "USART1.RTS_DE",
-          "direction": "",
-          "af": 7
+          "direction": ""
         }
       ]
     },
@@ -727,25 +662,25 @@
           "is_default": true
         },
         {
+          "af": 0,
           "note": "",
           "type": "system",
           "function": "SWCLK",
-          "direction": "",
-          "af": 0
+          "direction": ""
         },
         {
+          "af": 4,
           "note": "",
           "type": "interface",
           "function": "I2C1.SMBA",
-          "direction": "",
-          "af": 4
+          "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "LPTIM1.OUT",
-          "direction": "",
-          "af": 1
+          "direction": ""
         }
       ]
     },
@@ -766,11 +701,11 @@
           "is_default": true
         },
         {
+          "af": 0,
           "note": "",
           "type": "system",
           "function": "SWDIO",
-          "direction": "",
-          "af": 0
+          "direction": ""
         }
       ]
     },
@@ -791,18 +726,18 @@
           "is_default": true
         },
         {
+          "af": 0,
           "note": "",
           "type": "system",
           "function": "TRACE.D1",
-          "direction": "",
-          "af": 0
+          "direction": ""
         },
         {
+          "af": 10,
           "note": "",
           "type": "interface",
           "function": "QSPI.IO0",
-          "direction": "",
-          "af": 10
+          "direction": ""
         },
         {
           "note": "",
@@ -811,18 +746,25 @@
           "direction": ""
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.3N",
-          "direction": "",
-          "af": 1
+          "direction": ""
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "LPTIM2.1",
-          "direction": "",
-          "af": 14
+          "direction": ""
+        },
+        {
+          "af": 8,
+          "note": "",
+          "type": "interface",
+          "function": "LPUART1.RTS_DE",
+          "direction": ""
         }
       ]
     },
@@ -843,30 +785,30 @@
           "is_default": true
         },
         {
+          "af": 5,
           "type": "interface",
           "function": "SPI1.MOSI",
-          "direction": "output",
-          "af": 5
+          "direction": "output"
         },
         {
+          "af": 1,
           "note": "external trigger",
           "type": "timer",
           "function": "TIM1.ETR",
-          "direction": "input",
-          "af": 1
+          "direction": "input"
         },
         {
+          "af": 7,
           "note": "RS232 ready-to-send / RS485 driver-enable",
           "type": "interface",
           "function": "USART1.RTS_DE",
-          "direction": "bidirectional",
-          "af": 7
+          "direction": "bidirectional"
         },
         {
+          "af": 10,
           "type": "interface",
           "function": "USB.DP",
-          "direction": "bidirectional",
-          "af": 10
+          "direction": "bidirectional"
         }
       ]
     },
@@ -887,56 +829,56 @@
           "is_default": true
         },
         {
+          "af": 5,
           "type": "interface",
           "function": "SPI1.MISO",
-          "direction": "output",
-          "af": 5
+          "direction": "output"
         },
         {
+          "af": 1,
           "type": "timer",
           "function": "TIM1.4",
-          "direction": "output",
-          "af": 1
+          "direction": "output"
         },
         {
+          "af": 2,
           "note": "break input to disable PWM output",
           "type": "timer",
           "function": "TIM1.BKIN2",
-          "direction": "input",
-          "af": 2
+          "direction": "input"
         },
         {
+          "af": 12,
           "note": "break input to disable PWM output based on COMP1 output",
           "type": "timer",
           "function": "TIM1.BKIN2_COMP1",
-          "direction": "input",
-          "af": 12
+          "direction": "input"
         },
         {
+          "af": 7,
           "note": "RS232 clear-to-send",
           "type": "interface",
           "function": "USART1.CTS",
-          "direction": "bidirectional",
-          "af": 7
+          "direction": "bidirectional"
         },
         {
+          "af": 6,
           "type": "other",
           "function": "COMP1.OUT",
-          "direction": "output",
-          "af": 6
+          "direction": "output"
         },
         {
+          "af": 10,
           "type": "interface",
           "function": "USB.DM",
-          "direction": "bidirectional",
-          "af": 10
+          "direction": "bidirectional"
         },
         {
+          "af": 9,
           "note": "",
           "type": "other",
           "function": "G2.IO1",
-          "direction": "",
-          "af": 9
+          "direction": ""
         }
       ]
     },
@@ -957,23 +899,30 @@
           "is_default": true
         },
         {
+          "af": 4,
           "type": "interface",
           "function": "I2C3.DAT",
-          "direction": "bidirectional",
-          "af": 4
+          "direction": "bidirectional"
         },
         {
+          "af": 5,
           "type": "interface",
           "function": "SPI1.MISO",
-          "direction": "output",
-          "af": 5
+          "direction": "output"
         },
         {
+          "af": 7,
           "note": "RS232 clear-to-send",
           "type": "interface",
           "function": "USART1.CTS",
-          "direction": "bidirectional",
-          "af": 7
+          "direction": "bidirectional"
+        },
+        {
+          "af": 9,
+          "note": "",
+          "type": "other",
+          "function": "G2.IO1",
+          "direction": ""
         }
       ]
     },
@@ -994,17 +943,17 @@
           "is_default": true
         },
         {
+          "af": 5,
           "type": "interface",
           "function": "SPI1.CS",
-          "direction": "bidirectional",
-          "af": 5
+          "direction": "bidirectional"
         },
         {
+          "af": 14,
           "note": "break input to disable PWM output",
           "type": "timer",
           "function": "LPTIM2.OUT",
-          "direction": "output",
-          "af": 14
+          "direction": "output"
         },
         {
           "type": "other",
@@ -1070,6 +1019,85 @@
           "direction": ""
         }
       ]
+    }
+  ],
+  "clock": {
+    "default": "hsi16",
+    "sources": [
+      {
+        "type": "hsi16",
+        "description": "16MHz internal RC",
+        "frequency_mhz": 16
+      },
+      {
+        "type": "msi",
+        "description": "Multi-speed internal RC (100kHz-48MHz)",
+        "frequency_mhz": 4
+      },
+      {
+        "type": "hsi48",
+        "description": "48MHz internal RC (USB)",
+        "frequency_mhz": 48
+      }
+    ],
+    "configurations": [
+      {
+        "name": "low",
+        "source": "msi",
+        "sysclk_mhz": 8
+      },
+      {
+        "name": "default",
+        "source": "msi",
+        "sysclk_mhz": 16
+      },
+      {
+        "name": "high",
+        "source": "msi",
+        "sysclk_mhz": 48
+      },
+      {
+        "pll": true,
+        "name": "max",
+        "source": "hsi16",
+        "sysclk_mhz": 80
+      }
+    ]
+  },
+  "power": [
+    {
+      "max": 3.6,
+      "min": 1.8,
+      "type": "system",
+      "notes": "for USB communications, the supply voltage should be greater than 3.0V",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "20"
+      ]
+    }
+  ],
+  "family": "Core",
+  "package": {
+    "pads": 22,
+    "type": "T48",
+    "size_x": 4000,
+    "size_y": 8000,
+    "size_z": 0
+  },
+  "tile_id": 7,
+  "headline": "expanded-I/0 USB-prog. Cortex-M4",
+  "components": [
+    {
+      "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32l422tb.html",
+      "part": "STM32L422TB",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/7/ST_Microelectronics-STM32L422TB.pdf",
+      "manufacturer": "ST Microelectronics"
     }
   ],
   "interfaces": [
@@ -1341,30 +1369,33 @@
       ]
     }
   ],
-  "clock": {
-    "sources": [
-      {
-        "type": "hsi16",
-        "frequency_mhz": 16,
-        "description": "16MHz internal RC"
-      },
-      {
-        "type": "msi",
-        "frequency_mhz": 4,
-        "description": "Multi-speed internal RC (100kHz-48MHz)"
-      },
-      {
-        "type": "hsi48",
-        "frequency_mhz": 48,
-        "description": "48MHz internal RC (USB)"
-      }
-    ],
-    "default": "hsi16",
-    "configurations": [
-      { "name": "low",     "sysclk_mhz": 8,  "source": "msi" },
-      { "name": "default", "sysclk_mhz": 16, "source": "msi" },
-      { "name": "high",    "sysclk_mhz": 48, "source": "msi" },
-      { "name": "max",     "sysclk_mhz": 80, "source": "hsi16", "pll": true }
-    ]
-  }
+  "updated_at": "2026-03-30T04:08:01.987Z",
+  "description": "The expanded-I/O USB-programmable Core.U.2 is based on the same 80-MHz Cortex-M4 STM32L422 as the smaller Core.U.1, with the top 12 pads (1-5 and 16-22) matching the pad layout of the Core.U.1.  The additional I/O pads provide a user-configurable combination of single-wire and trace debugging, two I2C ports, one SPI port, one quad SPI port, ten 12-bit ADC inputs, multiple timers, capacitive-touch inputs, and an on-board comparator.  The board also includes an onboard LED and a physical button for reset and bootloading (see Application Notes).",
+  "json_version": "0.46",
+  "application_notes": [
+    {
+      "sort": 0,
+      "details": "Similar to the Core.U.1, when the chip is blank, it will default into the bootloader when connected over USB.  Once there is code in the program space, you need to hold the BOOT0 pin low during reset (either power-on or via the NRST pin) to enter the bootloader.  The physical button will also execute this behavior.",
+      "heading": "USB Bootloading",
+      "image_url": ""
+    },
+    {
+      "sort": 1,
+      "details": "The single-wire debug port is available on pads 13 (SWCLK) and 14 (SWDIO).  While not absolutely required, it is often helpful to have the ability to hold pads 22 (NRST) low when connecting to the debugger.  You can likely also use BOOT0 (via either the pad or the button) to help the debugger connect.",
+      "heading": "Single-Wire Debug & Bootloading",
+      "image_url": ""
+    },
+    {
+      "sort": 2,
+      "details": "The board button will issue a software reset via the NRST pin when pressed for a short (less than ~1sec) time.  When held for more than ~2 seconds and released, the system will enter the bootloader.",
+      "heading": "Button",
+      "image_url": ""
+    },
+    {
+      "sort": 3,
+      "details": "The onboard LED is connected to PA8 in an active-high configuration.",
+      "heading": "LED",
+      "image_url": ""
+    }
+  ]
 }

@@ -1,55 +1,6 @@
 {
-  "family": "Core",
-  "name": "U.1",
   "rev": "a",
-  "tile_id": 1,
-  "json_version": "0.19",
-  "updated_at": "2026-03-21T16:58:48.000Z",
-  "headline": "USB-programmable Cortex-M4",
-  "description": "The USB-programmable Core.U.1 is based on the 80-MHz 32-bit Cortex-M4 STM32L422 with 128KB flash, 40KB SRAM, and a CoreMark score of 273.55.  The exposed pads provide a user-configurable combination of two fast-mode-plus I2C ports, one SPI port, three 12-bit ADCs, multiple timers, USART, an onboard comparator, and capacitive-touch input.  A programmable onboard LED provides a convenient status indicator.  If more I/O is needed, consider the larger Core.U.2 in a T48-22 package.",
-  "application_notes": [
-    {
-      "details": "When the chip is blank, it will default into the bootloader when connected over USB.  Once there is code in the program space, you need to hold the BOOT0 pin low during reset (either power-on or via the NRST pin) to enter the bootloader.",
-      "heading": "Bootloading"
-    },
-    {
-      "details": "The onboard LED is connected to PA8 in an active-high configuration.",
-      "heading": "LED"
-    }
-  ],
-  "package": {
-    "pads": 12,
-    "type": "T44",
-    "size_x": 4000,
-    "size_y": 4000,
-    "size_z": 0
-  },
-  "power": [
-    {
-      "max": 3.6,
-      "min": 1.71,
-      "type": "system",
-      "notes": "minimum of 3.0V for USB communications",
-      "gnd_pad": [
-        "1"
-      ],
-      "function": "",
-      "direction": "input",
-      "is_required": true,
-      "max_current": "",
-      "positive_pad": [
-        "10"
-      ]
-    }
-  ],
-  "components": [
-    {
-      "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32l422tb.html",
-      "part": "STM32L422TB",
-      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/1/ST_Microelectronics-STM32L422TB.pdf",
-      "manufacturer": "ST Microelectronics"
-    }
-  ],
+  "name": "U.1",
   "pads": [
     {
       "pad": "1",
@@ -83,18 +34,18 @@
           "is_default": true
         },
         {
+          "af": 4,
           "note": "",
           "type": "interface",
           "function": "I2C3.CLK",
-          "direction": "bidirectional",
-          "af": 4
+          "direction": "bidirectional"
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.M0SI",
-          "direction": "bidirectional",
-          "af": 5
+          "direction": "bidirectional"
         },
         {
           "note": "",
@@ -103,11 +54,11 @@
           "direction": "input"
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM1.1N",
-          "direction": "output",
-          "af": 1
+          "direction": "output"
         }
       ]
     },
@@ -128,18 +79,18 @@
           "is_default": true
         },
         {
+          "af": 4,
           "note": "optional SMBus alert",
           "type": "interface",
           "function": "I2C1.SMBA",
-          "direction": "",
-          "af": 4
+          "direction": ""
         },
         {
+          "af": 5,
           "note": "",
           "type": "interface",
           "function": "SPI1.CLK",
-          "direction": "bidirectional",
-          "af": 5
+          "direction": "bidirectional"
         },
         {
           "note": "",
@@ -148,18 +99,18 @@
           "direction": "input"
         },
         {
+          "af": 1,
           "note": "",
           "type": "timer",
           "function": "TIM2.2",
-          "direction": "output",
-          "af": 1
+          "direction": "output"
         },
         {
+          "af": 14,
           "note": "",
           "type": "timer",
           "function": "TIM15.1N",
-          "direction": "output",
-          "af": 14
+          "direction": "output"
         },
         {
           "note": "",
@@ -185,29 +136,36 @@
           "is_default": true
         },
         {
+          "af": 4,
           "type": "interface",
           "function": "I2C1.CLK",
-          "direction": "bidirectional",
-          "af": 4
+          "direction": "bidirectional"
         },
         {
+          "af": 14,
           "type": "timer",
           "function": "TIM16.1N",
-          "direction": "output",
-          "af": 14
+          "direction": "output"
         },
         {
+          "af": 1,
           "note": "external trigger",
           "type": "timer",
           "function": "LPTIM1.ETR",
-          "direction": "input",
-          "af": 1
+          "direction": "input"
         },
         {
+          "af": 7,
           "type": "interface",
           "function": "USART1.TX",
-          "direction": "output",
-          "af": 7
+          "direction": "output"
+        },
+        {
+          "af": 9,
+          "note": "",
+          "type": "other",
+          "function": "G2.IO3",
+          "direction": ""
         }
       ]
     },
@@ -227,22 +185,29 @@
           "is_default": true
         },
         {
+          "af": 4,
           "type": "interface",
           "function": "I2C1.DAT",
-          "direction": "bidirectional",
-          "af": 4
+          "direction": "bidirectional"
         },
         {
+          "af": 1,
           "type": "timer",
           "function": "LPTIM1.2",
-          "direction": "output",
-          "af": 1
+          "direction": "output"
         },
         {
+          "af": 7,
           "type": "interface",
           "function": "USART1.RX",
-          "direction": "input",
-          "af": 7
+          "direction": "input"
+        },
+        {
+          "af": 9,
+          "note": "",
+          "type": "other",
+          "function": "G2.IO4",
+          "direction": ""
         }
       ]
     },
@@ -263,30 +228,30 @@
           "is_default": true
         },
         {
+          "af": 5,
           "type": "interface",
           "function": "SPI1.MOSI",
-          "direction": "output",
-          "af": 5
+          "direction": "output"
         },
         {
+          "af": 1,
           "note": "external trigger",
           "type": "timer",
           "function": "TIM1.ETR",
-          "direction": "input",
-          "af": 1
+          "direction": "input"
         },
         {
+          "af": 7,
           "note": "RS232 ready-to-send / RS485 driver-enable",
           "type": "interface",
           "function": "USART1.RTS_DE",
-          "direction": "bidirectional",
-          "af": 7
+          "direction": "bidirectional"
         },
         {
+          "af": 10,
           "type": "interface",
           "function": "USB.DP",
-          "direction": "bidirectional",
-          "af": 10
+          "direction": "bidirectional"
         }
       ]
     },
@@ -307,49 +272,49 @@
           "is_default": true
         },
         {
+          "af": 5,
           "type": "interface",
           "function": "SPI1.MISO",
-          "direction": "output",
-          "af": 5
+          "direction": "output"
         },
         {
+          "af": 1,
           "type": "timer",
           "function": "TIM1.4",
-          "direction": "output",
-          "af": 1
+          "direction": "output"
         },
         {
+          "af": 2,
           "note": "break input to disable PWM output",
           "type": "timer",
           "function": "TIM1.BKIN2",
-          "direction": "input",
-          "af": 2
+          "direction": "input"
         },
         {
+          "af": 12,
           "note": "break input to disable PWM output based on COMP1 output",
           "type": "timer",
           "function": "TIM1.BKIN2_COMP1",
-          "direction": "input",
-          "af": 12
+          "direction": "input"
         },
         {
+          "af": 7,
           "note": "RS232 clear-to-send",
           "type": "interface",
           "function": "USART1.CTS",
-          "direction": "bidirectional",
-          "af": 7
+          "direction": "bidirectional"
         },
         {
+          "af": 6,
           "type": "other",
           "function": "COMP1.OUT",
-          "direction": "output",
-          "af": 6
+          "direction": "output"
         },
         {
+          "af": 10,
           "type": "interface",
           "function": "USB.DM",
-          "direction": "bidirectional",
-          "af": 10
+          "direction": "bidirectional"
         }
       ]
     },
@@ -370,23 +335,30 @@
           "is_default": true
         },
         {
+          "af": 4,
           "type": "interface",
           "function": "I2C3.DAT",
-          "direction": "bidirectional",
-          "af": 4
+          "direction": "bidirectional"
         },
         {
+          "af": 5,
           "type": "interface",
           "function": "SPI1.MISO",
-          "direction": "output",
-          "af": 5
+          "direction": "output"
         },
         {
+          "af": 7,
           "note": "RS232 clear-to-send",
           "type": "interface",
           "function": "USART1.CTS",
-          "direction": "bidirectional",
-          "af": 7
+          "direction": "bidirectional"
+        },
+        {
+          "af": 9,
+          "note": "",
+          "type": "other",
+          "function": "G2.IO1",
+          "direction": ""
         }
       ]
     },
@@ -407,17 +379,17 @@
           "is_default": true
         },
         {
+          "af": 5,
           "type": "interface",
           "function": "SPI1.CS",
-          "direction": "bidirectional",
-          "af": 5
+          "direction": "bidirectional"
         },
         {
+          "af": 14,
           "note": "break input to disable PWM output",
           "type": "timer",
           "function": "LPTIM2.OUT",
-          "direction": "output",
-          "af": 14
+          "direction": "output"
         },
         {
           "type": "other",
@@ -482,6 +454,85 @@
           "direction": "input"
         }
       ]
+    }
+  ],
+  "clock": {
+    "default": "hsi16",
+    "sources": [
+      {
+        "type": "hsi16",
+        "description": "16MHz internal RC",
+        "frequency_mhz": 16
+      },
+      {
+        "type": "msi",
+        "description": "Multi-speed internal RC (100kHz-48MHz)",
+        "frequency_mhz": 4
+      },
+      {
+        "type": "hsi48",
+        "description": "48MHz internal RC (USB)",
+        "frequency_mhz": 48
+      }
+    ],
+    "configurations": [
+      {
+        "name": "low",
+        "source": "msi",
+        "sysclk_mhz": 8
+      },
+      {
+        "name": "default",
+        "source": "msi",
+        "sysclk_mhz": 16
+      },
+      {
+        "name": "high",
+        "source": "msi",
+        "sysclk_mhz": 48
+      },
+      {
+        "pll": true,
+        "name": "max",
+        "source": "hsi16",
+        "sysclk_mhz": 80
+      }
+    ]
+  },
+  "power": [
+    {
+      "max": 3.6,
+      "min": 1.71,
+      "type": "system",
+      "notes": "minimum of 3.0V for USB communications",
+      "gnd_pad": [
+        "1"
+      ],
+      "function": "",
+      "direction": "input",
+      "is_required": true,
+      "max_current": "",
+      "positive_pad": [
+        "10"
+      ]
+    }
+  ],
+  "family": "Core",
+  "package": {
+    "pads": 12,
+    "type": "T44",
+    "size_x": 4000,
+    "size_y": 4000,
+    "size_z": 0
+  },
+  "tile_id": 1,
+  "headline": "USB-programmable Cortex-M4",
+  "components": [
+    {
+      "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32l422tb.html",
+      "part": "STM32L422TB",
+      "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/1/ST_Microelectronics-STM32L422TB.pdf",
+      "manufacturer": "ST Microelectronics"
     }
   ],
   "interfaces": [
@@ -646,30 +697,17 @@
     "pin_sink_current": "",
     "pin_source_current": ""
   },
-  "clock": {
-    "sources": [
-      {
-        "type": "hsi16",
-        "frequency_mhz": 16,
-        "description": "16MHz internal RC"
-      },
-      {
-        "type": "msi",
-        "frequency_mhz": 4,
-        "description": "Multi-speed internal RC (100kHz-48MHz)"
-      },
-      {
-        "type": "hsi48",
-        "frequency_mhz": 48,
-        "description": "48MHz internal RC (USB)"
-      }
-    ],
-    "default": "hsi16",
-    "configurations": [
-      { "name": "low",     "sysclk_mhz": 8,  "source": "msi" },
-      { "name": "default", "sysclk_mhz": 16, "source": "msi" },
-      { "name": "high",    "sysclk_mhz": 48, "source": "msi" },
-      { "name": "max",     "sysclk_mhz": 80, "source": "hsi16", "pll": true }
-    ]
-  }
+  "updated_at": "2026-03-30T04:04:05.607Z",
+  "description": "The USB-programmable Core.U.1 is based on the 80-MHz 32-bit Cortex-M4 STM32L422 with 128KB flash, 40KB SRAM, and a CoreMark score of 273.55.  The exposed pads provide a user-configurable combination of two fast-mode-plus I2C ports, one SPI port, three 12-bit ADCs, multiple timers, USART, an onboard comparator, and capacitive-touch input.  A programmable onboard LED provides a convenient status indicator.  If more I/O is needed, consider the larger Core.U.2 in a T48-22 package.",
+  "json_version": "0.22",
+  "application_notes": [
+    {
+      "details": "When the chip is blank, it will default into the bootloader when connected over USB.  Once there is code in the program space, you need to hold the BOOT0 pin low during reset (either power-on or via the NRST pin) to enter the bootloader.",
+      "heading": "Bootloading"
+    },
+    {
+      "details": "The onboard LED is connected to PA8 in an active-high configuration.",
+      "heading": "LED"
+    }
+  ]
 }
