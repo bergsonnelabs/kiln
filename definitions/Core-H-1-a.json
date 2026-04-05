@@ -3,7 +3,7 @@
   "name": "H.1",
   "rev": "a",
   "tile_id": 11,
-  "json_version": "0.29",
+  "json_version": "0.30",
   "updated_at": "2026-03-21T16:58:48.000Z",
   "headline": "250MHz Cortex-M33",
   "description": "The Core.H.1 is built around the high-performance STM32H523 250-MHz 32-bit Cortex-M33 processor into a single T44 tile, providing a user-configurable combination of multiple communication interfaces (USB 2.0 full-speed, I2C/I3C, SPI, FDCAN, and UART), along with two 12-bit 5-Msps ADC inputs, one DAC output, and multiple timers.",
