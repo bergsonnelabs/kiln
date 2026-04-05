@@ -96,59 +96,6 @@
         {
           "note": "",
           "type": "digital",
-          "function": "B4",
-          "direction": "bidirectional",
-          "is_default": true
-        },
-        {
-          "note": "",
-          "type": "interface",
-          "function": "I2C3.DAT",
-          "direction": "",
-          "af": 9
-        },
-        {
-          "note": "",
-          "type": "interface",
-          "function": "I3C2.DAT",
-          "direction": "",
-          "af": 10
-        },
-        {
-          "note": "",
-          "type": "interface",
-          "function": "SPI1.MISO",
-          "direction": "",
-          "af": 5
-        },
-        {
-          "note": "",
-          "type": "timer",
-          "function": "TIM3.1",
-          "direction": "",
-          "af": 2
-        },
-        {
-          "note": "",
-          "type": "timer",
-          "function": "LPTIM1.2",
-          "direction": "",
-          "af": 4
-        }
-      ]
-    },
-    {
-      "pad": "3",
-      "geometry": {
-        "size_x": 800,
-        "size_y": 400,
-        "center_x": -1600,
-        "center_y": 0
-      },
-      "functions": [
-        {
-          "note": "",
-          "type": "digital",
           "function": "A8",
           "direction": "bidirectional",
           "is_default": true
@@ -194,6 +141,59 @@
           "function": "TIM8.BKIN2",
           "direction": "",
           "af": 3
+        }
+      ]
+    },
+    {
+      "pad": "3",
+      "geometry": {
+        "size_x": 800,
+        "size_y": 400,
+        "center_x": -1600,
+        "center_y": 0
+      },
+      "functions": [
+        {
+          "note": "",
+          "type": "digital",
+          "function": "B4",
+          "direction": "bidirectional",
+          "is_default": true
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I2C3.DAT",
+          "direction": "",
+          "af": 9
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "I3C2.DAT",
+          "direction": "",
+          "af": 10
+        },
+        {
+          "note": "",
+          "type": "interface",
+          "function": "SPI1.MISO",
+          "direction": "",
+          "af": 5
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "TIM3.1",
+          "direction": "",
+          "af": 2
+        },
+        {
+          "note": "",
+          "type": "timer",
+          "function": "LPTIM1.2",
+          "direction": "",
+          "af": 4
         }
       ]
     },
@@ -813,13 +813,8 @@
     "sources": [
       {
         "type": "hsi16",
-        "frequency_mhz": 16,
-        "description": "16MHz internal RC"
-      },
-      {
-        "type": "hsi48",
-        "frequency_mhz": 48,
-        "description": "48MHz internal RC"
+        "frequency_mhz": 64,
+        "description": "64MHz internal RC (HSI on H5)"
       },
       {
         "type": "csi",
@@ -827,12 +822,30 @@
         "description": "4MHz low-power internal RC"
       }
     ],
-    "default": "hsi48",
+    "default": "hsi16",
     "configurations": [
-      { "name": "low",     "sysclk_mhz": 16,  "source": "hsi16" },
-      { "name": "default", "sysclk_mhz": 48,  "source": "hsi48" },
-      { "name": "high",    "sysclk_mhz": 144, "source": "hsi48", "pll": true },
-      { "name": "max",     "sysclk_mhz": 240, "source": "hsi48", "pll": true }
+      {
+        "name": "low",
+        "sysclk_mhz": 4,
+        "source": "csi"
+      },
+      {
+        "name": "default",
+        "sysclk_mhz": 64,
+        "source": "hsi16"
+      },
+      {
+        "name": "high",
+        "sysclk_mhz": 150,
+        "source": "hsi16",
+        "pll": true
+      },
+      {
+        "name": "max",
+        "sysclk_mhz": 250,
+        "source": "hsi16",
+        "pll": true
+      }
     ]
   }
 }

@@ -60,8 +60,8 @@
       "geometry": {
         "size_x": 1000,
         "size_y": 400,
-        "center_x": -1600,
-        "center_y": 1500
+        "center_x": -1500,
+        "center_y": 1600
       },
       "functions": [
         {
@@ -876,7 +876,7 @@
     "default": "msi",
     "configurations": [
       { "name": "low",     "sysclk_mhz": 1,  "source": "msi", "lp_run": true },
-      { "name": "default", "sysclk_mhz": 4,  "source": "msi" },
+      { "name": "default", "sysclk_mhz": 2,  "source": "msi" },
       { "name": "high",    "sysclk_mhz": 16, "source": "hsi16" },
       { "name": "max",     "sysclk_mhz": 32, "source": "hsi16", "pll": true }
     ]
