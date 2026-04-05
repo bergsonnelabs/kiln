@@ -836,13 +836,15 @@
       },
       {
         "name": "high",
-        "sysclk_mhz": 150,
+        "sysclk_mhz": 128,
+        "note": "64÷4×16÷2, VCO=256",
         "source": "hsi16",
         "pll": true
       },
       {
         "name": "max",
-        "sysclk_mhz": 250,
+        "sysclk_mhz": 248,
+        "note": "64÷8×62÷2, VCO=496",
         "source": "hsi16",
         "pll": true
       }
