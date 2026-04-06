@@ -44,7 +44,7 @@
           "af": 5,
           "note": "",
           "type": "interface",
-          "function": "SPI1.M0SI",
+          "function": "SPI1.MOSI",
           "direction": "bidirectional"
         },
         {
@@ -665,25 +665,25 @@
       "pad_assignments": [
         {
           "pad": "4",
-          "function": "TX",
+          "function": "USART1.TX",
           "is_required": true
         },
         {
           "pad": "5",
-          "function": "RX",
+          "function": "USART1.RX",
           "is_required": true
         },
         {
           "pad": "6",
-          "function": "RTS_DE"
+          "function": "USART1.RTS_DE"
         },
         {
           "pad": "7",
-          "function": "CTS"
+          "function": "USART1.CTS"
         },
         {
           "pad": "8",
-          "function": "CTS"
+          "function": "USART1.CTS"
         }
       ]
     }
@@ -698,8 +698,17 @@
     "pin_source_current": ""
   },
   "updated_at": "2026-03-30T04:04:05.607Z",
+  "bootloaders": [
+    "USB_DFU",
+    "USART1",
+    "USART2",
+    "USART3",
+    "I2C1",
+    "I2C3",
+    "SPI1"
+  ],
   "description": "The USB-programmable Core.U.1 is based on the 80-MHz 32-bit Cortex-M4 STM32L422 with 128KB flash, 40KB SRAM, and a CoreMark score of 273.55.  The exposed pads provide a user-configurable combination of two fast-mode-plus I2C ports, one SPI port, three 12-bit ADCs, multiple timers, USART, an onboard comparator, and capacitive-touch input.  A programmable onboard LED provides a convenient status indicator.  If more I/O is needed, consider the larger Core.U.2 in a T48-22 package.",
-  "json_version": "0.22",
+  "json_version": "0.25",
   "application_notes": [
     {
       "details": "When the chip is blank, it will default into the bootloader when connected over USB.  Once there is code in the program space, you need to hold the BOOT0 pin low during reset (either power-on or via the NRST pin) to enter the bootloader.",

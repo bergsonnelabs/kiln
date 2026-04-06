@@ -3,7 +3,7 @@
   "name": "H.1",
   "rev": "a",
   "tile_id": 11,
-  "json_version": "0.30",
+  "json_version": "0.32",
   "updated_at": "2026-03-21T16:58:48.000Z",
   "headline": "250MHz Cortex-M33",
   "description": "The Core.H.1 is built around the high-performance STM32H523 250-MHz 32-bit Cortex-M33 processor into a single T44 tile, providing a user-configurable combination of multiple communication interfaces (USB 2.0 full-speed, I2C/I3C, SPI, FDCAN, and UART), along with two 12-bit 5-Msps ADC inputs, one DAC output, and multiple timers.",
@@ -465,7 +465,7 @@
         {
           "note": "",
           "type": "interface",
-          "function": "SPI1.SCK",
+          "function": "SPI1.CLK",
           "direction": "",
           "af": 5
         },
@@ -655,12 +655,12 @@
       "pad_assignments": [
         {
           "pad": "2",
-          "function": "I2C3.DAT",
+          "function": "I2C3.CLK",
           "is_required": true
         },
         {
           "pad": "3",
-          "function": "I2C3.CLK",
+          "function": "I2C3.DAT",
           "is_required": true
         }
       ]
@@ -677,12 +677,12 @@
       "pad_assignments": [
         {
           "pad": "2",
-          "function": "SPI1.MISO",
-          "is_required": true
+          "function": "SPI1.RDY"
         },
         {
           "pad": "3",
-          "function": "SPI1.RDY"
+          "function": "SPI1.MISO",
+          "is_required": true
         },
         {
           "pad": "8",
@@ -760,7 +760,7 @@
           "is_required": true
         },
         {
-          "pad": "3",
+          "pad": "2",
           "function": "USB.SOF"
         }
       ]
@@ -776,12 +776,12 @@
       "pad_assignments": [
         {
           "pad": "2",
-          "function": "I3C2.DAT",
+          "function": "I3C2.CLK",
           "is_required": true
         },
         {
           "pad": "3",
-          "function": "I3C2.CLK",
+          "function": "I3C2.DAT",
           "is_required": true
         }
       ]
@@ -812,9 +812,9 @@
   "clock": {
     "sources": [
       {
-        "type": "hsi16",
+        "type": "hsi",
         "frequency_mhz": 64,
-        "description": "64MHz internal RC (HSI on H5)"
+        "description": "64MHz internal RC oscillator"
       },
       {
         "type": "csi",
@@ -822,7 +822,7 @@
         "description": "4MHz low-power internal RC"
       }
     ],
-    "default": "hsi16",
+    "default": "hsi",
     "configurations": [
       {
         "name": "low",
@@ -832,22 +832,33 @@
       {
         "name": "default",
         "sysclk_mhz": 64,
-        "source": "hsi16"
+        "source": "hsi"
       },
       {
         "name": "high",
         "sysclk_mhz": 128,
         "note": "64÷4×16÷2, VCO=256",
-        "source": "hsi16",
+        "source": "hsi",
         "pll": true
       },
       {
         "name": "max",
         "sysclk_mhz": 248,
         "note": "64÷8×62÷2, VCO=496",
-        "source": "hsi16",
+        "source": "hsi",
         "pll": true
       }
     ]
-  }
+  },
+  "bootloaders": [
+    "USB_DFU",
+    "USART1",
+    "USART2",
+    "USART3",
+    "I2C1",
+    "I2C2",
+    "SPI1",
+    "SPI2",
+    "FDCAN1"
+  ]
 }

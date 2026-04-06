@@ -3,10 +3,10 @@
   "name": "L.1",
   "rev": "a",
   "tile_id": 12,
-  "json_version": "0.25",
+  "json_version": "0.27",
   "updated_at": "2026-03-21T16:58:48.000Z",
   "headline": "ultra-low-power Cortex-M0+",
-  "description": "Ultra-low-power ARM Cortex-M0+ core tile built around the STM32L011E4 with 16KB flash, 2KB RAM, and 512 bytes of data EEPROM. Optimized for battery-powered and energy-harvesting applications, with flexible I/O across 14 pads including I2C, USART, and LPUART interfaces, 6 ADC inputs, multiple timer channels, and dual analog comparators. Runs from 1.8\u20133.6V with bootloading and hardware debug via SWD.",
+  "description": "Ultra-low-power ARM Cortex-M0+ core tile built around the STM32L011E4 with 16KB flash, 2KB RAM, and 512 bytes of data EEPROM. Optimized for battery-powered and energy-harvesting applications, with flexible I/O across 14 pads including I2C, USART, and LPUART interfaces, 6 ADC inputs, multiple timer channels, and an analog comparator. Runs from 1.8–3.6V with bootloading and hardware debug via SWD.",
   "application_notes": [
     {
       "sort": 0,
@@ -121,12 +121,6 @@
           "function": "LPUART1.RX",
           "direction": "",
           "af": 6
-        },
-        {
-          "note": "",
-          "type": "other",
-          "function": "COMP2.IN+",
-          "direction": ""
         }
       ]
     },
@@ -259,12 +253,6 @@
           "function": "LPUART1.TX",
           "direction": "",
           "af": 6
-        },
-        {
-          "note": "",
-          "type": "other",
-          "function": "COMP2.IN+",
-          "direction": ""
         }
       ]
     },
@@ -318,12 +306,6 @@
           "function": "LPUART1.RX",
           "direction": "",
           "af": 6
-        },
-        {
-          "note": "",
-          "type": "other",
-          "function": "COMP2.IN+",
-          "direction": ""
         }
       ]
     },
@@ -448,19 +430,6 @@
           "function": "LPUART1.TX",
           "direction": "",
           "af": 6
-        },
-        {
-          "note": "",
-          "type": "other",
-          "function": "COMP2.OUT",
-          "direction": "",
-          "af": 7
-        },
-        {
-          "note": "",
-          "type": "other",
-          "function": "COMP2.IN-",
-          "direction": ""
         }
       ]
     },
@@ -511,12 +480,6 @@
           "note": "",
           "type": "other",
           "function": "COMP1.IN-",
-          "direction": ""
-        },
-        {
-          "note": "",
-          "type": "other",
-          "function": "COMP2.IN-",
           "direction": ""
         }
       ]
@@ -665,13 +628,6 @@
           "function": "LPUART1.TX",
           "direction": "",
           "af": 6
-        },
-        {
-          "note": "",
-          "type": "other",
-          "function": "COMP2.OUT",
-          "direction": "",
-          "af": 7
         },
         {
           "note": "",
@@ -865,7 +821,7 @@
       {
         "type": "msi",
         "frequency_mhz": 4,
-        "description": "Multi-speed internal RC (65kHz\u20134.194MHz)"
+        "description": "Multi-speed internal RC (65kHz–4.194MHz)"
       },
       {
         "type": "hsi16",
@@ -898,5 +854,9 @@
         "pll": true
       }
     ]
-  }
+  },
+  "bootloaders": [
+    "USART2",
+    "SPI1"
+  ]
 }

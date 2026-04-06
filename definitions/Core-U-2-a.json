@@ -46,7 +46,7 @@
           "af": 5,
           "note": "",
           "type": "interface",
-          "function": "SPI1.M0SI",
+          "function": "SPI1.MOSI",
           "direction": "bidirectional"
         },
         {
@@ -1297,10 +1297,6 @@
         {
           "pad": "8",
           "function": "USART2.CTS"
-        },
-        {
-          "pad": "19",
-          "function": "USART2.CK"
         }
       ]
     },
@@ -1324,7 +1320,7 @@
           "function": "LPUART1.CTS"
         },
         {
-          "pad": "16",
+          "pad": "15",
           "function": "LPUART1.RTS_DE"
         }
       ]
@@ -1370,8 +1366,17 @@
     }
   ],
   "updated_at": "2026-03-30T04:08:01.987Z",
+  "bootloaders": [
+    "USB_DFU",
+    "USART1",
+    "USART2",
+    "USART3",
+    "I2C1",
+    "I2C3",
+    "SPI1"
+  ],
   "description": "The expanded-I/O USB-programmable Core.U.2 is based on the same 80-MHz Cortex-M4 STM32L422 as the smaller Core.U.1, with the top 12 pads (1-5 and 16-22) matching the pad layout of the Core.U.1.  The additional I/O pads provide a user-configurable combination of single-wire and trace debugging, two I2C ports, one SPI port, one quad SPI port, ten 12-bit ADC inputs, multiple timers, capacitive-touch inputs, and an on-board comparator.  The board also includes an onboard LED and a physical button for reset and bootloading (see Application Notes).",
-  "json_version": "0.46",
+  "json_version": "0.49",
   "application_notes": [
     {
       "sort": 0,
