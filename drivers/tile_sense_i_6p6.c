@@ -26,6 +26,31 @@ static uint8_t resolve_id(uint8_t instance)
 }
 
 /* ================================================================
+ * Per-instance driver state
+ * ================================================================ */
+
+typedef struct {
+    sense_i_6p6_event_cb_t on_event;
+    void *event_ctx;
+    volatile uint8_t int1_flag;
+    uint8_t int1_pin;
+    uint8_t int2_pin;
+} icm_state_t;
+
+static icm_state_t icm_state[NUM_INSTANCES];
+
+static icm_state_t *state_for(tile_t *tile)
+{
+    for (uint8_t i = 0; i < NUM_INSTANCES; i++)
+        if (id_table[i] == tile->id) return &icm_state[i];
+    return &icm_state[0];
+}
+
+/* INT1 pin EXTI callbacks */
+static void _int1_isr_0(void *ctx) { icm_state[0].int1_flag = 1; (void)ctx; }
+static void _int1_isr_1(void *ctx) { icm_state[1].int1_flag = 1; (void)ctx; }
+
+/* ================================================================
  * Private helpers
  * ================================================================ */
 
@@ -80,7 +105,8 @@ uint8_t tile_sense_i_6p6_find(tiles_hal_t *hal, uint8_t instance)
     return hal->i2c_is_ready(hal->handle, addr) == 0;
 }
 
-void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance, tile_t *tile)
+void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
+                           tile_t *tile, const sense_i_6p6_cfg_t *cfg)
 {
     memzero(tile, sizeof(tile_t));
     tile->hal = hal;
@@ -90,6 +116,16 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance, tile_t *tile)
         tile->state = TILE_STATE_ERROR;
         TILE_ON_ERROR(tile, "sense_i_6p6: invalid instance");
         return;
+    }
+
+    /* Initialize per-instance state */
+    icm_state_t *s = state_for(tile);
+    memzero(s, sizeof(icm_state_t));
+    if (cfg) {
+        s->on_event = cfg->on_event;
+        s->event_ctx = cfg->event_ctx;
+        s->int1_pin = cfg->int1_pin;
+        s->int2_pin = cfg->int2_pin;
     }
 
     /* Probe bus */
@@ -104,10 +140,10 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance, tile_t *tile)
     hal->delay_ms(2);
 
     /* Read WHO_AM_I — store in flags field for debug.
-     * Expected 0x44 per datasheet; 0x46 seen on some revisions.
+     * Expected 0x44 (ICM-42686-P) or 0x47 (ICM-42688-P).
      * Accept any non-0x00/0xFF value (device is responding). */
     uint8_t who = icm_read(tile, ICM42686P_REG_WHO_AM_I);
-    tile->flags = who;  /* Stash for debug readback */
+    tile->flags = who;
     if (who == 0x00 || who == 0xFF) {
         tile->state = TILE_STATE_ERROR;
         TILE_ON_ERROR(tile, "sense_i_6p6: WHO_AM_I read failed");
@@ -120,18 +156,58 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance, tile_t *tile)
     /* INT_CONFIG1: clear INT_ASYNC_RESET (bit 4) for proper INT operation */
     icm_modify(tile, ICM42686P_REG_INT_CONFIG1, 0x10, 0x00);
 
-    /* Default config: ±8g accel, ±1000 dps gyro, both at 100 Hz */
-    icm_write(tile, ICM42686P_REG_ACCEL_CONFIG0,
-              (SENSE_I_6P6_ACCEL_8G << 5) | SENSE_I_6P6_ODR_100HZ);
-    icm_write(tile, ICM42686P_REG_GYRO_CONFIG0,
-              (SENSE_I_6P6_GYRO_1000DPS << 5) | SENSE_I_6P6_ODR_100HZ);
+    /* Apply config or defaults */
+    uint8_t accel_range = (cfg && cfg->accel_range) ? cfg->accel_range : SENSE_I_6P6_ACCEL_8G;
+    uint8_t gyro_range  = (cfg && cfg->gyro_range)  ? cfg->gyro_range  : SENSE_I_6P6_GYRO_1000DPS;
+    uint8_t odr         = (cfg && cfg->odr)         ? cfg->odr         : SENSE_I_6P6_ODR_100HZ;
+
+    icm_write(tile, ICM42686P_REG_ACCEL_CONFIG0, (accel_range << 5) | odr);
+    icm_write(tile, ICM42686P_REG_GYRO_CONFIG0, (gyro_range << 5) | odr);
 
     /* Enable accel + gyro in low-noise mode */
     icm_write(tile, ICM42686P_REG_PWR_MGMT0,
               ICM42686P_PWR_ACCEL_LN | ICM42686P_PWR_GYRO_LN);
     hal->delay_ms(1);  /* >200 µs after mode change */
 
+    /* Set up INT1 pin interrupt if configured */
+    if (s->int1_pin && hal->gpio_irq_enable) {
+        /* Configure INT1: push-pull, active high, pulsed */
+        icm_write(tile, ICM42686P_REG_INT_CONFIG, 0x03);
+        void (*isr)(void *) = (instance == 0) ? _int1_isr_0 : _int1_isr_1;
+        hal->gpio_irq_enable(hal->handle, s->int1_pin,
+                             TILES_GPIO_EDGE_RISING, isr, NULL);
+    }
+
     tile->state = TILE_STATE_READY;
+}
+
+/* ================================================================
+ * Event processing
+ * ================================================================ */
+
+void tile_sense_i_6p6_process(tile_t *tile)
+{
+    if (tile->state != TILE_STATE_READY) return;
+
+    icm_state_t *s = state_for(tile);
+
+    /* In interrupt mode, skip if no INT1 fired */
+    if (s->int1_pin && !s->int1_flag)
+        return;
+    s->int1_flag = 0;
+
+    /* Read and clear INT_STATUS */
+    uint8_t status = icm_read(tile, ICM42686P_REG_INT_STATUS);
+    if (status && s->on_event) {
+        s->on_event(tile, status, s->event_ctx);
+    }
+}
+
+void tile_sense_i_6p6_on_event(tile_t *tile, sense_i_6p6_event_cb_t cb, void *ctx)
+{
+    icm_state_t *s = state_for(tile);
+    s->on_event = cb;
+    s->event_ctx = ctx;
 }
 
 void tile_sense_i_6p6_sleep(tile_t *tile)
@@ -424,8 +500,11 @@ void tile_sense_i_6p6_wom_config(tile_t *tile,
 
 void tile_sense_i_6p6_wom_enable(tile_t *tile)
 {
-    /* WOM_INT_MODE=0 (OR): any axis triggers. Set in SMD_CONFIG[3]. */
-    icm_modify(tile, ICM42686P_REG_SMD_CONFIG, 0x08, 0x00);
+    /* Per datasheet Section 8.6: WOM_INT_MODE=0, WOM_MODE=1, SMD_MODE=1
+     * SMD_CONFIG = 0b00000101 = 0x05
+     * This enables WOM with previous-sample comparison. */
+    icm_write(tile, ICM42686P_REG_SMD_CONFIG, 0x05);
+    tile->hal->delay_ms(50);  /* Datasheet: wait 50ms after enabling */
 }
 
 void tile_sense_i_6p6_wom_disable(tile_t *tile)
