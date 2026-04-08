@@ -150,6 +150,38 @@ typedef struct {
     int (*spi_write)(void* handle, uint8_t cs, uint8_t reg,
                      const uint8_t* data, uint16_t len);
 
+    /* --- GPIO interrupt --- */
+
+    /**
+     * @brief  Enable an edge-triggered interrupt on a GPIO pin.
+     *
+     * Used by drivers for INT, RDY, ALERT, DRDY output pins on tiles.
+     * The callback runs in ISR context — keep it short (set a flag).
+     *
+     * @param  handle  Opaque platform handle
+     * @param  pin     Platform pin identifier (e.g., Core pad number)
+     * @param  edge    0 = falling, 1 = rising, 2 = both edges
+     * @param  cb      Callback to fire on edge event
+     * @param  ctx     User context passed to callback
+     * @return 0 on success, non-zero on error.  NULL if not supported.
+     */
+    int (*gpio_irq_enable)(void* handle, uint8_t pin, uint8_t edge,
+                           void (*cb)(void* ctx), void* ctx);
+
+    /**
+     * @brief  Disable a previously enabled GPIO interrupt.
+     *
+     * @param  handle  Opaque platform handle
+     * @param  pin     Same pin passed to gpio_irq_enable
+     *                 NULL if not supported.
+     */
+    void (*gpio_irq_disable)(void* handle, uint8_t pin);
+
+    /* Edge constants for gpio_irq_enable */
+    #define TILES_GPIO_EDGE_FALLING  0
+    #define TILES_GPIO_EDGE_RISING   1
+    #define TILES_GPIO_EDGE_BOTH     2
+
     /* --- Shared --- */
 
     /**
