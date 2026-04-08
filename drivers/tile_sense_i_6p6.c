@@ -642,8 +642,9 @@ void tile_sense_i_6p6_get_tap_result(tile_t *tile, sense_i_6p6_tap_result_t *res
  * ================================================================ */
 
 void tile_sense_i_6p6_set_gyro_offset(tile_t *tile,
-                                       int16_t x, int16_t y, int16_t z)
+                                       int16_t x_dps16, int16_t y_dps16, int16_t z_dps16)
 {
+    int16_t x = x_dps16, y = y_dps16, z = z_dps16;
     /* 12-bit signed values packed across OFFSET_USER0-4 (Bank 4).
      * Layout: U0=[GX 7:0], U1=[GY 11:8 | GX 11:8], U2=[GY 7:0],
      *         U3=[GZ 7:0], U4=[AX 11:8 | GZ 11:8] */
@@ -658,8 +659,9 @@ void tile_sense_i_6p6_set_gyro_offset(tile_t *tile,
 }
 
 void tile_sense_i_6p6_set_accel_offset(tile_t *tile,
-                                        int16_t x, int16_t y, int16_t z)
+                                        int16_t x_mg, int16_t y_mg, int16_t z_mg)
 {
+    int16_t x = x_mg, y = y_mg, z = z_mg;
     /* 12-bit signed values packed across OFFSET_USER4-8 (Bank 4).
      * Layout: U4=[AX 11:8 | GZ 11:8], U5=[AX 7:0], U6=[AY 7:0],
      *         U7=[AZ 11:8 | AY 11:8], U8=[AZ 7:0] */
