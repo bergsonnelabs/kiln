@@ -57,11 +57,11 @@ TILES_CHECK_VERSION(1, 0);
 /**
  * | Instance | ID   | Hardware config                    |
  * |----------|------|------------------------------------|
- * | 0        | 0x68 | Pad 2 (AD0) floating/GND — default |
- * | 1        | 0x69 | Pad 2 (AD0) tied to VDD            |
+ * | 0        | 0x69 | Pad 2 (AD0) pulled high — default  |
+ * | 1        | 0x68 | Pad 2 (AD0) tied to GND            |
  */
-#define ICM42686P_I2C_ADDR_DEFAULT  0x68
-#define ICM42686P_I2C_ADDR_ALT      0x69
+#define ICM42686P_I2C_ADDR_DEFAULT  0x69
+#define ICM42686P_I2C_ADDR_ALT      0x68
 
 /* ================================================================
  * Register map — Bank 0 (default)
