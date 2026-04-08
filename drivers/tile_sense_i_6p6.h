@@ -12,23 +12,28 @@
  *
  * Platform-agnostic: uses tiles_hal_t for all bus access.
  *
- * Quick start:
+ * Quick start (polling):
  * @code
  *   tile_t imu;
- *   tile_sense_i_6p6_init(&hal, 0, &imu);
- *   if (tile_is_ready(&imu)) {
- *       int16_t accel[3], gyro[3];
- *       tile_sense_i_6p6_get_raw_accels(&imu, accel);
- *       tile_sense_i_6p6_get_raw_gyros(&imu, gyro);
- *       float temp_c = tile_sense_i_6p6_get_temperature(&imu) / 132.48f + 25.0f;
- *   }
+ *   tile_sense_i_6p6_init(core_tiles_hal(&core_i2c3), 0, &imu, NULL);
+ *   int16_t accel[3], gyro[3];
+ *   tile_sense_i_6p6_get_raw_accels(&imu, accel);
+ *   tile_sense_i_6p6_get_raw_gyros(&imu, gyro);
  * @endcode
  *
- * Two tiles on one bus:
+ * Quick start (interrupt-driven with callback):
  * @code
- *   tile_t imu_a, imu_b;
- *   tile_sense_i_6p6_init(&hal, 0, &imu_a);  // AD0 low  → 0x68
- *   tile_sense_i_6p6_init(&hal, 1, &imu_b);  // AD0 high → 0x69
+ *   void on_data(tile_t *t, uint8_t events, void *ctx) {
+ *       int16_t buf[7];
+ *       tile_sense_i_6p6_get_raw_all(t, buf);
+ *   }
+ *   sense_i_6p6_cfg_t cfg = {
+ *       .on_event = on_data,
+ *       .int1_pin = 9,  // Core pad connected to INT1
+ *   };
+ *   tile_sense_i_6p6_init(core_tiles_hal(&core_i2c3), 0, &imu, &cfg);
+ *   tile_sense_i_6p6_int1_data_ready(&imu, 1);
+ *   while (1) { tile_sense_i_6p6_process(&imu); }
  * @endcode
  *
  * Datasheet: TDK InvenSense DS-000639, Rev 1.0
@@ -449,6 +454,44 @@ typedef struct {
 } sense_i_6p6_tap_result_t;
 
 /* ================================================================
+ * Event callback
+ * ================================================================ */
+
+/**
+ * Event callback fired by tile_sense_i_6p6_process() when an interrupt
+ * event is detected. The events parameter is a bitmask of INT_STATUS
+ * register bits (DATA_RDY, FIFO_THS, FIFO_FULL, etc.).
+ *
+ * Always runs in main-loop context (never ISR). I2C is safe to call.
+ */
+typedef void (*sense_i_6p6_event_cb_t)(tile_t *tile, uint8_t events, void *ctx);
+
+/* ================================================================
+ * Configuration
+ * ================================================================ */
+
+/**
+ * Optional init config. Pass NULL for defaults (polling, no interrupts).
+ */
+typedef struct {
+    /* Interrupt pins — set to enable interrupt-driven mode via gpio_irq.
+     * INT1 (tile pad 9): primary interrupt output.
+     * INT2 (tile pad 8): secondary interrupt output.
+     * Set to 0 for polled mode (no interrupt wiring needed). */
+    uint8_t int1_pin;             /**< Core pad number for INT1. 0 = polled. */
+    uint8_t int2_pin;             /**< Core pad number for INT2. 0 = unused. */
+
+    /* Event callback — fired by process() when interrupt events are detected */
+    sense_i_6p6_event_cb_t on_event;  /**< Callback. NULL = no callback. */
+    void *event_ctx;              /**< User context passed to callback. */
+
+    /* Initial sensor config (0 = use defaults: ±8g, ±1000dps, 100Hz) */
+    uint8_t accel_range;          /**< sense_i_6p6_accel_range_t. 0 = default. */
+    uint8_t gyro_range;           /**< sense_i_6p6_gyro_range_t. 0 = default. */
+    uint8_t odr;                  /**< sense_i_6p6_odr_t. 0 = default (100Hz). */
+} sense_i_6p6_cfg_t;
+
+/* ================================================================
  * Public API — Lifecycle
  * ================================================================ */
 
@@ -458,12 +501,27 @@ uint8_t tile_sense_i_6p6_find(tiles_hal_t *hal, uint8_t instance);
 /**
  * @brief  Initialize the ICM-42686P.
  *
- * Performs soft reset, verifies WHO_AM_I (0x44), configures default
- * ranges (±8g, ±1000 DPS) at 100 Hz ODR in low-noise mode.
+ * Performs soft reset, verifies WHO_AM_I, configures sensor ranges
+ * and ODR. Pass cfg=NULL for defaults (±8g, ±1000dps, 100Hz, polled).
  *
  * @note   Blocks for ~2 ms (reset). Call once at startup.
  */
-void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance, tile_t *tile);
+void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
+                           tile_t *tile, const sense_i_6p6_cfg_t *cfg);
+
+/* ---- Event processing ---- */
+
+/**
+ * Process pending interrupt events. Call from your main loop.
+ *
+ * In interrupt mode: returns immediately if no INT1 interrupt fired;
+ * reads INT_STATUS and fires callback only when events are pending.
+ * In polled mode: reads INT_STATUS every call, fires callback if set.
+ */
+void tile_sense_i_6p6_process(tile_t *tile);
+
+/** Register or change the event callback. */
+void tile_sense_i_6p6_on_event(tile_t *tile, sense_i_6p6_event_cb_t cb, void *ctx);
 
 /** @brief  Enter sleep mode (accel + gyro off). ~7.5 µA. */
 void tile_sense_i_6p6_sleep(tile_t *tile);
