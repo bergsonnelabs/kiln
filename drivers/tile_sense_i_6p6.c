@@ -196,10 +196,15 @@ void tile_sense_i_6p6_process(tile_t *tile)
         return;
     s->int1_flag = 0;
 
-    /* Read and clear INT_STATUS */
-    uint8_t status = icm_read(tile, ICM42686P_REG_INT_STATUS);
-    if (status && s->on_event) {
-        s->on_event(tile, status, s->event_ctx);
+    /* Read and clear all three status registers, pack into uint32_t:
+     * bits 7:0 = INT_STATUS, bits 15:8 = INT_STATUS2, bits 23:16 = INT_STATUS3 */
+    uint8_t s0 = icm_read(tile, ICM42686P_REG_INT_STATUS);
+    uint8_t s1 = icm_read(tile, ICM42686P_REG_INT_STATUS2);
+    uint8_t s2 = icm_read(tile, ICM42686P_REG_INT_STATUS3);
+    uint32_t events = (uint32_t)s0 | ((uint32_t)s1 << 8) | ((uint32_t)s2 << 16);
+
+    if (events && s->on_event) {
+        s->on_event(tile, events, s->event_ctx);
     }
 }
 

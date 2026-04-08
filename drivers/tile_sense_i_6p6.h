@@ -458,13 +458,34 @@ typedef struct {
  * ================================================================ */
 
 /**
- * Event callback fired by tile_sense_i_6p6_process() when an interrupt
- * event is detected. The events parameter is a bitmask of INT_STATUS
- * register bits (DATA_RDY, FIFO_THS, FIFO_FULL, etc.).
+ * Event callback fired by tile_sense_i_6p6_process() when interrupt
+ * events are detected. The events parameter packs three status registers:
  *
+ *   bits  7:0  = INT_STATUS  (DATA_RDY, FIFO_THS, FIFO_FULL, RESET_DONE)
+ *   bits 15:8  = INT_STATUS2 (WOM_X, WOM_Y, WOM_Z, SMD)
+ *   bits 23:16 = INT_STATUS3 (TAP_DET, TILT_DET, STEP_DET, STEP_OVF)
+ *
+ * Use SENSE_I_6P6_EV_* macros to check specific events.
  * Always runs in main-loop context (never ISR). I2C is safe to call.
  */
-typedef void (*sense_i_6p6_event_cb_t)(tile_t *tile, uint8_t events, void *ctx);
+typedef void (*sense_i_6p6_event_cb_t)(tile_t *tile, uint32_t events, void *ctx);
+
+/* Packed event masks for the callback events parameter */
+#define SENSE_I_6P6_EV_DATA_RDY     (1UL << 3)   /* INT_STATUS bit 3 */
+#define SENSE_I_6P6_EV_FIFO_THS     (1UL << 2)   /* INT_STATUS bit 2 */
+#define SENSE_I_6P6_EV_FIFO_FULL    (1UL << 1)   /* INT_STATUS bit 1 */
+#define SENSE_I_6P6_EV_RESET_DONE   (1UL << 4)   /* INT_STATUS bit 4 */
+
+#define SENSE_I_6P6_EV_WOM_X        (1UL << 8)   /* INT_STATUS2 bit 0 */
+#define SENSE_I_6P6_EV_WOM_Y        (1UL << 9)   /* INT_STATUS2 bit 1 */
+#define SENSE_I_6P6_EV_WOM_Z        (1UL << 10)  /* INT_STATUS2 bit 2 */
+#define SENSE_I_6P6_EV_SMD          (1UL << 11)   /* INT_STATUS2 bit 3 */
+#define SENSE_I_6P6_EV_WOM_ANY      (SENSE_I_6P6_EV_WOM_X | SENSE_I_6P6_EV_WOM_Y | SENSE_I_6P6_EV_WOM_Z)
+
+#define SENSE_I_6P6_EV_TAP          (1UL << 16)  /* INT_STATUS3 bit 0 */
+#define SENSE_I_6P6_EV_TILT         (1UL << 19)  /* INT_STATUS3 bit 3 */
+#define SENSE_I_6P6_EV_STEP         (1UL << 21)  /* INT_STATUS3 bit 5 */
+#define SENSE_I_6P6_EV_STEP_OVF     (1UL << 20)  /* INT_STATUS3 bit 4 */
 
 /* ================================================================
  * Configuration
