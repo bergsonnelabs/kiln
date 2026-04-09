@@ -41,6 +41,11 @@ static icm_state_t icm_state[NUM_INSTANCES];
 
 static icm_state_t *state_for(tile_t *tile)
 {
+    if (tile->hal->buses & TILES_BUS_SPI) {
+        /* SPI: id is CS index, use directly (clamped to array) */
+        uint8_t idx = tile->id < NUM_INSTANCES ? tile->id : 0;
+        return &icm_state[idx];
+    }
     for (uint8_t i = 0; i < NUM_INSTANCES; i++)
         if (id_table[i] == tile->id) return &icm_state[i];
     return &icm_state[0];
@@ -51,24 +56,37 @@ static void _int1_isr_0(void *ctx) { icm_state[0].int1_flag = 1; (void)ctx; }
 static void _int1_isr_1(void *ctx) { icm_state[1].int1_flag = 1; (void)ctx; }
 
 /* ================================================================
- * Private helpers
+ * Private helpers — bus-agnostic register access
+ *
+ * Dispatches to SPI or I2C based on hal->buses. For SPI, tile->id
+ * holds the CS index. For I2C, it holds the 7-bit device address.
+ * The SPI HAL callbacks handle the read/write bit (0x80) internally.
  * ================================================================ */
 
 static void icm_write(tile_t *tile, uint8_t reg, uint8_t val)
 {
-    tile->hal->i2c_write(tile->hal->handle, tile->id, reg, &val, 1);
+    if (tile->hal->buses & TILES_BUS_SPI)
+        tile->hal->spi_write(tile->hal->handle, tile->id, reg, &val, 1);
+    else
+        tile->hal->i2c_write(tile->hal->handle, tile->id, reg, &val, 1);
 }
 
 static uint8_t icm_read(tile_t *tile, uint8_t reg)
 {
     uint8_t val = 0;
-    tile->hal->i2c_read(tile->hal->handle, tile->id, reg, &val, 1);
+    if (tile->hal->buses & TILES_BUS_SPI)
+        tile->hal->spi_read(tile->hal->handle, tile->id, reg, &val, 1);
+    else
+        tile->hal->i2c_read(tile->hal->handle, tile->id, reg, &val, 1);
     return val;
 }
 
 static void icm_read_buf(tile_t *tile, uint8_t reg, uint8_t *buf, uint16_t len)
 {
-    tile->hal->i2c_read(tile->hal->handle, tile->id, reg, buf, len);
+    if (tile->hal->buses & TILES_BUS_SPI)
+        tile->hal->spi_read(tile->hal->handle, tile->id, reg, buf, len);
+    else
+        tile->hal->i2c_read(tile->hal->handle, tile->id, reg, buf, len);
 }
 
 static void icm_set_bank(tile_t *tile, uint8_t bank)
@@ -98,24 +116,38 @@ static void memzero(void *p, uint8_t n)
  * Lifecycle
  * ================================================================ */
 
+/** @brief Check if a Sense.I.6P6 is present on the bus. */
 uint8_t tile_sense_i_6p6_find(tiles_hal_t *hal, uint8_t instance)
 {
+    if (hal->buses & TILES_BUS_SPI) {
+        /* SPI: no address probe — do a WHO_AM_I read via CS index */
+        uint8_t who = 0;
+        hal->spi_read(hal->handle, instance, ICM42686P_REG_WHO_AM_I, &who, 1);
+        return (who == 0x44 || who == 0x47);
+    }
     uint8_t addr = resolve_id(instance);
     if (!addr) return 0;
     return hal->i2c_is_ready(hal->handle, addr) == 0;
 }
 
+/** @brief Initialize the ICM-42686P. */
 void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
                            tile_t *tile, const sense_i_6p6_cfg_t *cfg)
 {
     memzero(tile, sizeof(tile_t));
     tile->hal = hal;
-    tile->id  = resolve_id(instance);
 
-    if (!tile->id) {
-        tile->state = TILE_STATE_ERROR;
-        TILE_ON_ERROR(tile, "sense_i_6p6: invalid instance");
-        return;
+    if (hal->buses & TILES_BUS_SPI) {
+        /* SPI: id = CS index (instance maps directly) */
+        tile->id = instance;
+    } else {
+        /* I2C: id = 7-bit address from instance table */
+        tile->id = resolve_id(instance);
+        if (!tile->id) {
+            tile->state = TILE_STATE_ERROR;
+            TILE_ON_ERROR(tile, "sense_i_6p6: invalid instance");
+            return;
+        }
     }
 
     /* Initialize per-instance state */
@@ -129,15 +161,19 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
     }
 
     /* Probe bus */
-    if (hal->i2c_is_ready(hal->handle, tile->id) != 0) {
-        tile->state = TILE_STATE_ERROR;
-        TILE_ON_ERROR(tile, "sense_i_6p6: device not found");
-        return;
+    if (hal->buses & TILES_BUS_SPI) {
+        /* SPI: no address probe — verified by WHO_AM_I below */
+    } else {
+        if (hal->i2c_is_ready(hal->handle, tile->id) != 0) {
+            tile->state = TILE_STATE_ERROR;
+            TILE_ON_ERROR(tile, "sense_i_6p6: device not found");
+            return;
+        }
     }
 
     /* Soft reset */
     icm_write(tile, ICM42686P_REG_DEVICE_CONFIG, 0x01);
-    hal->delay_ms(2);
+    hal->delay_ms(10);  /* Datasheet: 1ms min; extra margin for SPI mode switch */
 
     /* Read WHO_AM_I — store in flags field for debug.
      * Expected 0x44 (ICM-42686-P) or 0x47 (ICM-42688-P).
@@ -152,6 +188,12 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
 
     /* Ensure bank 0 */
     icm_set_bank(tile, ICM42686P_BANK_0);
+
+    /* SPI output drive strength (datasheet section 12.3):
+     * SPI_SLEW_RATE must be set to 5 for SPI operation (default is 1 = I2C). */
+    if (hal->buses & TILES_BUS_SPI) {
+        icm_modify(tile, ICM42686P_REG_DRIVE_CONFIG, 0x07, 0x05);
+    }
 
     /* INT_CONFIG1: clear INT_ASYNC_RESET (bit 4) for proper INT operation */
     icm_modify(tile, ICM42686P_REG_INT_CONFIG1, 0x10, 0x00);
@@ -185,6 +227,7 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
  * Event processing
  * ================================================================ */
 
+/** @brief Process pending interrupt events. */
 void tile_sense_i_6p6_process(tile_t *tile)
 {
     if (tile->state != TILE_STATE_READY) return;
@@ -203,6 +246,7 @@ void tile_sense_i_6p6_process(tile_t *tile)
     }
 }
 
+/** @brief Register or change the event callback. */
 void tile_sense_i_6p6_on_event(tile_t *tile, sense_i_6p6_event_cb_t cb, void *ctx)
 {
     icm_state_t *s = state_for(tile);
@@ -210,6 +254,7 @@ void tile_sense_i_6p6_on_event(tile_t *tile, sense_i_6p6_event_cb_t cb, void *ct
     s->event_ctx = ctx;
 }
 
+/** @brief Enter sleep mode (accel + gyro off). */
 void tile_sense_i_6p6_sleep(tile_t *tile)
 {
     icm_write(tile, ICM42686P_REG_PWR_MGMT0,
@@ -217,6 +262,7 @@ void tile_sense_i_6p6_sleep(tile_t *tile)
     tile->state = TILE_STATE_SLEEPING;
 }
 
+/** @brief Wake from sleep, restore low-noise mode. */
 void tile_sense_i_6p6_wake(tile_t *tile)
 {
     icm_write(tile, ICM42686P_REG_PWR_MGMT0,
@@ -225,6 +271,7 @@ void tile_sense_i_6p6_wake(tile_t *tile)
     tile->state = TILE_STATE_READY;
 }
 
+/** @brief Software reset. Must call init() again after. */
 void tile_sense_i_6p6_reset(tile_t *tile)
 {
     icm_write(tile, ICM42686P_REG_DEVICE_CONFIG, 0x01);
@@ -236,26 +283,31 @@ void tile_sense_i_6p6_reset(tile_t *tile)
  * Configuration
  * ================================================================ */
 
+/** @brief Set accelerometer full-scale range. */
 void tile_sense_i_6p6_set_accel_range(tile_t *tile, sense_i_6p6_accel_range_t range)
 {
     icm_modify(tile, ICM42686P_REG_ACCEL_CONFIG0, 0xE0, (uint8_t)range << 5);
 }
 
+/** @brief Set gyroscope full-scale range. */
 void tile_sense_i_6p6_set_gyro_range(tile_t *tile, sense_i_6p6_gyro_range_t range)
 {
     icm_modify(tile, ICM42686P_REG_GYRO_CONFIG0, 0xE0, (uint8_t)range << 5);
 }
 
+/** @brief Set accelerometer output data rate. */
 void tile_sense_i_6p6_set_accel_odr(tile_t *tile, sense_i_6p6_odr_t odr)
 {
     icm_modify(tile, ICM42686P_REG_ACCEL_CONFIG0, 0x0F, (uint8_t)odr);
 }
 
+/** @brief Set gyroscope output data rate. */
 void tile_sense_i_6p6_set_gyro_odr(tile_t *tile, sense_i_6p6_odr_t odr)
 {
     icm_modify(tile, ICM42686P_REG_GYRO_CONFIG0, 0x0F, (uint8_t)odr);
 }
 
+/** @brief Set power mode independently for accel and gyro. */
 void tile_sense_i_6p6_set_power_mode(tile_t *tile,
                                       sense_i_6p6_power_mode_t accel,
                                       sense_i_6p6_power_mode_t gyro)
@@ -265,6 +317,7 @@ void tile_sense_i_6p6_set_power_mode(tile_t *tile,
     tile->hal->delay_ms(1);  /* >200 µs */
 }
 
+/** @brief Set UI filter bandwidth for both accel and gyro. */
 void tile_sense_i_6p6_set_filter_bw(tile_t *tile,
                                      sense_i_6p6_filter_bw_t accel_bw,
                                      sense_i_6p6_filter_bw_t gyro_bw)
@@ -273,6 +326,7 @@ void tile_sense_i_6p6_set_filter_bw(tile_t *tile,
               ((uint8_t)accel_bw << 4) | (uint8_t)gyro_bw);
 }
 
+/** @brief Set UI filter order for accel and gyro. */
 void tile_sense_i_6p6_set_filter_order(tile_t *tile,
                                         sense_i_6p6_filter_order_t accel_order,
                                         sense_i_6p6_filter_order_t gyro_order)
@@ -281,11 +335,13 @@ void tile_sense_i_6p6_set_filter_order(tile_t *tile,
     icm_modify(tile, ICM42686P_REG_ACCEL_CONFIG1, 0x18, (uint8_t)accel_order << 3);
 }
 
+/** @brief Set temperature sensor filter bandwidth. */
 void tile_sense_i_6p6_set_temp_filter(tile_t *tile, sense_i_6p6_temp_filter_t bw)
 {
     icm_modify(tile, ICM42686P_REG_GYRO_CONFIG1, 0xE0, (uint8_t)bw << 5);
 }
 
+/** @brief Enable or disable the temperature sensor. */
 void tile_sense_i_6p6_set_temp_enabled(tile_t *tile, uint8_t enabled)
 {
     icm_modify(tile, ICM42686P_REG_PWR_MGMT0, 0x20, enabled ? 0x00 : 0x20);
@@ -295,11 +351,13 @@ void tile_sense_i_6p6_set_temp_enabled(tile_t *tile, uint8_t enabled)
  * Data reads
  * ================================================================ */
 
+/** @brief Check if new sensor data is available. */
 uint8_t tile_sense_i_6p6_data_ready(tile_t *tile)
 {
     return (icm_read(tile, ICM42686P_REG_INT_STATUS) & ICM42686P_INT_DATA_RDY) != 0;
 }
 
+/** @brief Read raw accelerometer [X, Y, Z]. */
 void tile_sense_i_6p6_get_raw_accels(tile_t *tile, int16_t *buffer)
 {
     uint8_t raw[6];
@@ -309,6 +367,7 @@ void tile_sense_i_6p6_get_raw_accels(tile_t *tile, int16_t *buffer)
     buffer[2] = swap16(raw[4], raw[5]);
 }
 
+/** @brief Read raw gyroscope [X, Y, Z]. */
 void tile_sense_i_6p6_get_raw_gyros(tile_t *tile, int16_t *buffer)
 {
     uint8_t raw[6];
@@ -318,6 +377,7 @@ void tile_sense_i_6p6_get_raw_gyros(tile_t *tile, int16_t *buffer)
     buffer[2] = swap16(raw[4], raw[5]);
 }
 
+/** @brief Burst read accel + gyro [AX, AY, AZ, GX, GY, GZ]. */
 void tile_sense_i_6p6_get_raw_6dof(tile_t *tile, int16_t *buffer)
 {
     uint8_t raw[12];
@@ -330,6 +390,7 @@ void tile_sense_i_6p6_get_raw_6dof(tile_t *tile, int16_t *buffer)
     buffer[5] = swap16(raw[10], raw[11]);
 }
 
+/** @brief Read temperature raw value. */
 int16_t tile_sense_i_6p6_get_temperature(tile_t *tile)
 {
     uint8_t raw[2];
@@ -337,19 +398,28 @@ int16_t tile_sense_i_6p6_get_temperature(tile_t *tile)
     return swap16(raw[0], raw[1]);
 }
 
+/** @brief Read all 7 channels [Temp, AX, AY, AZ, GX, GY, GZ]. */
 void tile_sense_i_6p6_get_raw_all(tile_t *tile, int16_t *buffer)
 {
-    /* Burst: TEMP_H(0x1D) through GYRO_Z_L(0x2A) = 14 bytes = 7 × int16 */
-    uint8_t raw[14];
-    icm_read_buf(tile, ICM42686P_REG_TEMP_H, raw, 14);
-    for (int i = 0; i < 7; i++)
-        buffer[i] = swap16(raw[i * 2], raw[i * 2 + 1]);
+    /* Read temperature separately, then burst accel+gyro from 0x1F.
+     * A single 14-byte burst starting at TEMP_H (0x1D) is unreliable
+     * over SPI on the ICM-42686P — subsequent reads return 0xFF.
+     * Splitting into temp + 6dof avoids this. */
+    uint8_t tmp[2];
+    icm_read_buf(tile, ICM42686P_REG_TEMP_H, tmp, 2);
+    buffer[0] = swap16(tmp[0], tmp[1]);
+
+    uint8_t raw[12];
+    icm_read_buf(tile, ICM42686P_REG_ACCEL_X_H, raw, 12);
+    for (int i = 0; i < 6; i++)
+        buffer[i + 1] = swap16(raw[i * 2], raw[i * 2 + 1]);
 }
 
 /* ================================================================
  * FIFO
  * ================================================================ */
 
+/** @brief Configure the FIFO. */
 void tile_sense_i_6p6_fifo_config(tile_t *tile, sense_i_6p6_fifo_mode_t mode,
                                    uint8_t accel, uint8_t gyro,
                                    uint8_t temp, uint8_t hires)
@@ -366,6 +436,7 @@ void tile_sense_i_6p6_fifo_config(tile_t *tile, sense_i_6p6_fifo_mode_t mode,
     icm_write(tile, ICM42686P_REG_FIFO_CONFIG1, cfg1);
 }
 
+/** @brief Set the FIFO watermark threshold in records. */
 void tile_sense_i_6p6_fifo_set_watermark(tile_t *tile, uint16_t records)
 {
     if (records == 0) records = 1;  /* 0 is invalid per datasheet */
@@ -373,11 +444,13 @@ void tile_sense_i_6p6_fifo_set_watermark(tile_t *tile, uint16_t records)
     icm_write(tile, ICM42686P_REG_FIFO_CONFIG3, (uint8_t)((records >> 8) & 0x0F));
 }
 
+/** @brief Flush the FIFO (discard all data). */
 void tile_sense_i_6p6_fifo_flush(tile_t *tile)
 {
     icm_write(tile, ICM42686P_REG_SIGNAL_PATH_RESET, ICM42686P_FIFO_FLUSH);
 }
 
+/** @brief Read the FIFO record count. */
 uint16_t tile_sense_i_6p6_fifo_count(tile_t *tile)
 {
     uint8_t raw[2];
@@ -387,6 +460,7 @@ uint16_t tile_sense_i_6p6_fifo_count(tile_t *tile)
     return ((uint16_t)raw[0] << 8) | raw[1];
 }
 
+/** @brief Read one standard FIFO packet (16 bytes). */
 uint8_t tile_sense_i_6p6_fifo_read_packet(tile_t *tile, sense_i_6p6_fifo_packet_t *pkt)
 {
     uint8_t raw[16];
@@ -410,6 +484,7 @@ uint8_t tile_sense_i_6p6_fifo_read_packet(tile_t *tile, sense_i_6p6_fifo_packet_
     return 1;
 }
 
+/** @brief Read multiple FIFO packets. */
 uint16_t tile_sense_i_6p6_fifo_read_packets(tile_t *tile,
                                               sense_i_6p6_fifo_packet_t *packets,
                                               uint16_t max_count)
@@ -426,6 +501,7 @@ uint16_t tile_sense_i_6p6_fifo_read_packets(tile_t *tile,
     return read;
 }
 
+/** @brief Get the number of lost FIFO packets since last check. */
 uint16_t tile_sense_i_6p6_fifo_lost_count(tile_t *tile)
 {
     uint8_t lo = icm_read(tile, ICM42686P_REG_FIFO_LOST_PKT0);
@@ -437,38 +513,45 @@ uint16_t tile_sense_i_6p6_fifo_lost_count(tile_t *tile)
  * Interrupts
  * ================================================================ */
 
+/** @brief Configure INT1 pin behavior. */
 void tile_sense_i_6p6_int1_config(tile_t *tile, uint8_t config)
 {
     /* INT_CONFIG bits [2:0] = INT1_POLARITY, INT1_DRIVE, INT1_MODE */
     icm_modify(tile, ICM42686P_REG_INT_CONFIG, 0x07, config);
 }
 
+/** @brief Route data-ready interrupt to INT1. */
 void tile_sense_i_6p6_int1_data_ready(tile_t *tile, uint8_t enabled)
 {
     icm_modify(tile, ICM42686P_REG_INT_SOURCE0, 0x08, enabled ? 0x08 : 0x00);
 }
 
+/** @brief Route FIFO watermark interrupt to INT1. */
 void tile_sense_i_6p6_int1_fifo_ths(tile_t *tile, uint8_t enabled)
 {
     icm_modify(tile, ICM42686P_REG_INT_SOURCE0, 0x04, enabled ? 0x04 : 0x00);
 }
 
+/** @brief Route WOM (wake-on-motion) interrupt to INT1. */
 void tile_sense_i_6p6_int1_wom(tile_t *tile, uint8_t enabled)
 {
     uint8_t val = enabled ? 0x07 : 0x00;  /* WOM_X, WOM_Y, WOM_Z */
     icm_modify(tile, ICM42686P_REG_INT_SOURCE1, 0x07, val);
 }
 
+/** @brief Read and clear INT_STATUS register. */
 uint8_t tile_sense_i_6p6_get_int_status(tile_t *tile)
 {
     return icm_read(tile, ICM42686P_REG_INT_STATUS);
 }
 
+/** @brief Read and clear INT_STATUS2 (WOM/SMD flags). */
 uint8_t tile_sense_i_6p6_get_int_status2(tile_t *tile)
 {
     return icm_read(tile, ICM42686P_REG_INT_STATUS2);
 }
 
+/** @brief Read and clear INT_STATUS3 (APEX: step/tilt/tap flags). */
 uint8_t tile_sense_i_6p6_get_int_status3(tile_t *tile)
 {
     return icm_read(tile, ICM42686P_REG_INT_STATUS3);
@@ -478,6 +561,7 @@ uint8_t tile_sense_i_6p6_get_int_status3(tile_t *tile)
  * Wake on Motion (WOM)
  * ================================================================ */
 
+/** @brief Configure Wake-on-Motion thresholds. */
 void tile_sense_i_6p6_wom_config(tile_t *tile,
                                   uint16_t x_mg, uint16_t y_mg, uint16_t z_mg,
                                   sense_i_6p6_wom_mode_t mode)
@@ -498,6 +582,7 @@ void tile_sense_i_6p6_wom_config(tile_t *tile,
     icm_modify(tile, ICM42686P_REG_SMD_CONFIG, 0x04, (uint8_t)mode << 2);
 }
 
+/** @brief Enable WOM. */
 void tile_sense_i_6p6_wom_enable(tile_t *tile)
 {
     /* Per datasheet Section 8.6: WOM_INT_MODE=0, WOM_MODE=1, SMD_MODE=1
@@ -507,6 +592,7 @@ void tile_sense_i_6p6_wom_enable(tile_t *tile)
     tile->hal->delay_ms(50);  /* Datasheet: wait 50ms after enabling */
 }
 
+/** @brief Disable WOM. */
 void tile_sense_i_6p6_wom_disable(tile_t *tile)
 {
     /* Clear WOM threshold registers (set to 0 = disabled) */
@@ -521,6 +607,7 @@ void tile_sense_i_6p6_wom_disable(tile_t *tile)
  * Significant Motion Detection (SMD)
  * ================================================================ */
 
+/** @brief Configure and enable SMD. */
 void tile_sense_i_6p6_smd_config(tile_t *tile, sense_i_6p6_smd_mode_t mode)
 {
     icm_modify(tile, ICM42686P_REG_SMD_CONFIG, 0x03, (uint8_t)mode);
@@ -549,6 +636,7 @@ static void dmp_init_if_needed(tile_t *tile)
  * APEX: Pedometer
  * ================================================================ */
 
+/** @brief Enable the pedometer (step counter + step detector). */
 void tile_sense_i_6p6_pedometer_enable(tile_t *tile, sense_i_6p6_dmp_odr_t dmp_odr)
 {
     dmp_init_if_needed(tile);
@@ -560,11 +648,13 @@ void tile_sense_i_6p6_pedometer_enable(tile_t *tile, sense_i_6p6_dmp_odr_t dmp_o
     icm_write(tile, ICM42686P_REG_APEX_CONFIG0, cfg0);
 }
 
+/** @brief Disable the pedometer. */
 void tile_sense_i_6p6_pedometer_disable(tile_t *tile)
 {
     icm_modify(tile, ICM42686P_REG_APEX_CONFIG0, 0x20, 0x00);  /* Clear PED_ENABLE */
 }
 
+/** @brief Read the step count. */
 uint16_t tile_sense_i_6p6_get_step_count(tile_t *tile)
 {
     /* 42686P byte order: DATA0 = low, DATA1 = high (opposite from 42688P!) */
@@ -573,11 +663,13 @@ uint16_t tile_sense_i_6p6_get_step_count(tile_t *tile)
     return ((uint16_t)hi << 8) | lo;
 }
 
+/** @brief Read the step cadence. */
 uint8_t tile_sense_i_6p6_get_step_cadence(tile_t *tile)
 {
     return icm_read(tile, ICM42686P_REG_APEX_DATA2);
 }
 
+/** @brief Read the activity classification. */
 sense_i_6p6_activity_t tile_sense_i_6p6_get_activity(tile_t *tile)
 {
     return (sense_i_6p6_activity_t)(icm_read(tile, ICM42686P_REG_APEX_DATA3) & 0x03);
@@ -587,6 +679,7 @@ sense_i_6p6_activity_t tile_sense_i_6p6_get_activity(tile_t *tile)
  * APEX: Tilt Detection
  * ================================================================ */
 
+/** @brief Enable tilt detection. */
 void tile_sense_i_6p6_tilt_enable(tile_t *tile, uint8_t wait_seconds)
 {
     dmp_init_if_needed(tile);
@@ -606,6 +699,7 @@ void tile_sense_i_6p6_tilt_enable(tile_t *tile, uint8_t wait_seconds)
     icm_modify(tile, ICM42686P_REG_APEX_CONFIG0, 0x10, 0x10);
 }
 
+/** @brief Disable tilt detection. */
 void tile_sense_i_6p6_tilt_disable(tile_t *tile)
 {
     icm_modify(tile, ICM42686P_REG_APEX_CONFIG0, 0x10, 0x00);
@@ -615,17 +709,20 @@ void tile_sense_i_6p6_tilt_disable(tile_t *tile)
  * APEX: Tap Detection
  * ================================================================ */
 
+/** @brief Enable tap detection (single + double tap). */
 void tile_sense_i_6p6_tap_enable(tile_t *tile)
 {
     dmp_init_if_needed(tile);
     icm_modify(tile, ICM42686P_REG_APEX_CONFIG0, 0x40, 0x40);
 }
 
+/** @brief Disable tap detection. */
 void tile_sense_i_6p6_tap_disable(tile_t *tile)
 {
     icm_modify(tile, ICM42686P_REG_APEX_CONFIG0, 0x40, 0x00);
 }
 
+/** @brief Read the last tap detection result. */
 void tile_sense_i_6p6_get_tap_result(tile_t *tile, sense_i_6p6_tap_result_t *result)
 {
     uint8_t d4 = icm_read(tile, ICM42686P_REG_APEX_DATA4);
@@ -641,6 +738,7 @@ void tile_sense_i_6p6_get_tap_result(tile_t *tile, sense_i_6p6_tap_result_t *res
  * Advanced: User offsets
  * ================================================================ */
 
+/** @brief Set user-programmable gyro offset. */
 void tile_sense_i_6p6_set_gyro_offset(tile_t *tile,
                                        int16_t x_dps16, int16_t y_dps16, int16_t z_dps16)
 {
@@ -658,6 +756,7 @@ void tile_sense_i_6p6_set_gyro_offset(tile_t *tile,
     icm_set_bank(tile, ICM42686P_BANK_0);
 }
 
+/** @brief Set user-programmable accel offset. */
 void tile_sense_i_6p6_set_accel_offset(tile_t *tile,
                                         int16_t x_mg, int16_t y_mg, int16_t z_mg)
 {
@@ -679,6 +778,7 @@ void tile_sense_i_6p6_set_accel_offset(tile_t *tile,
  * Advanced: Self-test
  * ================================================================ */
 
+/** @brief Perform self-test for both accel and gyro. */
 uint8_t tile_sense_i_6p6_self_test(tile_t *tile, uint8_t *accel_pass, uint8_t *gyro_pass)
 {
     /* Save current state */
@@ -758,6 +858,7 @@ uint8_t tile_sense_i_6p6_self_test(tile_t *tile, uint8_t *accel_pass, uint8_t *g
  * Advanced: Generic register access
  * ================================================================ */
 
+/** @brief Read a register from any bank. */
 uint8_t tile_sense_i_6p6_read_reg(tile_t *tile, uint8_t bank, uint8_t reg)
 {
     if (bank != ICM42686P_BANK_0) icm_set_bank(tile, bank);
@@ -766,6 +867,7 @@ uint8_t tile_sense_i_6p6_read_reg(tile_t *tile, uint8_t bank, uint8_t reg)
     return val;
 }
 
+/** @brief Write a register in any bank. */
 void tile_sense_i_6p6_write_reg(tile_t *tile, uint8_t bank, uint8_t reg, uint8_t val)
 {
     if (bank != ICM42686P_BANK_0) icm_set_bank(tile, bank);
