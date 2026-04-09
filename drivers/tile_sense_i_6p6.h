@@ -1,6 +1,7 @@
 /**
  * @file   tile_sense_i_6p6.h
  * @brief  Complete driver for the Sense.I.6P6 tile (ICM-42686-P).
+ *         Supports both I2C and SPI bus access via tiles_hal_t.
  * @version 1.0.0
  *
  * 6-axis IMU with extended measurement range:
@@ -12,7 +13,7 @@
  *
  * Platform-agnostic: uses tiles_hal_t for all bus access.
  *
- * Quick start (polling):
+ * Quick start — I2C (polling):
  * @code
  *   tile_t imu;
  *   tile_sense_i_6p6_init(core_tiles_hal(&core_i2c3), 0, &imu, NULL);
@@ -21,7 +22,21 @@
  *   tile_sense_i_6p6_get_raw_gyros(&imu, gyro);
  * @endcode
  *
- * Quick start (interrupt-driven with callback):
+ * Quick start — SPI:
+ * @code
+ *   tiles_hal_core_cfg_t cfg = {
+ *       .spi = &core_spi1,
+ *       .buses = TILES_BUS_SPI,
+ *       .cs = { [0] = { .port = (tiles_gpio_t *)GPIOA, .pin = 4 } },
+ *   };
+ *   tiles_hal_t hal;
+ *   tiles_hal_core_init(&hal, &cfg);
+ *
+ *   tile_t imu;
+ *   tile_sense_i_6p6_init(&hal, 0, &imu, NULL);
+ * @endcode
+ *
+ * Quick start — interrupt-driven with callback:
  * @code
  *   void on_data(tile_t *t, uint8_t events, void *ctx) {
  *       int16_t buf[7];
