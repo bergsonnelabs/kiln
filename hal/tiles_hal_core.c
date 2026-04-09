@@ -108,12 +108,14 @@ static int core_spi_read(void* handle, uint8_t cs, uint8_t reg,
     ll_gpio_clear((GPIO_TypeDef*)s_cfg->cs[cs].port,
                   1UL << s_cfg->cs[cs].pin);
 
-    /* Send read command (register | read bit) */
-    uint8_t cmd = reg | 0x80;
-    hal_spi_write(h, &cmd, 1);
-
-    /* Clock in data */
-    hal_spi_read(h, data, (uint32_t)len);
+    /* Send read command and clock in data using full-duplex transfers.
+     * Using hal_spi_transfer (not separate write+read) avoids a FIFO
+     * synchronization issue on the STM32L4 old SPI IP where splitting
+     * the command byte and data bytes into separate write/read calls
+     * can leave stale data in the RX FIFO. */
+    (void)hal_spi_transfer(h, reg | 0x80);  /* Command byte, discard RX */
+    for (uint16_t i = 0; i < len; i++)
+        data[i] = hal_spi_transfer(h, 0x00);
 
     /* Deassert CS */
     ll_gpio_set((GPIO_TypeDef*)s_cfg->cs[cs].port,
@@ -137,12 +139,10 @@ static int core_spi_write(void* handle, uint8_t cs, uint8_t reg,
     ll_gpio_clear((GPIO_TypeDef*)s_cfg->cs[cs].port,
                   1UL << s_cfg->cs[cs].pin);
 
-    /* Send write command (register with read bit cleared) */
-    uint8_t cmd = reg & 0x7F;
-    hal_spi_write(h, &cmd, 1);
-
-    /* Send data */
-    hal_spi_write(h, data, (uint32_t)len);
+    /* Send write command + data using full-duplex transfers */
+    (void)hal_spi_transfer(h, reg & 0x7F);
+    for (uint16_t i = 0; i < len; i++)
+        (void)hal_spi_transfer(h, data[i]);
 
     /* Deassert CS */
     ll_gpio_set((GPIO_TypeDef*)s_cfg->cs[cs].port,

@@ -379,11 +379,18 @@ int16_t tile_sense_i_6p6_get_temperature(tile_t *tile)
 
 void tile_sense_i_6p6_get_raw_all(tile_t *tile, int16_t *buffer)
 {
-    /* Burst: TEMP_H(0x1D) through GYRO_Z_L(0x2A) = 14 bytes = 7 × int16 */
-    uint8_t raw[14];
-    icm_read_buf(tile, ICM42686P_REG_TEMP_H, raw, 14);
-    for (int i = 0; i < 7; i++)
-        buffer[i] = swap16(raw[i * 2], raw[i * 2 + 1]);
+    /* Read temperature separately, then burst accel+gyro from 0x1F.
+     * A single 14-byte burst starting at TEMP_H (0x1D) is unreliable
+     * over SPI on the ICM-42686P — subsequent reads return 0xFF.
+     * Splitting into temp + 6dof avoids this. */
+    uint8_t tmp[2];
+    icm_read_buf(tile, ICM42686P_REG_TEMP_H, tmp, 2);
+    buffer[0] = swap16(tmp[0], tmp[1]);
+
+    uint8_t raw[12];
+    icm_read_buf(tile, ICM42686P_REG_ACCEL_X_H, raw, 12);
+    for (int i = 0; i < 6; i++)
+        buffer[i + 1] = swap16(raw[i * 2], raw[i * 2 + 1]);
 }
 
 /* ================================================================
