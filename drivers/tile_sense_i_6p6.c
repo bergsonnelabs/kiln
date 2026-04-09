@@ -41,6 +41,11 @@ static icm_state_t icm_state[NUM_INSTANCES];
 
 static icm_state_t *state_for(tile_t *tile)
 {
+    if (tile->hal->buses & TILES_BUS_SPI) {
+        /* SPI: id is CS index, use directly (clamped to array) */
+        uint8_t idx = tile->id < NUM_INSTANCES ? tile->id : 0;
+        return &icm_state[idx];
+    }
     for (uint8_t i = 0; i < NUM_INSTANCES; i++)
         if (id_table[i] == tile->id) return &icm_state[i];
     return &icm_state[0];
@@ -51,24 +56,37 @@ static void _int1_isr_0(void *ctx) { icm_state[0].int1_flag = 1; (void)ctx; }
 static void _int1_isr_1(void *ctx) { icm_state[1].int1_flag = 1; (void)ctx; }
 
 /* ================================================================
- * Private helpers
+ * Private helpers — bus-agnostic register access
+ *
+ * Dispatches to SPI or I2C based on hal->buses. For SPI, tile->id
+ * holds the CS index. For I2C, it holds the 7-bit device address.
+ * The SPI HAL callbacks handle the read/write bit (0x80) internally.
  * ================================================================ */
 
 static void icm_write(tile_t *tile, uint8_t reg, uint8_t val)
 {
-    tile->hal->i2c_write(tile->hal->handle, tile->id, reg, &val, 1);
+    if (tile->hal->buses & TILES_BUS_SPI)
+        tile->hal->spi_write(tile->hal->handle, tile->id, reg, &val, 1);
+    else
+        tile->hal->i2c_write(tile->hal->handle, tile->id, reg, &val, 1);
 }
 
 static uint8_t icm_read(tile_t *tile, uint8_t reg)
 {
     uint8_t val = 0;
-    tile->hal->i2c_read(tile->hal->handle, tile->id, reg, &val, 1);
+    if (tile->hal->buses & TILES_BUS_SPI)
+        tile->hal->spi_read(tile->hal->handle, tile->id, reg, &val, 1);
+    else
+        tile->hal->i2c_read(tile->hal->handle, tile->id, reg, &val, 1);
     return val;
 }
 
 static void icm_read_buf(tile_t *tile, uint8_t reg, uint8_t *buf, uint16_t len)
 {
-    tile->hal->i2c_read(tile->hal->handle, tile->id, reg, buf, len);
+    if (tile->hal->buses & TILES_BUS_SPI)
+        tile->hal->spi_read(tile->hal->handle, tile->id, reg, buf, len);
+    else
+        tile->hal->i2c_read(tile->hal->handle, tile->id, reg, buf, len);
 }
 
 static void icm_set_bank(tile_t *tile, uint8_t bank)
@@ -100,6 +118,12 @@ static void memzero(void *p, uint8_t n)
 
 uint8_t tile_sense_i_6p6_find(tiles_hal_t *hal, uint8_t instance)
 {
+    if (hal->buses & TILES_BUS_SPI) {
+        /* SPI: no address probe — do a WHO_AM_I read via CS index */
+        uint8_t who = 0;
+        hal->spi_read(hal->handle, instance, ICM42686P_REG_WHO_AM_I, &who, 1);
+        return (who == 0x44 || who == 0x47);
+    }
     uint8_t addr = resolve_id(instance);
     if (!addr) return 0;
     return hal->i2c_is_ready(hal->handle, addr) == 0;
@@ -110,12 +134,18 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
 {
     memzero(tile, sizeof(tile_t));
     tile->hal = hal;
-    tile->id  = resolve_id(instance);
 
-    if (!tile->id) {
-        tile->state = TILE_STATE_ERROR;
-        TILE_ON_ERROR(tile, "sense_i_6p6: invalid instance");
-        return;
+    if (hal->buses & TILES_BUS_SPI) {
+        /* SPI: id = CS index (instance maps directly) */
+        tile->id = instance;
+    } else {
+        /* I2C: id = 7-bit address from instance table */
+        tile->id = resolve_id(instance);
+        if (!tile->id) {
+            tile->state = TILE_STATE_ERROR;
+            TILE_ON_ERROR(tile, "sense_i_6p6: invalid instance");
+            return;
+        }
     }
 
     /* Initialize per-instance state */
@@ -129,15 +159,19 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
     }
 
     /* Probe bus */
-    if (hal->i2c_is_ready(hal->handle, tile->id) != 0) {
-        tile->state = TILE_STATE_ERROR;
-        TILE_ON_ERROR(tile, "sense_i_6p6: device not found");
-        return;
+    if (hal->buses & TILES_BUS_SPI) {
+        /* SPI: no address probe — verified by WHO_AM_I below */
+    } else {
+        if (hal->i2c_is_ready(hal->handle, tile->id) != 0) {
+            tile->state = TILE_STATE_ERROR;
+            TILE_ON_ERROR(tile, "sense_i_6p6: device not found");
+            return;
+        }
     }
 
     /* Soft reset */
     icm_write(tile, ICM42686P_REG_DEVICE_CONFIG, 0x01);
-    hal->delay_ms(2);
+    hal->delay_ms(10);  /* Datasheet: 1ms min; extra margin for SPI mode switch */
 
     /* Read WHO_AM_I — store in flags field for debug.
      * Expected 0x44 (ICM-42686-P) or 0x47 (ICM-42688-P).
@@ -152,6 +186,12 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
 
     /* Ensure bank 0 */
     icm_set_bank(tile, ICM42686P_BANK_0);
+
+    /* SPI output drive strength (datasheet section 12.3):
+     * SPI_SLEW_RATE must be set to 5 for SPI operation (default is 1 = I2C). */
+    if (hal->buses & TILES_BUS_SPI) {
+        icm_modify(tile, ICM42686P_REG_DRIVE_CONFIG, 0x07, 0x05);
+    }
 
     /* INT_CONFIG1: clear INT_ASYNC_RESET (bit 4) for proper INT operation */
     icm_modify(tile, ICM42686P_REG_INT_CONFIG1, 0x10, 0x00);
