@@ -137,14 +137,14 @@ static void _rdy_isr_1(void *ctx) { state[1].rdy_flag = 1; (void)ctx; }
  * Lifecycle
  * ================================================================ */
 
-uint8_t tile_sense_t_c_find(tiles_hal_t *hal, uint8_t instance)
+uint8_t tile_sense_t_c_find(tiles_pal_t *hal, uint8_t instance)
 {
     uint8_t addr = resolve_id(instance);
     if (!addr) return 0;
     return hal->i2c_is_ready(hal->handle, addr) == 0;
 }
 
-void tile_sense_t_c_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_t_c_init(tiles_pal_t *hal, uint8_t instance,
                          tile_t *tile, const sense_t_c_cfg_t *cfg)
 {
     memzero(tile, sizeof(tile_t));

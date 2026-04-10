@@ -2,7 +2,7 @@
  * @file   tile_drive_a_2.h
  * @brief  Dual-channel audio output driver for the Drive.A.2 tile
  *         (DAC63202W smart DAC + 2x TPA2028D1 Class-D amplifiers).
- *         Supports I2C and SPI bus access via tiles_hal_t.
+ *         Supports I2C and SPI bus access via tiles_pal_t.
  * @version 2.0.0
  *
  * The Drive.A.2 tile provides two independent audio output channels,
@@ -26,10 +26,10 @@
  *
  * Quick start (I2C — DAC + amplifiers):
  * @code
- *   #include "core_tiles.h"  // provides core_tiles_hal()
+ *   #include "core_tiles.h"  // provides core_tiles_pal()
  *
  *   tile_t dac;
- *   tiles_hal_t *hal = core_tiles_hal(&core_i2c1);
+ *   tiles_pal_t *hal = core_tiles_pal(&core_i2c1);
  *   tile_drive_a_2_init(hal, 0, &dac, NULL);
  *   if (tile_is_ready(&dac)) {
  *       tile_drive_a_2_set(&dac, 0, 2048);       // Ch 0 mid-scale
@@ -42,7 +42,7 @@
  *   #include "core_tiles.h"
  *
  *   tile_t dac;
- *   tiles_hal_t *hal = core_tiles_hal(&core_spi1);
+ *   tiles_pal_t *hal = core_tiles_pal(&core_spi1);
  *   tile_drive_a_2_init(hal, 0, &dac, NULL);  // instance = CS index
  *   tile_drive_a_2_set_mv(&dac, 0, 1500);     // 1.5 V on channel 0
  * @endcode
@@ -240,7 +240,7 @@ typedef struct {
  * @param  instance  Instance index (see mapping table)
  * @return 1 if device ACKs (I2C) or responds to WHO_AM_I (SPI), 0 otherwise
  */
-uint8_t tile_drive_a_2_find(tiles_hal_t *hal, uint8_t instance);
+uint8_t tile_drive_a_2_find(tiles_pal_t *hal, uint8_t instance);
 
 /**
  * @brief  Initialize the Drive.A.2 tile.
@@ -253,7 +253,7 @@ uint8_t tile_drive_a_2_find(tiles_hal_t *hal, uint8_t instance);
  * @param  tile      Pointer to tile handle (populated by this function)
  * @param  cfg       Optional config, or NULL for defaults (1x VDD, 6 dB amp)
  */
-void tile_drive_a_2_init(tiles_hal_t *hal, uint8_t instance,
+void tile_drive_a_2_init(tiles_pal_t *hal, uint8_t instance,
                          tile_t *tile, const drive_a_2_cfg_t *cfg);
 
 /**

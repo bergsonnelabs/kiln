@@ -90,7 +90,7 @@ static int32_t sign_extend_24(uint32_t raw)
 
 /* ---- Lifecycle ---- */
 
-uint8_t tile_sense_bp_find(tiles_hal_t *hal, uint8_t instance)
+uint8_t tile_sense_bp_find(tiles_pal_t *hal, uint8_t instance)
 {
     uint8_t addr = resolve_id(instance);
     if (!addr) return 0;
@@ -103,7 +103,7 @@ uint8_t tile_sense_bp_find(tiles_hal_t *hal, uint8_t instance)
     return (who == ILPS22QS_WHO_AM_I_VALUE) ? 1 : 0;
 }
 
-void tile_sense_bp_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_bp_init(tiles_pal_t *hal, uint8_t instance,
                         tile_t *tile, const sense_bp_cfg_t *cfg)
 {
     memzero(tile, sizeof(tile_t));

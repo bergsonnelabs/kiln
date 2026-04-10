@@ -15,12 +15,10 @@
  *
  * Quick start:
  * @code
- *   tiles_hal_core_cfg_t cfg = { .i2c = &hi2c1, .buses = TILES_BUS_I2C };
- *   tiles_hal_t hal;
- *   tiles_hal_core_init(&hal, &cfg);
+ *   #include "core_tiles.h"
  *
  *   tile_t imu;
- *   tile_sense_i_9_init(&hal, 0, &imu);
+ *   tile_sense_i_9_init(core_tiles_pal(&core_i2c1), 0, &imu);
  *   if (tile_is_ready(&imu)) {
  *       int16_t accel[3], gyro[3], mag[3];
  *       tile_sense_i_9_get_raw_accels(&imu, accel);
@@ -32,8 +30,9 @@
  * Two tiles on one bus:
  * @code
  *   tile_t imu_a, imu_b;
- *   tile_sense_i_9_init(&hal, 0, &imu_a);  // pad 2 floating (0x69)
- *   tile_sense_i_9_init(&hal, 1, &imu_b);  // pad 2 grounded (0x68)
+ *   tiles_pal_t *hal = core_tiles_pal(&core_i2c1);
+ *   tile_sense_i_9_init(hal, 0, &imu_a);  // pad 2 floating (0x69)
+ *   tile_sense_i_9_init(hal, 1, &imu_b);  // pad 2 grounded (0x68)
  * @endcode
  */
 
@@ -179,7 +178,7 @@ typedef enum {
  * @param  instance  Instance index (0 = default, see mapping table)
  * @return 1 if device ACKs, 0 otherwise
  */
-uint8_t tile_sense_i_9_find(tiles_hal_t* hal, uint8_t instance);
+uint8_t tile_sense_i_9_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
  * @brief  Initialize the ICM-20948 and AK09916.
@@ -195,7 +194,7 @@ uint8_t tile_sense_i_9_find(tiles_hal_t* hal, uint8_t instance);
  *
  * @note   Blocks for ~50 ms during reset. Call once at startup.
  */
-void tile_sense_i_9_init(tiles_hal_t* hal, uint8_t instance, tile_t* tile);
+void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile);
 
 /**
  * @brief  Check if new IMU data is available.

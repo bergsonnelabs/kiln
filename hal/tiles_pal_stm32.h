@@ -1,5 +1,5 @@
 /**
- * @file   tiles_hal_stm32.h
+ * @file   tiles_pal_stm32.h
  * @brief  STM32 HAL for tile drivers.
  *
  * Works with all STM32 families that use the STM32 HAL driver library
@@ -8,19 +8,19 @@
  * Usage:
  * @code
  *   #include "tiles.h"
- *   #include "tiles_hal_stm32.h"
+ *   #include "tiles_pal_stm32.h"
  *
- *   tiles_hal_stm32_cfg_t cfg = {
+ *   tiles_pal_stm32_cfg_t cfg = {
  *       .i2c = &hi2c1,
  *       .buses = TILES_BUS_I2C,
  *   };
- *   tiles_hal_t hal;
- *   tiles_hal_stm32_init(&hal, &cfg);
+ *   tiles_pal_t hal;
+ *   tiles_pal_stm32_init(&hal, &cfg);
  * @endcode
  */
 
-#ifndef TILES_HAL_STM32_H_
-#define TILES_HAL_STM32_H_
+#ifndef TILES_PAL_STM32_H_
+#define TILES_PAL_STM32_H_
 
 #include "tiles.h"
 
@@ -50,7 +50,7 @@
  *
  * Set the bus handles you need and list CS port/pin pairs for SPI tiles.
  * Bus handles (I2C, SPI) must be initialized by your project before
- * calling tiles_hal_stm32_init.
+ * calling tiles_pal_stm32_init.
  */
 typedef struct {
     I2C_HandleTypeDef*  i2c;              /**< I2C peripheral (e.g. &hi2c1)     */
@@ -58,14 +58,14 @@ typedef struct {
     GPIO_TypeDef*       spi_cs_ports[8];  /**< GPIO port for each CS line       */
     uint16_t            spi_cs_pins[8];   /**< GPIO pin for each CS line        */
     uint8_t             buses;            /**< TILES_BUS_I2C | TILES_BUS_SPI    */
-} tiles_hal_stm32_cfg_t;
+} tiles_pal_stm32_cfg_t;
 
 /**
- * @brief  Initialize a tiles_hal_t from an STM32 configuration.
+ * @brief  Initialize a tiles_pal_t from an STM32 configuration.
  *
- * @param  hal  Pointer to tiles_hal_t to populate
+ * @param  hal  Pointer to tiles_pal_t to populate
  * @param  cfg  STM32-specific configuration
  */
-void tiles_hal_stm32_init(tiles_hal_t* hal, const tiles_hal_stm32_cfg_t* cfg);
+void tiles_pal_stm32_init(tiles_pal_t* hal, const tiles_pal_stm32_cfg_t* cfg);
 
-#endif /* TILES_HAL_STM32_H_ */
+#endif /* TILES_PAL_STM32_H_ */

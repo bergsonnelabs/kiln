@@ -17,12 +17,10 @@
  *
  * Quick start:
  * @code
- *   tiles_hal_core_cfg_t cfg = { .i2c = &hi2c1, .buses = TILES_BUS_I2C };
- *   tiles_hal_t hal;
- *   tiles_hal_core_init(&hal, &cfg);
+ *   #include "core_tiles.h"
  *
  *   tile_t haptic;
- *   tile_drive_h_init(&hal, 0, &haptic);
+ *   tile_drive_h_init(core_tiles_pal(&core_i2c1), 0, &haptic);
  *   if (tile_is_ready(&haptic)) {
  *       tile_drive_h_play(&haptic, 1, 1);  // play effect #1 once
  *   }
@@ -91,7 +89,7 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
  * @param  instance  Instance index (0 = default, see mapping table)
  * @return 1 if device ACKs, 0 otherwise
  */
-uint8_t tile_drive_h_find(tiles_hal_t* hal, uint8_t instance);
+uint8_t tile_drive_h_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
  * @brief  Initialize the DRV2605L haptic driver.
@@ -105,7 +103,7 @@ uint8_t tile_drive_h_find(tiles_hal_t* hal, uint8_t instance);
  *
  * @note   Blocks for ~500 ms during init. Call once at startup.
  */
-void tile_drive_h_init(tiles_hal_t* hal, uint8_t instance, tile_t* tile);
+void tile_drive_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile);
 
 /**
  * @brief  Play a waveform effect from the built-in library.

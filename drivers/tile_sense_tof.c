@@ -202,7 +202,7 @@ static void tof_apply_defaults(sense_tof_cfg_t *cfg)
 
 /* ---- Lifecycle ---- */
 
-uint8_t tile_sense_tof_find(tiles_hal_t *hal, uint8_t instance)
+uint8_t tile_sense_tof_find(tiles_pal_t *hal, uint8_t instance)
 {
     uint8_t addr = resolve_id(instance);
     if (!addr) return 0;
@@ -215,7 +215,7 @@ uint8_t tile_sense_tof_find(tiles_hal_t *hal, uint8_t instance)
     return ((id & TMF8806_ID_MASK) == TMF8806_DEVICE_ID) ? 1 : 0;
 }
 
-void tile_sense_tof_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_tof_init(tiles_pal_t *hal, uint8_t instance,
                          tile_t *tile, const sense_tof_cfg_t *cfg)
 {
     memzero(tile, sizeof(tile_t));

@@ -145,7 +145,7 @@ static uint16_t resolve_vref(uint8_t gain_sel)
  * Public API — Lifecycle
  * ================================================================ */
 
-uint8_t tile_drive_a_2_find(tiles_hal_t *hal, uint8_t instance)
+uint8_t tile_drive_a_2_find(tiles_pal_t *hal, uint8_t instance)
 {
     if (hal->buses & TILES_BUS_SPI) {
         /* SPI: probe via GENERAL-STATUS read — check DEVICE-ID */
@@ -161,7 +161,7 @@ uint8_t tile_drive_a_2_find(tiles_hal_t *hal, uint8_t instance)
     return (hal->i2c_is_ready(hal->handle, addr) == 0) ? 1 : 0;
 }
 
-void tile_drive_a_2_init(tiles_hal_t *hal, uint8_t instance,
+void tile_drive_a_2_init(tiles_pal_t *hal, uint8_t instance,
                          tile_t *tile, const drive_a_2_cfg_t *cfg)
 {
     memzero(tile, sizeof(tile_t));

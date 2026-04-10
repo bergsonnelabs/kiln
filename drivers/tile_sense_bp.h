@@ -24,7 +24,7 @@
  *
  *   tile_t baro;
  *   sense_bp_cfg_t cfg = { .odr = SENSE_BP_ODR_25HZ };
- *   tile_sense_bp_init(core_tiles_hal(&core_i2c3), 0, &baro, &cfg);
+ *   tile_sense_bp_init(core_tiles_pal(&core_i2c3), 0, &baro, &cfg);
  *
  *   int32_t pressure_mhpa = tile_sense_bp_get_pressure_mhpa(&baro);
  *   int32_t temp_cdeg     = tile_sense_bp_get_temp_cdeg(&baro);
@@ -32,7 +32,7 @@
  *
  * Datasheet: https://www.st.com/resource/en/datasheet/ilps22qs.pdf
  *
- * @note All bus I/O is routed through tiles_hal_t function pointers.
+ * @note All bus I/O is routed through tiles_pal_t function pointers.
  *       This driver contains no platform-specific code.
  */
 
@@ -209,7 +209,7 @@ typedef struct {
  * @param  instance 0 = default address (0x5D), 1 = alternate (0x5C).
  * @return 1 if device ACKs and WHO_AM_I matches, 0 otherwise.
  */
-uint8_t tile_sense_bp_find(tiles_hal_t *hal, uint8_t instance);
+uint8_t tile_sense_bp_find(tiles_pal_t *hal, uint8_t instance);
 
 /**
  * @brief  Initialise a Sense.BP tile.
@@ -222,7 +222,7 @@ uint8_t tile_sense_bp_find(tiles_hal_t *hal, uint8_t instance);
  * @param  tile     Tile handle to initialise.
  * @param  cfg      Configuration (NULL for defaults).
  */
-void tile_sense_bp_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_bp_init(tiles_pal_t *hal, uint8_t instance,
                         tile_t *tile, const sense_bp_cfg_t *cfg);
 
 /**

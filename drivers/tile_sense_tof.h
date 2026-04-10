@@ -23,7 +23,7 @@
  *
  *   tile_t tof;
  *   sense_tof_cfg_t cfg = { .mode = SENSE_TOF_RANGE_2500MM };
- *   tile_sense_tof_init(core_tiles_hal(&core_i2c1), 0, &tof, &cfg);
+ *   tile_sense_tof_init(core_tiles_pal(&core_i2c1), 0, &tof, &cfg);
  *
  *   tile_sense_tof_start(&tof);
  *   // ... poll or wait for interrupt ...
@@ -36,7 +36,7 @@
  *
  * Datasheet: https://ams.com/tmf8806
  *
- * @note All bus I/O is routed through tiles_hal_t function pointers.
+ * @note All bus I/O is routed through tiles_pal_t function pointers.
  *       This driver contains no platform-specific code.
  */
 
@@ -230,7 +230,7 @@ typedef struct {
  * @param  instance  Must be 0 (single-address device).
  * @return 1 if device ACKs and ID matches (0x09), 0 otherwise.
  */
-uint8_t tile_sense_tof_find(tiles_hal_t *hal, uint8_t instance);
+uint8_t tile_sense_tof_find(tiles_pal_t *hal, uint8_t instance);
 
 /**
  * @brief  Initialise a Sense.TOF tile.
@@ -251,7 +251,7 @@ uint8_t tile_sense_tof_find(tiles_hal_t *hal, uint8_t instance);
  * @param  tile      Tile handle to initialise.
  * @param  cfg       Configuration (NULL for defaults: 2.5 m, 30 ms, 900k iters).
  */
-void tile_sense_tof_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_tof_init(tiles_pal_t *hal, uint8_t instance,
                          tile_t *tile, const sense_tof_cfg_t *cfg);
 
 /**

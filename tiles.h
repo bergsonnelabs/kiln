@@ -3,7 +3,7 @@
  * @brief  Tile driver framework — the only include users need.
  *
  * Provides the tile instance handle (tile_t), lifecycle states,
- * error reporting, and convenience functions. Includes tiles_hal.h
+ * error reporting, and convenience functions. Includes tiles_pal.h
  * automatically, so users get the full framework with one include.
  *
  * Header-only — no companion .c file required.
@@ -13,9 +13,9 @@
  *   #include "tiles.h"
  *   #include "tile_sense_i_9.h"
  *
- *   tiles_hal_stm32_cfg_t cfg = { .i2c = &hi2c1, .buses = TILES_BUS_I2C };
- *   tiles_hal_t hal;
- *   tiles_hal_stm32_init(&hal, &cfg);
+ *   tiles_pal_stm32_cfg_t cfg = { .i2c = &hi2c1, .buses = TILES_BUS_I2C };
+ *   tiles_pal_t hal;
+ *   tiles_pal_stm32_init(&hal, &cfg);
  *   hal.on_error = my_error_handler;  // optional
  *
  *   tile_t imu;
@@ -29,7 +29,7 @@
 #ifndef INC_TILES_H_
 #define INC_TILES_H_
 
-#include "tiles_hal.h"
+#include "tiles_pal.h"
 
 /* ------------------------------------------------------------------ */
 /*  Library version                                                   */
@@ -109,7 +109,7 @@ typedef void (*tile_callback_fn)(void* ctx);
  * @endcode
  */
 typedef struct tile {
-    tiles_hal_t*     hal;       /**< Platform HAL pointer                       */
+    tiles_pal_t*     hal;       /**< Platform HAL pointer                       */
     uint8_t          id;        /**< Device identifier (I2C addr, SPI CS, etc.) */
     tile_state_t     state;     /**< Current lifecycle state                    */
     uint8_t          flags;     /**< Event flags — set by ISRs, cleared by

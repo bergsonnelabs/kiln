@@ -10,9 +10,9 @@
  *
  * Quick start:
  * @code
- *   tiles_hal_PLATFORM_cfg_t cfg = { .i2c = &I2C_HANDLE, .buses = TILES_BUS_I2C };
- *   tiles_hal_t hal;
- *   tiles_hal_PLATFORM_init(&hal, &cfg);
+ *   tiles_pal_PLATFORM_cfg_t cfg = { .i2c = &I2C_HANDLE, .buses = TILES_BUS_I2C };
+ *   tiles_pal_t hal;
+ *   tiles_pal_PLATFORM_init(&hal, &cfg);
  *
  *   tile_t sensor;
  *   tile_TEMPLATE_init(&hal, 0, &sensor);
@@ -95,7 +95,7 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
  * @param  instance  Address index (0 = default, see address table)
  * @return 1 if device ACKs, 0 otherwise
  */
-uint8_t tile_TEMPLATE_find(tiles_hal_t* hal, uint8_t instance);
+uint8_t tile_TEMPLATE_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
  * @brief  Initialize a TEMPLATE tile.
@@ -115,7 +115,7 @@ uint8_t tile_TEMPLATE_find(tiles_hal_t* hal, uint8_t instance);
  *   }
  * @endcode
  */
-void tile_TEMPLATE_init(tiles_hal_t* hal, uint8_t instance, tile_t* tile);
+void tile_TEMPLATE_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile);
 
 /**
  * @brief  Check if new data is available.

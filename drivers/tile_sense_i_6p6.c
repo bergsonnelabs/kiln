@@ -117,7 +117,7 @@ static void memzero(void *p, uint8_t n)
  * ================================================================ */
 
 /** @brief Check if a Sense.I.6P6 is present on the bus. */
-uint8_t tile_sense_i_6p6_find(tiles_hal_t *hal, uint8_t instance)
+uint8_t tile_sense_i_6p6_find(tiles_pal_t *hal, uint8_t instance)
 {
     if (hal->buses & TILES_BUS_SPI) {
         /* SPI: no address probe — do a WHO_AM_I read via CS index */
@@ -131,7 +131,7 @@ uint8_t tile_sense_i_6p6_find(tiles_hal_t *hal, uint8_t instance)
 }
 
 /** @brief Initialize the ICM-42686P. */
-void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_i_6p6_init(tiles_pal_t *hal, uint8_t instance,
                            tile_t *tile, const sense_i_6p6_cfg_t *cfg)
 {
     memzero(tile, sizeof(tile_t));

@@ -21,7 +21,7 @@
  * Simple polling example (Cores SDK):
  * @code
  *   tile_t touch;
- *   tile_sense_t_c_init(core_tiles_hal(&core_i2c3), 0, &touch, NULL);
+ *   tile_sense_t_c_init(core_tiles_pal(&core_i2c3), 0, &touch, NULL);
  *   while (1) {
  *       tile_sense_t_c_process(&touch);
  *       if (tile_sense_t_c_is_touched(&touch, SENSE_T_C_CH_SURFACE))
@@ -42,7 +42,7 @@
  *   }
  *
  *   sense_t_c_cfg_t cfg = { .on_event = on_touch };
- *   tile_sense_t_c_init(core_tiles_hal(&core_i2c3), 0, &touch, &cfg);
+ *   tile_sense_t_c_init(core_tiles_pal(&core_i2c3), 0, &touch, &cfg);
  *   while (1) {
  *       tile_sense_t_c_process(&touch);
  *       core_delay_ms(30);
@@ -55,7 +55,7 @@
  *       .rdy_pin = 3,
  *       .on_event = on_touch,
  *   };
- *   tile_sense_t_c_init(core_tiles_hal(&core_i2c3), 0, &touch, &cfg);
+ *   tile_sense_t_c_init(core_tiles_pal(&core_i2c3), 0, &touch, &cfg);
  *   while (1) {
  *       tile_sense_t_c_process(&touch);
  *       // ... other work — process() returns fast if no RDY event ...
@@ -307,7 +307,7 @@ typedef struct {
  * @param  instance  Device instance (0 or 1, selects I2C address)
  * @return 1 if found, 0 if not
  */
-uint8_t tile_sense_t_c_find(tiles_hal_t *hal, uint8_t instance);
+uint8_t tile_sense_t_c_find(tiles_pal_t *hal, uint8_t instance);
 
 /**
  * @brief  Initialize the touch controller.
@@ -320,7 +320,7 @@ uint8_t tile_sense_t_c_find(tiles_hal_t *hal, uint8_t instance);
  * @param  tile      Tile handle to initialize
  * @param  cfg       Optional config (thresholds, RDY pin, callback). NULL for defaults.
  */
-void tile_sense_t_c_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_t_c_init(tiles_pal_t *hal, uint8_t instance,
                          tile_t *tile, const sense_t_c_cfg_t *cfg);
 
 /* ---- Event processing ---- */

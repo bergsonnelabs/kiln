@@ -1,5 +1,5 @@
 /**
- * @file   tiles_hal_arduino.h
+ * @file   tiles_pal_arduino.h
  * @brief  Arduino HAL for tile drivers.
  *
  * Works on AVR, SAMD, ESP32-Arduino, RP2040, and other
@@ -8,18 +8,18 @@
  * Usage:
  * @code
  *   #include "tiles.h"
- *   #include "tiles_hal_arduino.h"
+ *   #include "tiles_pal_arduino.h"
  *
- *   tiles_hal_arduino_cfg_t cfg = {
+ *   tiles_pal_arduino_cfg_t cfg = {
  *       .buses = TILES_BUS_I2C,
  *   };
- *   tiles_hal_t hal;
- *   tiles_hal_arduino_init(&hal, &cfg);
+ *   tiles_pal_t hal;
+ *   tiles_pal_arduino_init(&hal, &cfg);
  * @endcode
  */
 
-#ifndef TILES_HAL_ARDUINO_H_
-#define TILES_HAL_ARDUINO_H_
+#ifndef TILES_PAL_ARDUINO_H_
+#define TILES_PAL_ARDUINO_H_
 
 #include "tiles.h"
 #include <Wire.h>
@@ -38,21 +38,21 @@ typedef struct {
     TwoWire*  wire;              /**< I2C instance (NULL = default Wire)      */
     uint8_t   spi_cs_pins[8];   /**< Arduino pin numbers for SPI CS lines    */
     uint8_t   buses;             /**< TILES_BUS_I2C | TILES_BUS_SPI | ...     */
-} tiles_hal_arduino_cfg_t;
+} tiles_pal_arduino_cfg_t;
 
 /**
- * @brief  Initialize a tiles_hal_t from an Arduino configuration.
+ * @brief  Initialize a tiles_pal_t from an Arduino configuration.
  *
  * Call Wire.begin() (and SPI.begin() if using SPI) before this.
  * Configure CS pins as OUTPUT before using SPI-based tiles.
  *
- * @param  hal  Pointer to tiles_hal_t to populate
+ * @param  hal  Pointer to tiles_pal_t to populate
  * @param  cfg  Arduino-specific configuration
  */
-void tiles_hal_arduino_init(tiles_hal_t* hal, const tiles_hal_arduino_cfg_t* cfg);
+void tiles_pal_arduino_init(tiles_pal_t* hal, const tiles_pal_arduino_cfg_t* cfg);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TILES_HAL_ARDUINO_H_ */
+#endif /* TILES_PAL_ARDUINO_H_ */

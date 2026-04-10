@@ -1,12 +1,12 @@
 /**
- * @file   tiles_hal_arduino.cpp
+ * @file   tiles_pal_arduino.cpp
  * @brief  Arduino HAL implementation for tile drivers.
  *
- * Bridges tiles_hal_t to the Arduino Wire (I2C) and SPI libraries.
+ * Bridges tiles_pal_t to the Arduino Wire (I2C) and SPI libraries.
  * Uses blocking I/O — suitable for single-threaded sketches.
  */
 
-#include "tiles_hal_arduino.h"
+#include "tiles_pal_arduino.h"
 #include <SPI.h>
 
 /* -------------------------------------------------------------- */
@@ -89,7 +89,7 @@ static void arduino_delay_ms(uint32_t ms)
 /* Public init                                                      */
 /* -------------------------------------------------------------- */
 
-void tiles_hal_arduino_init(tiles_hal_t* hal, const tiles_hal_arduino_cfg_t* cfg)
+void tiles_pal_arduino_init(tiles_pal_t* hal, const tiles_pal_arduino_cfg_t* cfg)
 {
     /* I2C */
     if (cfg->buses & TILES_BUS_I2C) {

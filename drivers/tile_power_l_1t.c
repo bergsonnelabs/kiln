@@ -42,14 +42,14 @@ static uint8_t bq_read(tile_t* tile, uint8_t reg)
 /* Public API                                                      */
 /* -------------------------------------------------------------- */
 
-uint8_t tile_power_l_1t_find(tiles_hal_t* hal, uint8_t instance)
+uint8_t tile_power_l_1t_find(tiles_pal_t* hal, uint8_t instance)
 {
     uint8_t id = resolve_id(instance);
     if (id == 0x00) return 0;
     return (hal->i2c_is_ready(hal->handle, id) == 0) ? 1 : 0;
 }
 
-void tile_power_l_1t_init(tiles_hal_t* hal, uint8_t instance, tile_t* tile)
+void tile_power_l_1t_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile)
 {
     tile->hal      = NULL;
     tile->id       = 0;

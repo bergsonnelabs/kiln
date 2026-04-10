@@ -64,14 +64,14 @@ static void swap16(int16_t* buf, uint8_t count)
 /* Public API                                                      */
 /* -------------------------------------------------------------- */
 
-uint8_t tile_sense_i_9_find(tiles_hal_t* hal, uint8_t instance)
+uint8_t tile_sense_i_9_find(tiles_pal_t* hal, uint8_t instance)
 {
     uint8_t id = resolve_id(instance);
     if (id == 0x00) return 0;
     return (hal->i2c_is_ready(hal->handle, id) == 0) ? 1 : 0;
 }
 
-void tile_sense_i_9_init(tiles_hal_t* hal, uint8_t instance, tile_t* tile)
+void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile)
 {
     tile->hal      = NULL;
     tile->id       = 0;

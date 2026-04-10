@@ -114,7 +114,7 @@ static uint16_t resolve_vref(uint8_t ref_sel, uint16_t user_vref_mv)
  * ================================================================ */
 
 /** @brief Check if a Sense.MIC is present on the bus. */
-uint8_t tile_sense_mic_find(tiles_hal_t *hal, uint8_t instance)
+uint8_t tile_sense_mic_find(tiles_pal_t *hal, uint8_t instance)
 {
     uint8_t addr = resolve_id(instance);
     if (!addr) return 0;
@@ -122,7 +122,7 @@ uint8_t tile_sense_mic_find(tiles_hal_t *hal, uint8_t instance)
 }
 
 /** @brief Initialize the MAX11645 ADC. */
-void tile_sense_mic_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_mic_init(tiles_pal_t *hal, uint8_t instance,
                          tile_t *tile, const sense_mic_cfg_t *cfg)
 {
     memzero(tile, sizeof(tile_t));

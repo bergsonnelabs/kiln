@@ -17,12 +17,10 @@
  *
  * Quick start:
  * @code
- *   tiles_hal_core_cfg_t cfg = { .i2c = &hi2c1, .buses = TILES_BUS_I2C };
- *   tiles_hal_t hal;
- *   tiles_hal_core_init(&hal, &cfg);
+ *   #include "core_tiles.h"
  *
  *   tile_t piezo;
- *   tile_drive_p_init(&hal, 0, &piezo);
+ *   tile_drive_p_init(core_tiles_pal(&core_i2c1), 0, &piezo);
  *   if (tile_is_ready(&piezo)) {
  *       tile_drive_p_set_mode(&piezo, DRIVE_P_MODE_PLAY_FIFO);
  *       tile_drive_p_write_fifo(&piezo, 0x7FFF);
@@ -122,7 +120,7 @@ typedef enum {
  * @param  instance  Instance index (0 = default, see mapping table)
  * @return 1 if device ACKs, 0 otherwise
  */
-uint8_t tile_drive_p_find(tiles_hal_t* hal, uint8_t instance);
+uint8_t tile_drive_p_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
  * @brief  Initialize the BOS1921 piezoelectric driver.
@@ -135,7 +133,7 @@ uint8_t tile_drive_p_find(tiles_hal_t* hal, uint8_t instance);
  * @param  instance  Instance index (0 = default, see mapping table)
  * @param  tile      Pointer to tile handle (populated by this function)
  */
-void tile_drive_p_init(tiles_hal_t* hal, uint8_t instance, tile_t* tile);
+void tile_drive_p_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile);
 
 /**
  * @brief  Perform a software reset.

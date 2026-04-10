@@ -32,14 +32,14 @@ static uint8_t lp_read(tile_t *tile, uint8_t reg)
 
 /* ---- Public API ---- */
 
-uint8_t tile_disp_rgbw_find(tiles_hal_t *hal, uint8_t instance)
+uint8_t tile_disp_rgbw_find(tiles_pal_t *hal, uint8_t instance)
 {
     uint8_t addr = resolve_id(instance);
     if (!addr) return 0;
     return hal->i2c_is_ready(hal->handle, addr) == 0;
 }
 
-void tile_disp_rgbw_init(tiles_hal_t *hal, uint8_t instance, tile_t *tile)
+void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile)
 {
     for (uint8_t i = 0; i < sizeof(tile_t); i++)
         ((uint8_t *)tile)[i] = 0;

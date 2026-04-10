@@ -62,7 +62,7 @@ TILES_CHECK_VERSION(1, 0);
 /* ---- Public API ---- */
 
 /** @brief  Check if a Disp.RGBW is present on the bus. */
-uint8_t tile_disp_rgbw_find(tiles_hal_t *hal, uint8_t instance);
+uint8_t tile_disp_rgbw_find(tiles_pal_t *hal, uint8_t instance);
 
 /**
  * @brief  Initialize the LP5811 LED driver.
@@ -71,7 +71,7 @@ uint8_t tile_disp_rgbw_find(tiles_hal_t *hal, uint8_t instance);
  * current to 51mA, enables all 4 LED channels, and sets current
  * limits to 50%.
  */
-void tile_disp_rgbw_init(tiles_hal_t *hal, uint8_t instance, tile_t *tile);
+void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile);
 
 /**
  * @brief  Set RGBW output levels.

@@ -18,12 +18,10 @@
  *
  * Quick start:
  * @code
- *   tiles_hal_core_cfg_t cfg = { .i2c = &hi2c1, .buses = TILES_BUS_I2C };
- *   tiles_hal_t hal;
- *   tiles_hal_core_init(&hal, &cfg);
+ *   #include "core_tiles.h"
  *
  *   tile_t battery;
- *   tile_power_l_1t_init(&hal, 0, &battery);
+ *   tile_power_l_1t_init(core_tiles_pal(&core_i2c1), 0, &battery);
  *   if (tile_is_ready(&battery)) {
  *       uint16_t vbat = tile_power_l_1t_get_vbat(&battery);
  *       uint8_t  pct  = tile_power_l_1t_get_percent(&battery);
@@ -98,7 +96,7 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
  * @param  instance  Instance index (0 = default, see mapping table)
  * @return 1 if device ACKs, 0 otherwise
  */
-uint8_t tile_power_l_1t_find(tiles_hal_t* hal, uint8_t instance);
+uint8_t tile_power_l_1t_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
  * @brief  Initialize the BQ25150 charge controller.
@@ -110,7 +108,7 @@ uint8_t tile_power_l_1t_find(tiles_hal_t* hal, uint8_t instance);
  * @param  instance  Instance index (0 = default, see mapping table)
  * @param  tile      Pointer to tile handle (populated by this function)
  */
-void tile_power_l_1t_init(tiles_hal_t* hal, uint8_t instance, tile_t* tile);
+void tile_power_l_1t_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile);
 
 /**
  * @brief  Read the raw battery voltage from the ADC.

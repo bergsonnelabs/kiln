@@ -1,18 +1,18 @@
 /**
- * @file   tiles_hal_stm32.c
+ * @file   tiles_pal_stm32.c
  * @brief  STM32 HAL implementation for tile drivers.
  *
- * Bridges tiles_hal_t to the STM32 HAL I2C and SPI APIs.
+ * Bridges tiles_pal_t to the STM32 HAL I2C and SPI APIs.
  * Uses blocking transfers. For DMA-based transfers, copy this file
  * and swap in the _DMA variants of the HAL calls.
  */
 
-#include "tiles_hal_stm32.h"
+#include "tiles_pal_stm32.h"
 
 #define STM32_HAL_TIMEOUT_MS  50
 
 /* Store cfg pointer so SPI callbacks can access CS port/pin mappings */
-static const tiles_hal_stm32_cfg_t* s_cfg;
+static const tiles_pal_stm32_cfg_t* s_cfg;
 
 /* -------------------------------------------------------------- */
 /* I2C callbacks                                                   */
@@ -116,7 +116,7 @@ static void stm32_delay_ms(uint32_t ms)
 /* Public init                                                      */
 /* -------------------------------------------------------------- */
 
-void tiles_hal_stm32_init(tiles_hal_t* hal, const tiles_hal_stm32_cfg_t* cfg)
+void tiles_pal_stm32_init(tiles_pal_t* hal, const tiles_pal_stm32_cfg_t* cfg)
 {
     s_cfg = cfg;
 

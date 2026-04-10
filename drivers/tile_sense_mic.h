@@ -1,7 +1,7 @@
 /**
  * @file   tile_sense_mic.h
  * @brief  Complete driver for the Sense.MIC tile (MAX11645 ADC + AMM-2742 MEMS mic).
- *         I2C-only, command-based protocol via tiles_hal_t raw I2C.
+ *         I2C-only, command-based protocol via tiles_pal_t raw I2C.
  * @version 1.0.0
  *
  * I2C-output MEMS microphone tile combining:
@@ -11,14 +11,14 @@
  *     I2C up to 1.7 MHz, internal 2.048V reference
  *
  * The MAX11645 uses a command-based I2C protocol (no register addresses).
- * All bus access goes through tiles_hal_t i2c_write_raw / i2c_read_raw.
+ * All bus access goes through tiles_pal_t i2c_write_raw / i2c_read_raw.
  *
- * Platform-agnostic: uses tiles_hal_t for all bus access.
+ * Platform-agnostic: uses tiles_pal_t for all bus access.
  *
  * Quick start — polling:
  * @code
  *   tile_t mic;
- *   tile_sense_mic_init(core_tiles_hal(&core_i2c3), 0, &mic, NULL);
+ *   tile_sense_mic_init(core_tiles_pal(&core_i2c3), 0, &mic, NULL);
  *   uint16_t raw = tile_sense_mic_get_raw(&mic);
  *   uint16_t mv  = tile_sense_mic_get_raw_mv(&mic);
  * @endcode
@@ -26,7 +26,7 @@
  * Quick start — continuous sampling:
  * @code
  *   tile_t mic;
- *   tile_sense_mic_init(core_tiles_hal(&core_i2c3), 0, &mic, NULL);
+ *   tile_sense_mic_init(core_tiles_pal(&core_i2c3), 0, &mic, NULL);
  *
  *   uint16_t samples[256];
  *   tile_sense_mic_get_samples(&mic, samples, 256);
@@ -39,7 +39,7 @@
  * @code
  *   sense_mic_cfg_t cfg = { .ref = SENSE_MIC_REF_INTERNAL };
  *   tile_t mic;
- *   tile_sense_mic_init(core_tiles_hal(&core_i2c3), 0, &mic, &cfg);
+ *   tile_sense_mic_init(core_tiles_pal(&core_i2c3), 0, &mic, &cfg);
  *   // Now get_raw_mv() uses 2048 mV full-scale (0.5 mV/LSB)
  * @endcode
  *
@@ -213,7 +213,7 @@ typedef struct {
  * Lightweight probe — does not configure the device.
  * The MAX11645 has no WHO_AM_I register; this checks for an ACK at 0x36.
  */
-uint8_t tile_sense_mic_find(tiles_hal_t *hal, uint8_t instance);
+uint8_t tile_sense_mic_find(tiles_pal_t *hal, uint8_t instance);
 
 /**
  * @brief  Initialize the MAX11645 ADC.
@@ -228,7 +228,7 @@ uint8_t tile_sense_mic_find(tiles_hal_t *hal, uint8_t instance);
  * @note   Blocks for ~5 ms (setup settling + DC offset calibration).
  *         Call once at startup.
  */
-void tile_sense_mic_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_mic_init(tiles_pal_t *hal, uint8_t instance,
                          tile_t *tile, const sense_mic_cfg_t *cfg);
 
 /** @brief  Enter low-power mode (no conversions). */

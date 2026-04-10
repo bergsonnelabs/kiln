@@ -1,7 +1,7 @@
 /**
  * @file   tile_sense_i_6p6.h
  * @brief  Complete driver for the Sense.I.6P6 tile (ICM-42686-P).
- *         Supports both I2C and SPI bus access via tiles_hal_t.
+ *         Supports both I2C and SPI bus access via tiles_pal_t.
  * @version 1.0.0
  *
  * 6-axis IMU with extended measurement range:
@@ -11,12 +11,12 @@
  *   - FIFO:           2 KB with multiple packet formats
  *   - APEX:           Pedometer, tilt, wake-on-motion, tap detection
  *
- * Platform-agnostic: uses tiles_hal_t for all bus access.
+ * Platform-agnostic: uses tiles_pal_t for all bus access.
  *
  * Quick start — I2C (polling):
  * @code
  *   tile_t imu;
- *   tile_sense_i_6p6_init(core_tiles_hal(&core_i2c3), 0, &imu, NULL);
+ *   tile_sense_i_6p6_init(core_tiles_pal(&core_i2c3), 0, &imu, NULL);
  *   int16_t accel[3], gyro[3];
  *   tile_sense_i_6p6_get_raw_accels(&imu, accel);
  *   tile_sense_i_6p6_get_raw_gyros(&imu, gyro);
@@ -25,7 +25,7 @@
  * Quick start — SPI:
  * @code
  *   tile_t imu;
- *   tile_sense_i_6p6_init(core_tiles_hal(&core_spi1), 0, &imu, NULL);
+ *   tile_sense_i_6p6_init(core_tiles_pal(&core_spi1), 0, &imu, NULL);
  *   int16_t accel[3];
  *   tile_sense_i_6p6_get_raw_accels(&imu, accel);
  * @endcode
@@ -40,7 +40,7 @@
  *       .on_event = on_data,
  *       .int1_pin = 9,  // Core pad connected to INT1
  *   };
- *   tile_sense_i_6p6_init(core_tiles_hal(&core_i2c3), 0, &imu, &cfg);
+ *   tile_sense_i_6p6_init(core_tiles_pal(&core_i2c3), 0, &imu, &cfg);
  *   tile_sense_i_6p6_int1_data_ready(&imu, 1);
  *   while (1) { tile_sense_i_6p6_process(&imu); }
  * @endcode
@@ -505,7 +505,7 @@ typedef struct {
  * ================================================================ */
 
 /** @brief  Check if a Sense.I.6P6 is present on the bus (address probe only). */
-uint8_t tile_sense_i_6p6_find(tiles_hal_t *hal, uint8_t instance);
+uint8_t tile_sense_i_6p6_find(tiles_pal_t *hal, uint8_t instance);
 
 /**
  * @brief  Initialize the ICM-42686P.
@@ -515,7 +515,7 @@ uint8_t tile_sense_i_6p6_find(tiles_hal_t *hal, uint8_t instance);
  *
  * @note   Blocks for ~2 ms (reset). Call once at startup.
  */
-void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
+void tile_sense_i_6p6_init(tiles_pal_t *hal, uint8_t instance,
                            tile_t *tile, const sense_i_6p6_cfg_t *cfg);
 
 /* ---- Event processing ---- */

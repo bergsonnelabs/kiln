@@ -1,12 +1,12 @@
 /**
- * @file   tiles_hal_esp_idf.c
+ * @file   tiles_pal_esp_idf.c
  * @brief  ESP-IDF HAL implementation for tile drivers.
  *
- * Bridges tiles_hal_t to the ESP-IDF I2C master and SPI master APIs.
+ * Bridges tiles_pal_t to the ESP-IDF I2C master and SPI master APIs.
  * Uses the esp_idf >= v5.x i2c_master driver.
  */
 
-#include "tiles_hal_esp_idf.h"
+#include "tiles_pal_esp_idf.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -15,7 +15,7 @@
 #define ESP_HAL_TIMEOUT_MS  100
 
 /* Store the cfg pointer so SPI callbacks can access spi_host/clock */
-static const tiles_hal_esp_idf_cfg_t* s_cfg;
+static const tiles_pal_esp_idf_cfg_t* s_cfg;
 
 /* -------------------------------------------------------------- */
 /* I2C callbacks                                                   */
@@ -139,7 +139,7 @@ static void esp_delay_ms(uint32_t ms)
 /* Public init                                                      */
 /* -------------------------------------------------------------- */
 
-void tiles_hal_esp_idf_init(tiles_hal_t* hal, const tiles_hal_esp_idf_cfg_t* cfg)
+void tiles_pal_esp_idf_init(tiles_pal_t* hal, const tiles_pal_esp_idf_cfg_t* cfg)
 {
     s_cfg = cfg;
 
