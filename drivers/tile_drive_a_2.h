@@ -248,8 +248,7 @@ uint8_t tile_drive_a_2_find(tiles_hal_t *hal, uint8_t instance);
  * Resets the DAC, verifies DEVICE-ID, powers up both VOUT channels,
  * configures gain, and (in I2C mode) probes and configures the amplifiers.
  *
- * @param  hal       Platform HAL handle. On Cores SDK, use
- *                    core_tiles_hal(&core_i2cN) from core_tiles.h.
+ * @param  hal       Platform HAL handle (see core_tiles.h).
  * @param  instance  Instance index (I2C: address variant, SPI: CS index)
  * @param  tile      Pointer to tile handle (populated by this function)
  * @param  cfg       Optional config, or NULL for defaults (1x VDD, 6 dB amp)
