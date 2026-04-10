@@ -24,21 +24,27 @@
  * In SPI mode, only the DAC is controllable; amplifier functions
  * become no-ops since the I2C bus pins are repurposed for SPI.
  *
- * Quick start — I2C:
+ * Quick start (I2C — DAC + amplifiers):
  * @code
+ *   #include "core_tiles.h"  // provides core_tiles_hal()
+ *
  *   tile_t dac;
- *   tile_drive_a_2_init(core_tiles_hal(&core_i2c1), 0, &dac, NULL);
+ *   tiles_hal_t *hal = core_tiles_hal(&core_i2c1);
+ *   tile_drive_a_2_init(hal, 0, &dac, NULL);
  *   if (tile_is_ready(&dac)) {
  *       tile_drive_a_2_set(&dac, 0, 2048);       // Ch 0 mid-scale
  *       tile_drive_a_2_amp_set_gain(&dac, 12);    // +12 dB both amps
  *   }
  * @endcode
  *
- * Quick start — SPI:
+ * Quick start (SPI — DAC only, no amplifier control):
  * @code
+ *   #include "core_tiles.h"
+ *
  *   tile_t dac;
- *   tile_drive_a_2_init(&spi_hal, 0, &dac, NULL);  // instance = CS index
- *   tile_drive_a_2_set_mv(&dac, 0, 1500);           // 1.5 V on channel 0
+ *   tiles_hal_t *hal = core_tiles_hal_spi(&core_spi1);
+ *   tile_drive_a_2_init(hal, 0, &dac, NULL);  // instance = CS index
+ *   tile_drive_a_2_set_mv(&dac, 0, 1500);     // 1.5 V on channel 0
  * @endcode
  *
  * Datasheet (DAC): https://www.ti.com/product/DAC63202W
@@ -242,7 +248,8 @@ uint8_t tile_drive_a_2_find(tiles_hal_t *hal, uint8_t instance);
  * Resets the DAC, verifies DEVICE-ID, powers up both VOUT channels,
  * configures gain, and (in I2C mode) probes and configures the amplifiers.
  *
- * @param  hal       Platform HAL handle
+ * @param  hal       Platform HAL handle. On Cores SDK, use
+ *                    core_tiles_hal(&core_i2cN) from core_tiles.h.
  * @param  instance  Instance index (I2C: address variant, SPI: CS index)
  * @param  tile      Pointer to tile handle (populated by this function)
  * @param  cfg       Optional config, or NULL for defaults (1x VDD, 6 dB amp)
