@@ -42,7 +42,7 @@
  *   #include "core_tiles.h"
  *
  *   tile_t dac;
- *   tiles_hal_t *hal = core_tiles_hal_spi(&core_spi1);
+ *   tiles_hal_t *hal = core_tiles_hal(&core_spi1);
  *   tile_drive_a_2_init(hal, 0, &dac, NULL);  // instance = CS index
  *   tile_drive_a_2_set_mv(&dac, 0, 1500);     // 1.5 V on channel 0
  * @endcode
