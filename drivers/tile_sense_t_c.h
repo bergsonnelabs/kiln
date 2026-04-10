@@ -241,12 +241,12 @@ TILES_CHECK_VERSION(1, 0);
  * ================================================================ */
 
 typedef enum {
-    SENSE_T_C_POWER_NORMAL       = 0,
-    SENSE_T_C_POWER_LOW          = 1,
-    SENSE_T_C_POWER_ULTRA_LOW    = 2,
-    SENSE_T_C_POWER_HALT         = 3,
-    SENSE_T_C_POWER_AUTO         = 4,
-    SENSE_T_C_POWER_AUTO_NO_ULP  = 5,
+    SENSE_T_C_POWER_NORMAL       = 0,  /**< Normal power mode */
+    SENSE_T_C_POWER_LOW          = 1,  /**< Low power mode */
+    SENSE_T_C_POWER_ULTRA_LOW    = 2,  /**< Ultra-low power mode */
+    SENSE_T_C_POWER_HALT         = 3,  /**< Halt (lowest power) */
+    SENSE_T_C_POWER_AUTO         = 4,  /**< Auto power mode switching */
+    SENSE_T_C_POWER_AUTO_NO_ULP  = 5,  /**< Auto mode, skip ultra-low power */
 } sense_t_c_power_mode_t;
 
 /* ================================================================
@@ -301,13 +301,24 @@ typedef struct {
  * Public API
  * ================================================================ */
 
-/** Check if tile is present. Returns 1 if found, 0 if not. */
+/**
+ * @brief  Probe the bus for an IQS323 touch controller.
+ * @param  hal       Tiles HAL handle (I2C bus)
+ * @param  instance  Device instance (0 or 1, selects I2C address)
+ * @return 1 if found, 0 if not
+ */
 uint8_t tile_sense_t_c_find(tiles_hal_t *hal, uint8_t instance);
 
 /**
- * Initialize the tile. Soft resets, configures CH1 (surface) for
- * self-capacitive touch, sets thresholds, runs ATI.
- * Pass cfg=NULL for polled mode with factory defaults.
+ * @brief  Initialize the touch controller.
+ *
+ * Soft resets, configures CH1 (surface) for self-capacitive touch,
+ * sets proximity/touch thresholds, runs ATI.
+ *
+ * @param  hal       Tiles HAL handle (I2C bus)
+ * @param  instance  Device instance (0 or 1, selects I2C address)
+ * @param  tile      Tile handle to initialize
+ * @param  cfg       Optional config (thresholds, RDY pin, callback). NULL for defaults.
  */
 void tile_sense_t_c_init(tiles_hal_t *hal, uint8_t instance,
                          tile_t *tile, const sense_t_c_cfg_t *cfg);
@@ -315,15 +326,23 @@ void tile_sense_t_c_init(tiles_hal_t *hal, uint8_t instance,
 /* ---- Event processing ---- */
 
 /**
- * Process pending events. Call from your main loop.
+ * @brief  Read pending touch/proximity events and update internal state.
  *
+ * Call from your main loop.
  * In polled mode: reads status register, fires callback if events present.
  * In RDY mode: returns immediately if no RDY interrupt; reads + fires
  * callback only when the device has new data.
+ *
+ * @param  tile  Tile handle
  */
 void tile_sense_t_c_process(tile_t *tile);
 
-/** Register or change the event callback. */
+/**
+ * @brief  Register or change the event callback for touch/proximity events.
+ * @param  tile  Tile handle
+ * @param  cb    Callback function (NULL to disable)
+ * @param  ctx   User context passed to callback
+ */
 void tile_sense_t_c_on_event(tile_t *tile, sense_t_c_event_cb_t cb, void *ctx);
 
 /* ---- Lifecycle ---- */

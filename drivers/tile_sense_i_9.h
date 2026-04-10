@@ -131,10 +131,10 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
  *   SENSE_I_9_ACCEL_8G  → 4096,   SENSE_I_9_ACCEL_16G → 2048
  */
 typedef enum {
-    SENSE_I_9_ACCEL_2G   = 0x00,
+    SENSE_I_9_ACCEL_2G   = 0x00,  /**< +/- 2g */
     SENSE_I_9_ACCEL_4G   = 0x02,  /**< bits [2:1] of ACCEL_CONFIG */
-    SENSE_I_9_ACCEL_8G   = 0x04,
-    SENSE_I_9_ACCEL_16G  = 0x06,
+    SENSE_I_9_ACCEL_8G   = 0x04,  /**< +/- 8g */
+    SENSE_I_9_ACCEL_16G  = 0x06,  /**< +/- 16g */
 } sense_i_9_accel_range_t;
 
 /**
@@ -145,10 +145,10 @@ typedef enum {
  *   SENSE_I_9_GYRO_1000DPS → 32.8,   SENSE_I_9_GYRO_2000DPS → 16.4
  */
 typedef enum {
-    SENSE_I_9_GYRO_250DPS  = 0x00,
+    SENSE_I_9_GYRO_250DPS  = 0x00,  /**< +/- 250 deg/s */
     SENSE_I_9_GYRO_500DPS  = 0x02,  /**< bits [2:1] of GYRO_CONFIG */
-    SENSE_I_9_GYRO_1000DPS = 0x04,
-    SENSE_I_9_GYRO_2000DPS = 0x06,
+    SENSE_I_9_GYRO_1000DPS = 0x04,  /**< +/- 1000 deg/s */
+    SENSE_I_9_GYRO_2000DPS = 0x06,  /**< +/- 2000 deg/s */
 } sense_i_9_gyro_range_t;
 
 /**
@@ -158,12 +158,12 @@ typedef enum {
  * Continuous modes free-run at the specified rate.
  */
 typedef enum {
-    SENSE_I_9_MAG_POWER_DOWN       = 0x00,
-    SENSE_I_9_MAG_SINGLE           = 0x01,
-    SENSE_I_9_MAG_CONTINUOUS_10HZ  = 0x02,
-    SENSE_I_9_MAG_CONTINUOUS_20HZ  = 0x04,
-    SENSE_I_9_MAG_CONTINUOUS_50HZ  = 0x06,
-    SENSE_I_9_MAG_CONTINUOUS_100HZ = 0x08,
+    SENSE_I_9_MAG_POWER_DOWN       = 0x00,  /**< Power-down */
+    SENSE_I_9_MAG_SINGLE           = 0x01,  /**< Single measurement */
+    SENSE_I_9_MAG_CONTINUOUS_10HZ  = 0x02,  /**< Continuous at 10 Hz */
+    SENSE_I_9_MAG_CONTINUOUS_20HZ  = 0x04,  /**< Continuous at 20 Hz */
+    SENSE_I_9_MAG_CONTINUOUS_50HZ  = 0x06,  /**< Continuous at 50 Hz */
+    SENSE_I_9_MAG_CONTINUOUS_100HZ = 0x08,  /**< Continuous at 100 Hz */
 } sense_i_9_mag_mode_t;
 
 /* -------------------------------------------------------------- */

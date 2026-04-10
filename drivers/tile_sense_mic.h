@@ -365,6 +365,13 @@ uint16_t tile_sense_mic_rms(const uint16_t *samples, uint16_t count,
 
 /**
  * @brief  Convert peak-to-peak raw amplitude to millivolts.
+ *
+ * Uses the configured reference voltage to scale a peak-to-peak raw
+ * ADC count into millivolts: mv = pp_raw * vref_mv / 4096.
+ *
+ * @param  tile    Initialised tile handle.
+ * @param  pp_raw  Peak-to-peak amplitude in raw ADC counts (from peak_to_peak()).
+ * @return Amplitude in millivolts.
  */
 uint16_t tile_sense_mic_amplitude_mv(tile_t *tile, uint16_t pp_raw);
 

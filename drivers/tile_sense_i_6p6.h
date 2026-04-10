@@ -274,11 +274,11 @@ TILES_CHECK_VERSION(1, 0);
  * | ACCEL_2G     | ±2 g   | 16,384              |
  */
 typedef enum {
-    SENSE_I_6P6_ACCEL_32G  = 0x00,
-    SENSE_I_6P6_ACCEL_16G  = 0x01,
-    SENSE_I_6P6_ACCEL_8G   = 0x02,
-    SENSE_I_6P6_ACCEL_4G   = 0x03,
-    SENSE_I_6P6_ACCEL_2G   = 0x04,
+    SENSE_I_6P6_ACCEL_32G  = 0x00,  /**< +/- 32g */
+    SENSE_I_6P6_ACCEL_16G  = 0x01,  /**< +/- 16g */
+    SENSE_I_6P6_ACCEL_8G   = 0x02,  /**< +/- 8g */
+    SENSE_I_6P6_ACCEL_4G   = 0x03,  /**< +/- 4g */
+    SENSE_I_6P6_ACCEL_2G   = 0x04,  /**< +/- 2g */
 } sense_i_6p6_accel_range_t;
 
 /**
@@ -296,14 +296,14 @@ typedef enum {
  * | GYRO_31_25DPS | ±31.25 °/s   |  1048.6              |
  */
 typedef enum {
-    SENSE_I_6P6_GYRO_4000DPS   = 0x00,
-    SENSE_I_6P6_GYRO_2000DPS   = 0x01,
-    SENSE_I_6P6_GYRO_1000DPS   = 0x02,
-    SENSE_I_6P6_GYRO_500DPS    = 0x03,
-    SENSE_I_6P6_GYRO_250DPS    = 0x04,
-    SENSE_I_6P6_GYRO_125DPS    = 0x05,
-    SENSE_I_6P6_GYRO_62_5DPS   = 0x06,
-    SENSE_I_6P6_GYRO_31_25DPS  = 0x07,
+    SENSE_I_6P6_GYRO_4000DPS   = 0x00,  /**< +/- 4000 deg/s */
+    SENSE_I_6P6_GYRO_2000DPS   = 0x01,  /**< +/- 2000 deg/s */
+    SENSE_I_6P6_GYRO_1000DPS   = 0x02,  /**< +/- 1000 deg/s */
+    SENSE_I_6P6_GYRO_500DPS    = 0x03,  /**< +/- 500 deg/s */
+    SENSE_I_6P6_GYRO_250DPS    = 0x04,  /**< +/- 250 deg/s */
+    SENSE_I_6P6_GYRO_125DPS    = 0x05,  /**< +/- 125 deg/s */
+    SENSE_I_6P6_GYRO_62_5DPS   = 0x06,  /**< +/- 62.5 deg/s */
+    SENSE_I_6P6_GYRO_31_25DPS  = 0x07,  /**< +/- 31.25 deg/s */
 } sense_i_6p6_gyro_range_t;
 
 /**
@@ -313,28 +313,28 @@ typedef enum {
  * Rates above 200 Hz require Low-Noise mode. Rates below 12.5 Hz are accel LP only.
  */
 typedef enum {
-    SENSE_I_6P6_ODR_32KHZ    = 0x01,
-    SENSE_I_6P6_ODR_16KHZ    = 0x02,
-    SENSE_I_6P6_ODR_8KHZ     = 0x03,
-    SENSE_I_6P6_ODR_4KHZ     = 0x04,
-    SENSE_I_6P6_ODR_2KHZ     = 0x05,
-    SENSE_I_6P6_ODR_1KHZ     = 0x06,
-    SENSE_I_6P6_ODR_200HZ    = 0x07,
-    SENSE_I_6P6_ODR_100HZ    = 0x08,
-    SENSE_I_6P6_ODR_50HZ     = 0x09,
-    SENSE_I_6P6_ODR_25HZ     = 0x0A,
-    SENSE_I_6P6_ODR_12_5HZ   = 0x0B,
-    SENSE_I_6P6_ODR_6_25HZ   = 0x0C,   /**< Accel LP only */
-    SENSE_I_6P6_ODR_3_125HZ  = 0x0D,   /**< Accel LP only */
-    SENSE_I_6P6_ODR_1_5625HZ = 0x0E,   /**< Accel LP only */
-    SENSE_I_6P6_ODR_500HZ    = 0x0F,
+    SENSE_I_6P6_ODR_32KHZ    = 0x01,    /**< 32 kHz */
+    SENSE_I_6P6_ODR_16KHZ    = 0x02,    /**< 16 kHz */
+    SENSE_I_6P6_ODR_8KHZ     = 0x03,    /**< 8 kHz */
+    SENSE_I_6P6_ODR_4KHZ     = 0x04,    /**< 4 kHz */
+    SENSE_I_6P6_ODR_2KHZ     = 0x05,    /**< 2 kHz */
+    SENSE_I_6P6_ODR_1KHZ     = 0x06,    /**< 1 kHz */
+    SENSE_I_6P6_ODR_200HZ    = 0x07,    /**< 200 Hz */
+    SENSE_I_6P6_ODR_100HZ    = 0x08,    /**< 100 Hz */
+    SENSE_I_6P6_ODR_50HZ     = 0x09,    /**< 50 Hz */
+    SENSE_I_6P6_ODR_25HZ     = 0x0A,    /**< 25 Hz */
+    SENSE_I_6P6_ODR_12_5HZ   = 0x0B,    /**< 12.5 Hz */
+    SENSE_I_6P6_ODR_6_25HZ   = 0x0C,    /**< 6.25 Hz (accel LP only) */
+    SENSE_I_6P6_ODR_3_125HZ  = 0x0D,    /**< 3.125 Hz (accel LP only) */
+    SENSE_I_6P6_ODR_1_5625HZ = 0x0E,    /**< 1.5625 Hz (accel LP only) */
+    SENSE_I_6P6_ODR_500HZ    = 0x0F,    /**< 500 Hz */
 } sense_i_6p6_odr_t;
 
 /**
  * @brief  Power mode for accel/gyro independently.
  */
 typedef enum {
-    SENSE_I_6P6_MODE_OFF     = 0x00,
+    SENSE_I_6P6_MODE_OFF     = 0x00,   /**< Powered off */
     SENSE_I_6P6_MODE_STANDBY = 0x01,   /**< Gyro only: drive on, no output */
     SENSE_I_6P6_MODE_LP      = 0x02,   /**< Accel only: duty-cycled */
     SENSE_I_6P6_MODE_LN      = 0x03,   /**< Low-noise (full performance) */
@@ -350,12 +350,12 @@ typedef enum {
 typedef enum {
     SENSE_I_6P6_FILT_BW_ODR_2     = 0x00,  /**< ODR/2 (Nyquist) */
     SENSE_I_6P6_FILT_BW_ODR_4     = 0x01,  /**< max(400,ODR)/4 (default) */
-    SENSE_I_6P6_FILT_BW_ODR_5     = 0x02,
-    SENSE_I_6P6_FILT_BW_ODR_8     = 0x03,
-    SENSE_I_6P6_FILT_BW_ODR_10    = 0x04,
-    SENSE_I_6P6_FILT_BW_ODR_16    = 0x05,
-    SENSE_I_6P6_FILT_BW_ODR_20    = 0x06,
-    SENSE_I_6P6_FILT_BW_ODR_40    = 0x07,
+    SENSE_I_6P6_FILT_BW_ODR_5     = 0x02,  /**< ODR/5 */
+    SENSE_I_6P6_FILT_BW_ODR_8     = 0x03,  /**< ODR/8 */
+    SENSE_I_6P6_FILT_BW_ODR_10    = 0x04,  /**< ODR/10 */
+    SENSE_I_6P6_FILT_BW_ODR_16    = 0x05,  /**< ODR/16 */
+    SENSE_I_6P6_FILT_BW_ODR_20    = 0x06,  /**< ODR/20 */
+    SENSE_I_6P6_FILT_BW_ODR_40    = 0x07,  /**< ODR/40 */
     SENSE_I_6P6_FILT_LP_1X_AVG    = 0x01,  /**< LP mode: 1× averaging (default) */
     SENSE_I_6P6_FILT_LP_16X_AVG   = 0x06,  /**< LP mode: 16× averaging */
 } sense_i_6p6_filter_bw_t;
@@ -364,39 +364,39 @@ typedef enum {
  * @brief  UI filter order.
  */
 typedef enum {
-    SENSE_I_6P6_FILT_ORDER_1ST = 0x00,
-    SENSE_I_6P6_FILT_ORDER_2ND = 0x01,
-    SENSE_I_6P6_FILT_ORDER_3RD = 0x02,
+    SENSE_I_6P6_FILT_ORDER_1ST = 0x00,  /**< 1st order */
+    SENSE_I_6P6_FILT_ORDER_2ND = 0x01,  /**< 2nd order */
+    SENSE_I_6P6_FILT_ORDER_3RD = 0x02,  /**< 3rd order */
 } sense_i_6p6_filter_order_t;
 
 /**
  * @brief  Temperature filter bandwidth.
  */
 typedef enum {
-    SENSE_I_6P6_TEMP_FILT_4000HZ = 0x00,
-    SENSE_I_6P6_TEMP_FILT_170HZ  = 0x01,
-    SENSE_I_6P6_TEMP_FILT_82HZ   = 0x02,
-    SENSE_I_6P6_TEMP_FILT_40HZ   = 0x03,
-    SENSE_I_6P6_TEMP_FILT_20HZ   = 0x04,
-    SENSE_I_6P6_TEMP_FILT_10HZ   = 0x05,
-    SENSE_I_6P6_TEMP_FILT_5HZ    = 0x06,
+    SENSE_I_6P6_TEMP_FILT_4000HZ = 0x00,  /**< 4000 Hz cutoff */
+    SENSE_I_6P6_TEMP_FILT_170HZ  = 0x01,  /**< 170 Hz cutoff */
+    SENSE_I_6P6_TEMP_FILT_82HZ   = 0x02,  /**< 82 Hz cutoff */
+    SENSE_I_6P6_TEMP_FILT_40HZ   = 0x03,  /**< 40 Hz cutoff */
+    SENSE_I_6P6_TEMP_FILT_20HZ   = 0x04,  /**< 20 Hz cutoff */
+    SENSE_I_6P6_TEMP_FILT_10HZ   = 0x05,  /**< 10 Hz cutoff */
+    SENSE_I_6P6_TEMP_FILT_5HZ    = 0x06,  /**< 5 Hz cutoff */
 } sense_i_6p6_temp_filter_t;
 
 /**
  * @brief  FIFO mode.
  */
 typedef enum {
-    SENSE_I_6P6_FIFO_BYPASS      = 0x00,
-    SENSE_I_6P6_FIFO_STREAM      = 0x01,
-    SENSE_I_6P6_FIFO_STOP_ON_FULL = 0x02,
+    SENSE_I_6P6_FIFO_BYPASS      = 0x00,  /**< FIFO disabled */
+    SENSE_I_6P6_FIFO_STREAM      = 0x01,  /**< Stream mode (oldest data replaced) */
+    SENSE_I_6P6_FIFO_STOP_ON_FULL = 0x02,  /**< Stop on full */
 } sense_i_6p6_fifo_mode_t;
 
 /**
  * @brief  APEX DMP output data rate.
  */
 typedef enum {
-    SENSE_I_6P6_DMP_ODR_25HZ  = 0x00,
-    SENSE_I_6P6_DMP_ODR_50HZ  = 0x02,
+    SENSE_I_6P6_DMP_ODR_25HZ  = 0x00,  /**< 25 Hz */
+    SENSE_I_6P6_DMP_ODR_50HZ  = 0x02,  /**< 50 Hz */
 } sense_i_6p6_dmp_odr_t;
 
 /**
@@ -411,7 +411,7 @@ typedef enum {
  * @brief  SMD (Significant Motion Detection) mode.
  */
 typedef enum {
-    SENSE_I_6P6_SMD_DISABLED = 0x00,
+    SENSE_I_6P6_SMD_DISABLED = 0x00,   /**< Disabled */
     SENSE_I_6P6_SMD_SHORT    = 0x02,   /**< 1 second WOM window */
     SENSE_I_6P6_SMD_LONG     = 0x03,   /**< 3 second WOM window */
 } sense_i_6p6_smd_mode_t;
@@ -420,12 +420,12 @@ typedef enum {
  * @brief  Interrupt pin configuration.
  */
 typedef enum {
-    SENSE_I_6P6_INT_ACTIVE_LOW   = 0x00,
-    SENSE_I_6P6_INT_ACTIVE_HIGH  = 0x01,
-    SENSE_I_6P6_INT_OPEN_DRAIN   = 0x00,
-    SENSE_I_6P6_INT_PUSH_PULL    = 0x02,
-    SENSE_I_6P6_INT_PULSED       = 0x00,
-    SENSE_I_6P6_INT_LATCHED      = 0x04,
+    SENSE_I_6P6_INT_ACTIVE_LOW   = 0x00,  /**< Active low */
+    SENSE_I_6P6_INT_ACTIVE_HIGH  = 0x01,  /**< Active high */
+    SENSE_I_6P6_INT_OPEN_DRAIN   = 0x00,  /**< Open drain */
+    SENSE_I_6P6_INT_PUSH_PULL    = 0x02,  /**< Push-pull */
+    SENSE_I_6P6_INT_PULSED       = 0x00,  /**< Pulsed */
+    SENSE_I_6P6_INT_LATCHED      = 0x04,  /**< Latched */
 } sense_i_6p6_int_config_t;
 
 /**
@@ -453,9 +453,9 @@ typedef struct {
  * @brief  APEX activity classification.
  */
 typedef enum {
-    SENSE_I_6P6_ACTIVITY_UNKNOWN = 0x00,
-    SENSE_I_6P6_ACTIVITY_WALK    = 0x01,
-    SENSE_I_6P6_ACTIVITY_RUN     = 0x02,
+    SENSE_I_6P6_ACTIVITY_UNKNOWN = 0x00,  /**< Unknown */
+    SENSE_I_6P6_ACTIVITY_WALK    = 0x01,  /**< Walking */
+    SENSE_I_6P6_ACTIVITY_RUN     = 0x02,  /**< Running */
 } sense_i_6p6_activity_t;
 
 /**
@@ -527,7 +527,7 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
 /* ---- Event processing ---- */
 
 /**
- * Process pending interrupt events. Call from your main loop.
+ * @brief  Process pending interrupt events. Call from your main loop.
  *
  * In interrupt mode: returns immediately if no INT1 interrupt fired;
  * reads INT_STATUS and fires callback only when events are pending.
@@ -535,7 +535,7 @@ void tile_sense_i_6p6_init(tiles_hal_t *hal, uint8_t instance,
  */
 void tile_sense_i_6p6_process(tile_t *tile);
 
-/** Register or change the event callback. */
+/** @brief  Register or change the event callback. */
 void tile_sense_i_6p6_on_event(tile_t *tile, sense_i_6p6_event_cb_t cb, void *ctx);
 
 /** @brief  Enter sleep mode (accel + gyro off). ~7.5 µA. */

@@ -141,25 +141,25 @@ TILES_CHECK_VERSION(1, 0);
 /** Output data rate selection (CTRL_REG1 ODR[3:0], bits 6:3). */
 typedef enum {
     SENSE_BP_ODR_POWERDOWN = 0x00,  /**< Power-down / one-shot */
-    SENSE_BP_ODR_1HZ       = 0x01,
-    SENSE_BP_ODR_4HZ       = 0x02,
-    SENSE_BP_ODR_10HZ      = 0x03,
-    SENSE_BP_ODR_25HZ      = 0x04,
-    SENSE_BP_ODR_50HZ      = 0x05,
-    SENSE_BP_ODR_75HZ      = 0x06,
-    SENSE_BP_ODR_100HZ     = 0x07,
-    SENSE_BP_ODR_200HZ     = 0x08,
+    SENSE_BP_ODR_1HZ       = 0x01,  /**< 1 Hz */
+    SENSE_BP_ODR_4HZ       = 0x02,  /**< 4 Hz */
+    SENSE_BP_ODR_10HZ      = 0x03,  /**< 10 Hz */
+    SENSE_BP_ODR_25HZ      = 0x04,  /**< 25 Hz */
+    SENSE_BP_ODR_50HZ      = 0x05,  /**< 50 Hz */
+    SENSE_BP_ODR_75HZ      = 0x06,  /**< 75 Hz */
+    SENSE_BP_ODR_100HZ     = 0x07,  /**< 100 Hz */
+    SENSE_BP_ODR_200HZ     = 0x08,  /**< 200 Hz */
 } sense_bp_odr_t;
 
 /** Averaging selection (CTRL_REG1 AVG[2:0], bits 2:0). */
 typedef enum {
-    SENSE_BP_AVG_4   = 0x00,
-    SENSE_BP_AVG_8   = 0x01,
-    SENSE_BP_AVG_16  = 0x02,
-    SENSE_BP_AVG_32  = 0x03,
-    SENSE_BP_AVG_64  = 0x04,
-    SENSE_BP_AVG_128 = 0x05,
-    SENSE_BP_AVG_512 = 0x07,
+    SENSE_BP_AVG_4   = 0x00,  /**< 4 samples */
+    SENSE_BP_AVG_8   = 0x01,  /**< 8 samples */
+    SENSE_BP_AVG_16  = 0x02,  /**< 16 samples */
+    SENSE_BP_AVG_32  = 0x03,  /**< 32 samples */
+    SENSE_BP_AVG_64  = 0x04,  /**< 64 samples */
+    SENSE_BP_AVG_128 = 0x05,  /**< 128 samples */
+    SENSE_BP_AVG_512 = 0x07,  /**< 512 samples */
 } sense_bp_avg_t;
 
 /** Full-scale mode selection (CTRL_REG2 FS_MODE, bit 6). */
