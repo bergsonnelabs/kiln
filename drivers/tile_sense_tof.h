@@ -1,6 +1,6 @@
 /**
  * @file  tile_sense_tof.h
- * @brief Sense.TOF tile driver — TMF8806 time-of-flight distance sensor.
+ * @brief TMF8806 time-of-flight distance sensor.
  *
  * Platform-agnostic driver for the AMS/Sciosense TMF8806 direct time-of-flight
  * (dToF) sensor with integrated VCSEL emitter and SPAD detector array.

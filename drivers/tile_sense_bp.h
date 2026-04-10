@@ -1,6 +1,6 @@
 /**
  * @file  tile_sense_bp.h
- * @brief Sense.BP tile driver — ILPS22QS barometric pressure & temperature.
+ * @brief ILPS22QS barometric pressure & temperature sensor.
  *
  * Platform-agnostic driver for the ST ILPS22QS dual full-scale absolute
  * pressure sensor (260–1260 hPa or 260–4060 hPa) with embedded temperature
