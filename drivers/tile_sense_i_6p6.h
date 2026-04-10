@@ -24,16 +24,10 @@
  *
  * Quick start — SPI:
  * @code
- *   tiles_hal_core_cfg_t cfg = {
- *       .spi = &core_spi1,
- *       .buses = TILES_BUS_SPI,
- *       .cs = { [0] = { .port = (tiles_gpio_t *)GPIOA, .pin = 4 } },
- *   };
- *   tiles_hal_t hal;
- *   tiles_hal_core_init(&hal, &cfg);
- *
  *   tile_t imu;
- *   tile_sense_i_6p6_init(&hal, 0, &imu, NULL);
+ *   tile_sense_i_6p6_init(core_tiles_hal(&core_spi1), 0, &imu, NULL);
+ *   int16_t accel[3];
+ *   tile_sense_i_6p6_get_raw_accels(&imu, accel);
  * @endcode
  *
  * Quick start — interrupt-driven with callback:
