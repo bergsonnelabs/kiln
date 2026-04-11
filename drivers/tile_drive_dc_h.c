@@ -100,10 +100,13 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
     }
 
     /* Parse config, apply defaults */
-    uint8_t mode    = DRIVE_DC_H_MODE_VOLTAGE;
-    uint8_t vm_gain = 1;    /* 0-3.92V range */
-    uint8_t cs_gain = 0;    /* 4A max */
-    uint8_t target  = 0xFF; /* full scale */
+    uint8_t  mode            = DRIVE_DC_H_MODE_VOLTAGE;
+    uint8_t  vm_gain         = 1;    /* 0-3.92V range */
+    uint8_t  cs_gain         = 0;    /* 4A max */
+    uint8_t  target          = 0xFF; /* full scale */
+    uint16_t motor_mohm      = 0;
+    uint8_t  ripples_per_rev = 12;
+    uint16_t kv_uv_per_rpm   = 0;
 
     if (cfg != NULL) {
         mode    = cfg->mode;
@@ -111,6 +114,10 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
         cs_gain = cfg->cs_gain;
         if (cs_gain > 5) cs_gain = 5;
         target  = cfg->target;
+        motor_mohm      = cfg->motor_mohm;
+        ripples_per_rev = cfg->ripples_per_rev;
+        if (ripples_per_rev == 0) ripples_per_rev = 12;
+        kv_uv_per_rpm   = cfg->kv_uv_per_rpm;
     }
 
     /* ---- CONFIG4: I2C bridge control, PWM mode ----
@@ -155,7 +162,7 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
     if (mode == DRIVE_DC_H_MODE_SPEED) {
         reg_ctrl_bits = 0x02;  /* 10b = speed regulation */
     } else {
-        reg_ctrl_bits = 0x03;  /* 11b = voltage regulation */
+        reg_ctrl_bits = 0x03;  /* 11b = voltage regulation (also for RIPPLE_COUNT) */
     }
     drv_write(tile, DRV8214_REG_CTRL0,
               0x20 | (reg_ctrl_bits << 3) | 0x07);
@@ -175,7 +182,8 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
      * [5]   RC_HIZ       = 0   (bridge stays on at threshold)
      * [4:3] FLT_GAIN_SEL = 01  (gain = 4)
      * [2:0] CS_GAIN_SEL  = cfg                                     */
-    uint8_t en_rc = (mode == DRIVE_DC_H_MODE_SPEED) ? 0x80 : 0x00;
+    uint8_t en_rc = (mode == DRIVE_DC_H_MODE_SPEED ||
+                     mode == DRIVE_DC_H_MODE_RIPPLE_COUNT) ? 0x80 : 0x00;
     drv_write(tile, DRV8214_REG_RC_CTRL0,
               en_rc | 0x08 | (cs_gain & 0x07));
 
@@ -183,6 +191,73 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
      * [7:6] OUT_FLT  = 11  (1000 Hz cutoff — 20x below 25 kHz PWM)
      * [5:0] EXT_DUTY = 0   (not used in I2C bridge mode)           */
     drv_write(tile, DRV8214_REG_CTRL2, 0xC0);
+
+    /* ---- Ripple counting tuning (motor-specific parameters) ----
+     * Computes INV_R and KMC register values from motor parameters.
+     * Skipped if motor_mohm == 0.                                   */
+    if (motor_mohm > 0) {
+
+        /* INV_R = INV_R_SCALE / R_motor (ohms)
+         *       = INV_R_SCALE * 1000 / motor_mohm
+         * Try scales from largest to smallest for best precision. */
+        static const uint32_t inv_r_scales[]    = { 8192, 1024, 64, 2 };
+        static const uint8_t  inv_r_scale_bits[] = { 3, 2, 1, 0 };
+        uint8_t inv_r = 0;
+        uint8_t inv_r_sb = 0;
+
+        for (uint8_t i = 0; i < 4; i++) {
+            uint32_t v = inv_r_scales[i] * 1000 / motor_mohm;
+            if (v >= 1 && v <= 255) {
+                inv_r = (uint8_t)v;
+                inv_r_sb = inv_r_scale_bits[i];
+                break;
+            }
+        }
+
+        /* KMC = (Kv / N_R) * KMC_SCALE
+         * Kv in V/(rad/s) = kv_uv_per_rpm / 104720 (approx)
+         * Pre-computed multipliers: KMC_SCALE * 60 / (2*pi*1e6)
+         *   scale 3 (196608): ×1878/1000
+         *   scale 2 (98304):  ×939/1000
+         *   scale 1 (12288):  ×117/1000
+         *   scale 0 (6144):   ×59/1000                              */
+        uint8_t kmc = 0;
+        uint8_t kmc_sb = 0;
+
+        if (kv_uv_per_rpm > 0) {
+            static const uint16_t kmc_mults[]      = { 1878, 939, 117, 59 };
+            static const uint8_t  kmc_scale_bits[] = { 3, 2, 1, 0 };
+
+            for (uint8_t i = 0; i < 4; i++) {
+                uint32_t num = (uint32_t)kv_uv_per_rpm * kmc_mults[i];
+                uint32_t den = (uint32_t)1000 * ripples_per_rev;
+                uint32_t v   = (num + den / 2) / den;  /* round */
+                if (v >= 1 && v <= 255) {
+                    kmc = (uint8_t)v;
+                    kmc_sb = kmc_scale_bits[i];
+                    break;
+                }
+            }
+        }
+
+        /* RC_CTRL2: scaling factors
+         * [7:6] INV_R_SCALE
+         * [5:4] KMC_SCALE
+         * [3:2] RC_THR_SCALE = 11 (×64, default)
+         * [1:0] RC_THR[9:8]  = 11 (default)                        */
+        drv_write(tile, DRV8214_REG_RC_CTRL2,
+                  (inv_r_sb << 6) | (kmc_sb << 4) | 0x0F);
+
+        /* RC_CTRL3: INV_R */
+        if (inv_r > 0) {
+            drv_write(tile, DRV8214_REG_RC_CTRL3, inv_r);
+        }
+
+        /* RC_CTRL4: KMC */
+        if (kmc > 0) {
+            drv_write(tile, DRV8214_REG_RC_CTRL4, kmc);
+        }
+    }
 
     tile->state = TILE_STATE_READY;
 }

@@ -118,6 +118,10 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 
 /* Ripple counting control registers */
 #define DRV8214_REG_RC_CTRL0        0x11  /**< EN_RC, CS_GAIN_SEL */
+#define DRV8214_REG_RC_CTRL1        0x12  /**< RC_THR [7:0] */
+#define DRV8214_REG_RC_CTRL2        0x13  /**< INV_R_SCALE, KMC_SCALE, RC_THR_SCALE, RC_THR[9:8] */
+#define DRV8214_REG_RC_CTRL3        0x14  /**< INV_R */
+#define DRV8214_REG_RC_CTRL4        0x15  /**< KMC */
 
 /** @brief  Expected CONFIG3 register value at power-on. */
 #define DRV8214_CONFIG3_DEFAULT     0x63
@@ -139,13 +143,21 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 /* -------------------------------------------------------------- */
 
 /** Voltage regulation — internal PI loop maintains target motor voltage.
- *  WSET_VSET sets the target; VM_GAIN_SEL selects the voltage range. */
+ *  WSET_VSET sets the target; VM_GAIN_SEL selects the voltage range.
+ *  Ripple counting is disabled. */
 #define DRIVE_DC_H_MODE_VOLTAGE     0
 
 /** Speed regulation — internal PI loop maintains target motor speed
- *  using the ripple counting algorithm. Requires motor-specific tuning
- *  of INV_R, KMC, and filter parameters for accurate operation. */
+ *  using the ripple counting algorithm. Requires motor_mohm,
+ *  ripples_per_rev, and kv_uv_per_rpm in the config struct. */
 #define DRIVE_DC_H_MODE_SPEED       1
+
+/** Voltage regulation with ripple counting enabled. Motor runs at the
+ *  target voltage while counting commutation ripples for position
+ *  tracking. Use get_ripple_count() to read position, get_speed() for
+ *  speed estimate. Provide motor_mohm and ripples_per_rev for accurate
+ *  counting; kv_uv_per_rpm improves speed estimation but is optional. */
+#define DRIVE_DC_H_MODE_RIPPLE_COUNT 2
 
 /* -------------------------------------------------------------- */
 /* Public API                                                      */
@@ -162,24 +174,42 @@ uint8_t tile_drive_dc_h_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
  * Optional init config. Pass NULL for defaults:
- *   - Voltage regulation mode
+ *   - Voltage regulation mode (no ripple counting)
  *   - 0-3.92 V range (VM_GAIN_SEL=1)
  *   - 4 A max current sense (CS_GAIN_SEL=0)
  *   - Full target voltage (WSET_VSET=0xFF)
  *   - Soft-start enabled, 25 kHz PWM
  *   - I2C bridge control, PWM mode
+ *
+ * For ripple counting, set mode to RIPPLE_COUNT or SPEED and
+ * provide motor parameters. The driver computes register values
+ * (INV_R, KMC, scaling factors) automatically.
  */
 typedef struct {
-    uint8_t mode;     /**< DRIVE_DC_H_MODE_VOLTAGE (0) or _SPEED (1). */
-    uint8_t vm_gain;  /**< Voltage range: 0 = 0-15.7 V, 1 = 0-3.92 V.
-                           Use 1 for better resolution at low voltages. */
-    uint8_t cs_gain;  /**< Current sense gain (CS_GAIN_SEL, 0-5):
-                           0=4A, 1=2A, 2=1A, 3=0.5A, 4=0.25A, 5=0.125A.
-                           Lower gain = lower R_DS(on) = higher efficiency. */
-    uint8_t target;   /**< WSET_VSET: target voltage or speed (0-255).
-                           In voltage mode with VM_GAIN_SEL=1:
-                             WSET_VSET = target_mV * 255 / 3920.
-                           0xFF = full scale. */
+    uint8_t  mode;     /**< DRIVE_DC_H_MODE_VOLTAGE (0), _SPEED (1),
+                            or _RIPPLE_COUNT (2). */
+    uint8_t  vm_gain;  /**< Voltage range: 0 = 0-15.7 V, 1 = 0-3.92 V.
+                            Use 1 for better resolution at low voltages. */
+    uint8_t  cs_gain;  /**< Current sense gain (CS_GAIN_SEL, 0-5):
+                            0=4A, 1=2A, 2=1A, 3=0.5A, 4=0.25A, 5=0.125A.
+                            Lower gain = lower R_DS(on) = higher efficiency. */
+    uint8_t  target;   /**< WSET_VSET: target voltage or speed (0-255).
+                            In voltage mode with VM_GAIN_SEL=1:
+                              WSET_VSET = target_mV * 255 / 3920.
+                            0xFF = full scale. */
+
+    /* ---- Ripple counting (set motor_mohm > 0 to enable tuning) ---- */
+    uint16_t motor_mohm;       /**< Motor winding resistance in milliohms.
+                                    0 = skip ripple tuning (use chip defaults).
+                                    Typical small DC motor: 1000-50000 mohm. */
+    uint8_t  ripples_per_rev;  /**< Commutation ripples per revolution.
+                                    = LCM(brushes, commutator_segments).
+                                    Common values: 3, 5, 6, 7, 12.
+                                    0 = default (12). */
+    uint16_t kv_uv_per_rpm;    /**< Back-EMF constant in uV/RPM.
+                                    Improves speed estimation accuracy.
+                                    0 = skip KMC tuning.
+                                    Typical small motor: 100-2000 uV/RPM. */
 } drive_dc_h_cfg_t;
 
 /**
