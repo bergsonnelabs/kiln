@@ -181,20 +181,6 @@ typedef enum {
 uint8_t tile_sense_i_9_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
- * @brief  Initialize the ICM-20948 and AK09916.
- *
- * Performs a soft reset, verifies WHO_AM_I, wakes the device,
- * enables all accel + gyro axes, enables I2C bypass for direct
- * magnetometer access, and starts the magnetometer in continuous
- * 100 Hz mode.
- *
- * @param  hal       Platform HAL handle
- * @param  instance  Instance index (0 = default, see mapping table)
- * @param  tile      Pointer to tile handle (populated by this function)
- *
- * @note   Blocks for ~50 ms during reset. Call once at startup.
- */
-/**
  * Optional init config. Pass NULL for defaults.
  * Reserved for future use (e.g., initial range/ODR settings).
  */
@@ -202,6 +188,21 @@ typedef struct {
     uint8_t reserved;   /**< Placeholder — no options yet. */
 } sense_i_9_cfg_t;
 
+/**
+ * @brief  Initialize the ICM-20948 and AK09916.
+ *
+ * Performs a soft reset, verifies WHO_AM_I, wakes the device,
+ * enables all accel + gyro axes, enables I2C bypass for direct
+ * magnetometer access, and starts the magnetometer in continuous
+ * 100 Hz mode. Pass cfg=NULL for defaults.
+ *
+ * @param  hal       Platform HAL handle
+ * @param  instance  Instance index (0 = default, see mapping table)
+ * @param  tile      Pointer to tile handle (populated by this function)
+ * @param  cfg       Optional config, or NULL for defaults
+ *
+ * @note   Blocks for ~50 ms during reset. Call once at startup.
+ */
 void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
                          const sense_i_9_cfg_t *cfg);
 

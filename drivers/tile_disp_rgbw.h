@@ -65,13 +65,6 @@ TILES_CHECK_VERSION(1, 0);
 uint8_t tile_disp_rgbw_find(tiles_pal_t *hal, uint8_t instance);
 
 /**
- * @brief  Initialize the LP5811 LED driver.
- *
- * Enables the chip, configures boost voltage to 4.5V, sets max
- * current to 51mA, enables all 4 LED channels, and sets current
- * limits to 50%.
- */
-/**
  * Optional init config. Pass NULL for defaults.
  * Reserved for future use (e.g., initial brightness, current limits).
  */
@@ -79,6 +72,18 @@ typedef struct {
     uint8_t reserved;   /**< Placeholder — no options yet. */
 } disp_rgbw_cfg_t;
 
+/**
+ * @brief  Initialize the LP5811 LED driver.
+ *
+ * Enables the chip, configures boost voltage to 4.5V, sets max
+ * current to 51mA, enables all 4 LED channels, and sets current
+ * limits to 50%. Pass cfg=NULL for defaults.
+ *
+ * @param  hal       Platform abstraction handle
+ * @param  instance  Device instance (0 = default address 0x50)
+ * @param  tile      Tile handle to populate
+ * @param  cfg       Optional config, or NULL for defaults
+ */
 void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
                          const disp_rgbw_cfg_t *cfg);
 
