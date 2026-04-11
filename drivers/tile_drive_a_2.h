@@ -222,11 +222,8 @@ typedef struct {
  * Pass NULL for defaults: 1x VDD gain on both channels, 6 dB amp gain.
  */
 typedef struct {
-    uint8_t gain;            /**< drive_a_2_gain_t. 0 = 1x ext VREF.
-                                  Use DRIVE_A_2_GAIN_1X_VDD for VDD ref. */
-    int8_t  amp_gain_db;     /**< Amplifier fixed gain in dB. 0 = 0 dB.
-                                  Power-on default is 6 dB; set explicitly
-                                  if you want a different starting gain. */
+    uint8_t gain;            /**< DAC gain (drive_a_2_gain_t). Default: DRIVE_A_2_GAIN_1X_VDD. */
+    int8_t  amp_gain_db;     /**< Amplifier fixed gain in dB (-28 to +30). Default: 6 dB. */
 } drive_a_2_cfg_t;
 
 /* -------------------------------------------------------------- */

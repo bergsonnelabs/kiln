@@ -196,11 +196,10 @@ typedef enum {
  * Optional init config. Pass NULL for defaults (VDD ref, AIN0, single-ended).
  */
 typedef struct {
-    uint8_t  ref;       /**< sense_mic_ref_t. 0 = default (VDD). */
-    uint8_t  channel;   /**< sense_mic_channel_t. 0 = default (AIN0 / mic). */
-    uint8_t  scan;      /**< sense_mic_scan_t. 0 = default (scan up). */
-    uint16_t vref_mv;   /**< Reference voltage in mV. 0 = auto (3300 for VDD,
-                             2048 for internal). Only needed for external ref. */
+    uint8_t  ref;       /**< Voltage reference (sense_mic_ref_t). Default: SENSE_MIC_REF_VDD. */
+    uint8_t  channel;   /**< ADC channel (sense_mic_channel_t). Default: SENSE_MIC_CH_AIN0. */
+    uint8_t  scan;      /**< Scan mode (sense_mic_scan_t). Default: SENSE_MIC_SCAN_SINGLE. */
+    uint16_t vref_mv;   /**< Reference voltage in mV. 0 = auto (3300 for VDD, 2048 for internal). Set manually only for external ref. */
 } sense_mic_cfg_t;
 
 /* ================================================================
