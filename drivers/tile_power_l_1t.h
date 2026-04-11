@@ -99,16 +99,6 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 uint8_t tile_power_l_1t_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
- * @brief  Initialize the BQ25150 charge controller.
- *
- * Verifies the device ID and configures charge current, precharge,
- * undervoltage lockout, ADC, and disables ship mode.
- *
- * @param  hal       Platform HAL handle
- * @param  instance  Instance index (0 = default, see mapping table)
- * @param  tile      Pointer to tile handle (populated by this function)
- */
-/**
  * Optional init config. Pass NULL for defaults.
  * Reserved for future use.
  */
@@ -116,6 +106,17 @@ typedef struct {
     uint8_t reserved;   /**< Placeholder — no options yet. */
 } power_l_1t_cfg_t;
 
+/**
+ * @brief  Initialize the BQ25150 charge controller.
+ *
+ * Verifies the device ID and configures charge current, precharge,
+ * undervoltage lockout, ADC, and disables ship mode. Pass cfg=NULL for defaults.
+ *
+ * @param  hal       Platform HAL handle
+ * @param  instance  Instance index (0 = default, see mapping table)
+ * @param  tile      Pointer to tile handle (populated by this function)
+ * @param  cfg       Optional config, or NULL for defaults
+ */
 void tile_power_l_1t_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
                           const power_l_1t_cfg_t *cfg);
 

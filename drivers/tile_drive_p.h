@@ -123,17 +123,6 @@ typedef enum {
 uint8_t tile_drive_p_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
- * @brief  Initialize the BOS1921 piezoelectric driver.
- *
- * Wakes the device, performs a software reset, verifies the chip ID,
- * and configures parasitic capacitance and supply parameters for a
- * 260nF piezo on a 3.7V LiPo supply.
- *
- * @param  hal       Platform HAL handle
- * @param  instance  Instance index (0 = default, see mapping table)
- * @param  tile      Pointer to tile handle (populated by this function)
- */
-/**
  * Optional init config. Pass NULL for defaults.
  * Reserved for future use.
  */
@@ -141,6 +130,18 @@ typedef struct {
     uint8_t reserved;   /**< Placeholder — no options yet. */
 } drive_p_cfg_t;
 
+/**
+ * @brief  Initialize the BOS1921 piezoelectric driver.
+ *
+ * Wakes the device, performs a software reset, verifies the chip ID,
+ * and configures parasitic capacitance and supply parameters for a
+ * 260nF piezo on a 3.7V LiPo supply. Pass cfg=NULL for defaults.
+ *
+ * @param  hal       Platform HAL handle
+ * @param  instance  Instance index (0 = default, see mapping table)
+ * @param  tile      Pointer to tile handle (populated by this function)
+ * @param  cfg       Optional config, or NULL for defaults
+ */
 void tile_drive_p_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
                        const drive_p_cfg_t *cfg);
 

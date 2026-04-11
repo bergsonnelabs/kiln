@@ -92,18 +92,6 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 uint8_t tile_drive_h_find(tiles_pal_t* hal, uint8_t instance);
 
 /**
- * @brief  Initialize the DRV2605L haptic driver.
- *
- * Verifies the status register, exits standby, and configures
- * for LRA open-loop operation with library 6.
- *
- * @param  hal       Platform HAL handle
- * @param  instance  Instance index (0 = default, see mapping table)
- * @param  tile      Pointer to tile handle (populated by this function)
- *
- * @note   Blocks for ~500 ms during init. Call once at startup.
- */
-/**
  * Optional init config. Pass NULL for defaults.
  * Reserved for future use (e.g., default waveform library, auto-cal).
  */
@@ -111,6 +99,19 @@ typedef struct {
     uint8_t reserved;   /**< Placeholder — no options yet. */
 } drive_h_cfg_t;
 
+/**
+ * @brief  Initialize the DRV2605L haptic driver.
+ *
+ * Verifies the status register, exits standby, and configures
+ * for LRA open-loop operation with library 6. Pass cfg=NULL for defaults.
+ *
+ * @param  hal       Platform HAL handle
+ * @param  instance  Instance index (0 = default, see mapping table)
+ * @param  tile      Pointer to tile handle (populated by this function)
+ * @param  cfg       Optional config, or NULL for defaults
+ *
+ * @note   Blocks for ~500 ms during init. Call once at startup.
+ */
 void tile_drive_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
                        const drive_h_cfg_t *cfg);
 
