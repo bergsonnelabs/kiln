@@ -179,16 +179,9 @@ typedef enum {
  */
 typedef struct {
     uint8_t  mode;        /**< sense_tof_distance_mode_t (default: RANGE_2500MM). */
-    uint8_t  period_ms;   /**< Repetition period code. 0x00 = single shot,
-                               0x1E = 30 ms (default), 0xFE = 1000 ms,
-                               0xFF = 2000 ms. Intermediate values scale
-                               linearly in milliseconds. */
-    uint16_t kilo_iters;  /**< Iterations in thousands (default: 900). Higher
-                               values improve SNR at the cost of measurement
-                               time and power. */
-    uint8_t  threshold;   /**< Detection threshold, 0-63 (default: 6). Lower
-                               values increase sensitivity but may produce
-                               more false detections. */
+    uint8_t  period_ms;   /**< Repetition period code (default: 0x1E = 30 ms). 0x00 = single shot, 0xFE = 1 s, 0xFF = 2 s. */
+    uint16_t kilo_iters;  /**< Iterations in thousands (default: 900). Higher values improve SNR at the cost of power. */
+    uint8_t  threshold;   /**< Detection threshold, 0-63 (default: 6). Lower values increase sensitivity. */
 } sense_tof_cfg_t;
 
 /* ---- Result struct ---- */
@@ -201,8 +194,7 @@ typedef struct {
 typedef struct {
     uint16_t distance_mm;   /**< Peak distance in millimeters. 0 if no target. */
     uint8_t  status;        /**< Result status. 0x00-0x0F = valid, 0x10+ = error. */
-    uint8_t  reliability;   /**< Confidence indicator, 0-63.
-                                 0 = no object detected, 63 = highest confidence. */
+    uint8_t  reliability;   /**< Confidence indicator, 0-63. 0 = no object, 63 = highest confidence. */
     int8_t   temperature;   /**< Die temperature in degrees Celsius. */
     uint8_t  result_number; /**< Monotonically incrementing result counter. */
 } sense_tof_result_t;

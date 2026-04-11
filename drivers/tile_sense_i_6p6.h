@@ -436,7 +436,7 @@ typedef enum {
  * @brief  FIFO packet structure (16 bytes, accel + gyro + temp + timestamp).
  */
 typedef struct {
-    uint8_t  header;
+    uint8_t  header;     /**< Packet header byte (use SENSE_I_6P6_FIFO_HEADER_* masks). */
     int16_t  accel[3];   /**< X, Y, Z in raw ADC counts */
     int16_t  gyro[3];    /**< X, Y, Z in raw ADC counts */
     int8_t   temp;       /**< 8-bit temperature: degC = temp/2.07 + 25 */

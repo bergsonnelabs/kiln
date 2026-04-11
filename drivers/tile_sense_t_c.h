@@ -283,10 +283,7 @@ typedef struct {
     sense_t_c_event_cb_t on_event;   /**< Callback. NULL = no callback. */
     void *event_ctx;              /**< User context passed to callback. */
 
-    /* Channel enable mask: bit 0=CH0, bit 1=CH1, bit 2=CH2.
-     * 0 = use factory defaults (all enabled).
-     * For single-surface touch, set to (1 << SENSE_T_C_CH_SURFACE). */
-    uint8_t channels;
+    uint8_t channels;             /**< Channel enable bitmask (bit 0=CH0, 1=CH1, 2=CH2). 0 = factory default (all enabled). */
 
     /* Thresholds (0 = use factory defaults) */
     uint8_t prox_threshold;       /**< Proximity threshold (factory default ~4). */

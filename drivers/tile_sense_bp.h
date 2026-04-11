@@ -193,12 +193,12 @@ typedef enum {
  * ODR=25 Hz, AVG=4, FS=1260 hPa, LPF enabled at ODR/4, BDU enabled.
  */
 typedef struct {
-    uint8_t odr;       /**< sense_bp_odr_t. 0 = default (25 Hz). */
-    uint8_t avg;       /**< sense_bp_avg_t. 0 = default (4 samples). */
-    uint8_t fs;        /**< sense_bp_fs_t. 0 = default (1260 hPa). */
-    uint8_t lpf;       /**< 1 = enable low-pass filter (default). 0 = disable. */
-    uint8_t lpf_bw;    /**< sense_bp_lpf_bw_t. 0 = ODR/4 (default). */
-    uint8_t bdu;       /**< 1 = block data update (default). 0 = continuous. */
+    uint8_t odr;       /**< Output data rate (sense_bp_odr_t). Default: SENSE_BP_ODR_25HZ. */
+    uint8_t avg;       /**< Averaging depth (sense_bp_avg_t). Default: SENSE_BP_AVG_4. */
+    uint8_t fs;        /**< Full-scale mode (sense_bp_fs_t). Default: SENSE_BP_FS_1260HPA. */
+    uint8_t lpf;       /**< Low-pass filter: 1 = enabled (default), 0 = disabled. */
+    uint8_t lpf_bw;    /**< LPF bandwidth (sense_bp_lpf_bw_t). Default: SENSE_BP_LPF_ODR_4. */
+    uint8_t bdu;       /**< Block data update: 1 = enabled (default), 0 = continuous. */
 } sense_bp_cfg_t;
 
 /* ---- Lifecycle ---- */
