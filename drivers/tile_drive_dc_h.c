@@ -120,20 +120,32 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
         kv_uv_per_rpm   = cfg->kv_uv_per_rpm;
     }
 
-    /* ---- CONFIG4: I2C bridge control, PWM mode ----
-     * [7:6] RC_REP     = 00  (no ripple count on nFAULT)
-     * [5]   STALL_REP  = 1   (report stall on nFAULT)
-     * [4]   CBC_REP    = 1   (report current regulation on nFAULT)
-     * [3]   PMODE      = 1   (PWM mode — supports coast state)
-     * [2]   I2C_BC     = 1   (I2C controls bridge)
-     * [1]   I2C_EN_IN1 = 0   (start in coast)
-     * [0]   I2C_PH_IN2 = 0                                        */
-    drv_write(tile, DRV8214_REG_CONFIG4, CONFIG4_BASE);
+    /* ---- CONFIG4: bridge control mode ---- */
+    if (mode == DRIVE_DC_H_MODE_PAD_PHEN) {
+        /* External pad control, PH/EN mode:
+         * [7:6] RC_REP     = 00  (no ripple count on nFAULT)
+         * [5]   STALL_REP  = 1   (report stall on nFAULT)
+         * [4]   CBC_REP    = 1   (report current regulation on nFAULT)
+         * [3]   PMODE      = 0   (PH/EN mode)
+         * [2]   I2C_BC     = 0   (external pad control)
+         * [1:0] -          = 00  (ignored when I2C_BC=0)           */
+        drv_write(tile, DRV8214_REG_CONFIG4, 0x30);
+    } else {
+        /* I2C bridge control, PWM mode:
+         * [7:6] RC_REP     = 00  (no ripple count on nFAULT)
+         * [5]   STALL_REP  = 1   (report stall on nFAULT)
+         * [4]   CBC_REP    = 1   (report current regulation on nFAULT)
+         * [3]   PMODE      = 1   (PWM mode — supports coast state)
+         * [2]   I2C_BC     = 1   (I2C controls bridge)
+         * [1]   I2C_EN_IN1 = 0   (start in coast)
+         * [0]   I2C_PH_IN2 = 0                                    */
+        drv_write(tile, DRV8214_REG_CONFIG4, CONFIG4_BASE);
+    }
 
     /* ---- CONFIG0: enable output stage, faults, voltage range ----
      * [7]   EN_OUT       = 1   (enable output FETs)
      * [6]   EN_OVP       = 1   (overvoltage protection on)
-     * [5]   EN_STALL     = 1   (stall detection on)
+     * [5]   EN_STALL     = mode-dependent (off for pad control)
      * [4]   VSNS_SEL     = 0   (analog output filter)
      * [3]   VM_GAIN_SEL  = cfg (voltage range selection)
      * [2]   CLR_CNT      = 0
@@ -143,14 +155,19 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
               0xE2 | (vm_gain << 3));
 
     /* ---- CONFIG3: stall/current regulation settings ----
-     * [7:6] IMODE     = 01  (current reg during tINRUSH only)
+     * [7:6] IMODE     = mode-dependent
+     *                   01 for I2C modes (current reg during tINRUSH)
+     *                   00 for PAD_PHEN (no current reg — user controls PWM)
      * [5]   SMODE     = 1   (stall = indication only, outputs stay on)
      * [4]   INT_VREF  = 1   (use internal 500 mV stall reference)
      * [3]   TBLANK    = 0   (1.8 us blanking time)
      * [2]   TDEG      = 0   (2 us deglitch time)
      * [1]   OCP_MODE  = 1   (auto-retry on overcurrent)
      * [0]   TSD_MODE  = 1   (auto-retry on thermal shutdown)        */
-    drv_write(tile, DRV8214_REG_CONFIG3, 0x73);
+    {
+        uint8_t imode = (mode == DRIVE_DC_H_MODE_PAD_PHEN) ? 0x00 : 0x40;
+        drv_write(tile, DRV8214_REG_CONFIG3, 0x33 | imode);
+    }
 
     /* ---- REG_CTRL0: regulation mode, soft-start, PWM freq ----
      * [7:6] RSVD      = 00
@@ -161,6 +178,8 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
     uint8_t reg_ctrl_bits;
     if (mode == DRIVE_DC_H_MODE_SPEED) {
         reg_ctrl_bits = 0x02;  /* 10b = speed regulation */
+    } else if (mode == DRIVE_DC_H_MODE_PAD_PHEN) {
+        reg_ctrl_bits = 0x00;  /* 00b = no regulation (external PWM) */
     } else {
         reg_ctrl_bits = 0x03;  /* 11b = voltage regulation (also for RIPPLE_COUNT) */
     }

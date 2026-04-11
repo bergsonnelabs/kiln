@@ -159,6 +159,17 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
  *  counting; kv_uv_per_rpm improves speed estimation but is optional. */
 #define DRIVE_DC_H_MODE_RIPPLE_COUNT 2
 
+/** External pad control in PH/EN mode. The DRV8214 is configured
+ *  via I2C (EN_OUT=1, PMODE=0, I2C_BC=0) then the motor is
+ *  controlled entirely through the EN and PH pads:
+ *    - EN (tile pad 2): PWM for speed control, HIGH=drive, LOW=brake
+ *    - PH (tile pad 3): direction — HIGH=forward, LOW=reverse
+ *  After init, the I2C bridge control bits are ignored. Motor
+ *  monitoring (get_voltage_mv, get_current_ma, get_fault, etc.)
+ *  still works over I2C. forward/reverse/brake/coast functions
+ *  are NOT available in this mode — use GPIO/PWM instead. */
+#define DRIVE_DC_H_MODE_PAD_PHEN    3
+
 /* -------------------------------------------------------------- */
 /* Public API                                                      */
 /* -------------------------------------------------------------- */
