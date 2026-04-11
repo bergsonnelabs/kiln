@@ -21,7 +21,7 @@
  *   #include "core_tiles.h"
  *
  *   tile_t battery;
- *   tile_power_l_1t_init(core_tiles_pal(&core_i2c1), 0, &battery);
+ *   tile_power_l_1t_init(core_tiles_pal(&core_i2c1), 0, &battery, NULL);
  *   if (tile_is_ready(&battery)) {
  *       uint16_t vbat = tile_power_l_1t_get_vbat(&battery);
  *       uint8_t  pct  = tile_power_l_1t_get_percent(&battery);
@@ -108,7 +108,16 @@ uint8_t tile_power_l_1t_find(tiles_pal_t* hal, uint8_t instance);
  * @param  instance  Instance index (0 = default, see mapping table)
  * @param  tile      Pointer to tile handle (populated by this function)
  */
-void tile_power_l_1t_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile);
+/**
+ * Optional init config. Pass NULL for defaults.
+ * Reserved for future use.
+ */
+typedef struct {
+    uint8_t reserved;   /**< Placeholder — no options yet. */
+} power_l_1t_cfg_t;
+
+void tile_power_l_1t_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
+                          const power_l_1t_cfg_t *cfg);
 
 /**
  * @brief  Read the raw battery voltage from the ADC.

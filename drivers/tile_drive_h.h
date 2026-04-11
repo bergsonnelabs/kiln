@@ -20,7 +20,7 @@
  *   #include "core_tiles.h"
  *
  *   tile_t haptic;
- *   tile_drive_h_init(core_tiles_pal(&core_i2c1), 0, &haptic);
+ *   tile_drive_h_init(core_tiles_pal(&core_i2c1), 0, &haptic, NULL);
  *   if (tile_is_ready(&haptic)) {
  *       tile_drive_h_play(&haptic, 1, 1);  // play effect #1 once
  *   }
@@ -103,7 +103,16 @@ uint8_t tile_drive_h_find(tiles_pal_t* hal, uint8_t instance);
  *
  * @note   Blocks for ~500 ms during init. Call once at startup.
  */
-void tile_drive_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile);
+/**
+ * Optional init config. Pass NULL for defaults.
+ * Reserved for future use (e.g., default waveform library, auto-cal).
+ */
+typedef struct {
+    uint8_t reserved;   /**< Placeholder — no options yet. */
+} drive_h_cfg_t;
+
+void tile_drive_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
+                       const drive_h_cfg_t *cfg);
 
 /**
  * @brief  Play a waveform effect from the built-in library.

@@ -39,8 +39,10 @@ uint8_t tile_disp_rgbw_find(tiles_pal_t *hal, uint8_t instance)
     return hal->i2c_is_ready(hal->handle, addr) == 0;
 }
 
-void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile)
+void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
+                         const disp_rgbw_cfg_t *cfg)
 {
+    (void)cfg;  /* Reserved for future use */
     for (uint8_t i = 0; i < sizeof(tile_t); i++)
         ((uint8_t *)tile)[i] = 0;
 

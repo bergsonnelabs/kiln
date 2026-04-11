@@ -9,7 +9,7 @@
  * Quick start:
  * @code
  *   tile_t led;
- *   tile_disp_rgbw_init(&hal, 0, &led);
+ *   tile_disp_rgbw_init(&hal, 0, &led, NULL);
  *   tile_disp_rgbw_set(&led, 255, 0, 0, 0);   // red
  *   tile_disp_rgbw_set(&led, 0, 0, 0, 128);   // dim white
  *   tile_disp_rgbw_off(&led);                  // all off
@@ -71,7 +71,16 @@ uint8_t tile_disp_rgbw_find(tiles_pal_t *hal, uint8_t instance);
  * current to 51mA, enables all 4 LED channels, and sets current
  * limits to 50%.
  */
-void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile);
+/**
+ * Optional init config. Pass NULL for defaults.
+ * Reserved for future use (e.g., initial brightness, current limits).
+ */
+typedef struct {
+    uint8_t reserved;   /**< Placeholder — no options yet. */
+} disp_rgbw_cfg_t;
+
+void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
+                         const disp_rgbw_cfg_t *cfg);
 
 /**
  * @brief  Set RGBW output levels.

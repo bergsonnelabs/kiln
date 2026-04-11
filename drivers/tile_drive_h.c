@@ -49,8 +49,10 @@ uint8_t tile_drive_h_find(tiles_pal_t* hal, uint8_t instance)
     return (hal->i2c_is_ready(hal->handle, id) == 0) ? 1 : 0;
 }
 
-void tile_drive_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile)
+void tile_drive_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
+                       const drive_h_cfg_t *cfg)
 {
+    (void)cfg;  /* Reserved for future use */
     tile->hal      = NULL;
     tile->id       = 0;
     tile->state    = TILE_STATE_NONE;
