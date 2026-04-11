@@ -20,7 +20,7 @@
  *   #include "core_tiles.h"
  *
  *   tile_t piezo;
- *   tile_drive_p_init(core_tiles_pal(&core_i2c1), 0, &piezo);
+ *   tile_drive_p_init(core_tiles_pal(&core_i2c1), 0, &piezo, NULL);
  *   if (tile_is_ready(&piezo)) {
  *       tile_drive_p_set_mode(&piezo, DRIVE_P_MODE_PLAY_FIFO);
  *       tile_drive_p_write_fifo(&piezo, 0x7FFF);
@@ -133,7 +133,16 @@ uint8_t tile_drive_p_find(tiles_pal_t* hal, uint8_t instance);
  * @param  instance  Instance index (0 = default, see mapping table)
  * @param  tile      Pointer to tile handle (populated by this function)
  */
-void tile_drive_p_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile);
+/**
+ * Optional init config. Pass NULL for defaults.
+ * Reserved for future use.
+ */
+typedef struct {
+    uint8_t reserved;   /**< Placeholder — no options yet. */
+} drive_p_cfg_t;
+
+void tile_drive_p_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
+                       const drive_p_cfg_t *cfg);
 
 /**
  * @brief  Perform a software reset.

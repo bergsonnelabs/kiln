@@ -71,8 +71,10 @@ uint8_t tile_sense_i_9_find(tiles_pal_t* hal, uint8_t instance)
     return (hal->i2c_is_ready(hal->handle, id) == 0) ? 1 : 0;
 }
 
-void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile)
+void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
+                         const sense_i_9_cfg_t *cfg)
 {
+    (void)cfg;  /* Reserved for future use */
     tile->hal      = NULL;
     tile->id       = 0;
     tile->state    = TILE_STATE_NONE;

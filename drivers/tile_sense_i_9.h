@@ -18,7 +18,7 @@
  *   #include "core_tiles.h"
  *
  *   tile_t imu;
- *   tile_sense_i_9_init(core_tiles_pal(&core_i2c1), 0, &imu);
+ *   tile_sense_i_9_init(core_tiles_pal(&core_i2c1), 0, &imu, NULL);
  *   if (tile_is_ready(&imu)) {
  *       int16_t accel[3], gyro[3], mag[3];
  *       tile_sense_i_9_get_raw_accels(&imu, accel);
@@ -31,8 +31,8 @@
  * @code
  *   tile_t imu_a, imu_b;
  *   tiles_pal_t *hal = core_tiles_pal(&core_i2c1);
- *   tile_sense_i_9_init(hal, 0, &imu_a);  // pad 2 floating (0x69)
- *   tile_sense_i_9_init(hal, 1, &imu_b);  // pad 2 grounded (0x68)
+ *   tile_sense_i_9_init(hal, 0, &imu_a, NULL);  // pad 2 floating (0x69)
+ *   tile_sense_i_9_init(hal, 1, &imu_b, NULL);  // pad 2 grounded (0x68)
  * @endcode
  */
 
@@ -194,7 +194,16 @@ uint8_t tile_sense_i_9_find(tiles_pal_t* hal, uint8_t instance);
  *
  * @note   Blocks for ~50 ms during reset. Call once at startup.
  */
-void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile);
+/**
+ * Optional init config. Pass NULL for defaults.
+ * Reserved for future use (e.g., initial range/ODR settings).
+ */
+typedef struct {
+    uint8_t reserved;   /**< Placeholder — no options yet. */
+} sense_i_9_cfg_t;
+
+void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
+                         const sense_i_9_cfg_t *cfg);
 
 /**
  * @brief  Check if new IMU data is available.
