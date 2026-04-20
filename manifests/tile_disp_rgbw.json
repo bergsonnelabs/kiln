@@ -1,7 +1,11 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@4be5a9b",
-  "tile": "Disp.RGBW",
+  "source": "cores@f726ee1",
+  "tile": "Display.RGBW",
+  "palette": {
+    "label": "Display.RGBW",
+    "icon": "◑"
+  },
   "driver": {
     "prefix": "tile_disp_rgbw",
     "header": "tile_disp_rgbw.h",

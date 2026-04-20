@@ -1,6 +1,6 @@
 /**
  * @file   tile_disp_rgbw.h
- * @brief  RGBW LED driver for the Disp.RGBW tile (LP5811).
+ * @brief  RGBW LED driver for the Display.RGBW tile (LP5811).
  * @version 1.0.0
  *
  * 4-channel LED driver with independent PWM + current control.
@@ -14,6 +14,8 @@
  *   tile_disp_rgbw_set(&led, 0, 0, 0, 128);   // dim white
  *   tile_disp_rgbw_off(&led);                  // all off
  * @endcode
+ *
+ * @tessera tile label=Display.RGBW icon=◑
  */
 
 #ifndef INC_TILE_DISP_RGBW_H_
