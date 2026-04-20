@@ -1,0 +1,136 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@80cfec3",
+  "tile": "Sense.I.6P6",
+  "palette": {
+    "label": "Sense.I.6P6",
+    "icon": "∿"
+  },
+  "driver": {
+    "prefix": "tile_sense_i_6p6",
+    "header": "tile_sense_i_6p6.h",
+    "version": "1.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_sense_i_6p6_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "sleep"
+      ],
+      "symbol": "tile_sense_i_6p6_sleep",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Enter sleep mode (accel + gyro off). ~7.5 µA.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wake"
+      ],
+      "symbol": "tile_sense_i_6p6_wake",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Wake from sleep, restore low-noise mode. Range/ODR preserved.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "reset"
+      ],
+      "symbol": "tile_sense_i_6p6_reset",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Software reset. Blocks ~2 ms. Must call init() again after.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "flush_fifo"
+      ],
+      "symbol": "tile_sense_i_6p6_fifo_flush",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Flush the FIFO (discard all data).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "enable_tilt"
+      ],
+      "symbol": "tile_sense_i_6p6_tilt_enable",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Enable tilt detection.",
+      "params": [
+        {
+          "name": "wait_seconds",
+          "type": "int",
+          "range": [
+            0,
+            6
+          ],
+          "unit": "s",
+          "description": "Time the tilt must be sustained (0, 2, 4, or 6)."
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "disable_tilt"
+      ],
+      "symbol": "tile_sense_i_6p6_tilt_disable",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Disable tilt detection.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "enable_tap"
+      ],
+      "symbol": "tile_sense_i_6p6_tap_enable",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Enable tap detection (single + double tap).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "disable_tap"
+      ],
+      "symbol": "tile_sense_i_6p6_tap_disable",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Disable tap detection.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    }
+  ],
+  "events": []
+}

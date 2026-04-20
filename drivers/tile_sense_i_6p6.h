@@ -46,6 +46,8 @@
  * @endcode
  *
  * Datasheet: TDK InvenSense DS-000639, Rev 1.0
+ *
+ * @tessera tile label=Sense.I.6P6 icon=∿
  */
 
 #ifndef INC_TILE_SENSE_I_6P6_H_
@@ -532,13 +534,25 @@ void tile_sense_i_6p6_process(tile_t *tile);
 /** @brief  Register or change the event callback. */
 void tile_sense_i_6p6_on_event(tile_t *tile, sense_i_6p6_event_cb_t cb, void *ctx);
 
-/** @brief  Enter sleep mode (accel + gyro off). ~7.5 µA. */
+/**
+ * @brief  Enter sleep mode (accel + gyro off). ~7.5 µA.
+ *
+ * @tessera expose category=tile name=sleep
+ */
 void tile_sense_i_6p6_sleep(tile_t *tile);
 
-/** @brief  Wake from sleep, restore low-noise mode. Range/ODR preserved. */
+/**
+ * @brief  Wake from sleep, restore low-noise mode. Range/ODR preserved.
+ *
+ * @tessera expose category=tile name=wake
+ */
 void tile_sense_i_6p6_wake(tile_t *tile);
 
-/** @brief  Software reset. Blocks ~2 ms. Must call init() again after. */
+/**
+ * @brief  Software reset. Blocks ~2 ms. Must call init() again after.
+ *
+ * @tessera expose category=tile name=reset
+ */
 void tile_sense_i_6p6_reset(tile_t *tile);
 
 /* ================================================================
@@ -623,7 +637,11 @@ void tile_sense_i_6p6_fifo_config(tile_t *tile, sense_i_6p6_fifo_mode_t mode,
 /** @brief  Set the FIFO watermark threshold in records (1–4095). */
 void tile_sense_i_6p6_fifo_set_watermark(tile_t *tile, uint16_t records);
 
-/** @brief  Flush the FIFO (discard all data). */
+/**
+ * @brief  Flush the FIFO (discard all data).
+ *
+ * @tessera expose category=tile name=flush_fifo
+ */
 void tile_sense_i_6p6_fifo_flush(tile_t *tile);
 
 /** @brief  Read the FIFO record count. */
@@ -760,11 +778,16 @@ sense_i_6p6_activity_t tile_sense_i_6p6_get_activity(tile_t *tile);
  * Triggers when device tilts >35° for the configured wait time.
  * Requires accel at ≥25 Hz. Initializes DMP if needed.
  *
- * @param  wait_seconds  Time the tilt must be sustained: 0, 2, 4, or 6
+ * @tessera expose category=tile name=enable_tilt
+ * @param wait_seconds [0..6] s Time the tilt must be sustained (0, 2, 4, or 6).
  */
 void tile_sense_i_6p6_tilt_enable(tile_t *tile, uint8_t wait_seconds);
 
-/** @brief  Disable tilt detection. */
+/**
+ * @brief  Disable tilt detection.
+ *
+ * @tessera expose category=tile name=disable_tilt
+ */
 void tile_sense_i_6p6_tilt_disable(tile_t *tile);
 
 /* ================================================================
@@ -776,10 +799,16 @@ void tile_sense_i_6p6_tilt_disable(tile_t *tile);
  *
  * Requires accel in LN mode at 200 Hz, 500 Hz, or 1 kHz.
  * Initializes DMP if needed.
+ *
+ * @tessera expose category=tile name=enable_tap
  */
 void tile_sense_i_6p6_tap_enable(tile_t *tile);
 
-/** @brief  Disable tap detection. */
+/**
+ * @brief  Disable tap detection.
+ *
+ * @tessera expose category=tile name=disable_tap
+ */
 void tile_sense_i_6p6_tap_disable(tile_t *tile);
 
 /**
