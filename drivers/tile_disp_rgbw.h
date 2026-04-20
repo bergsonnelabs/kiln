@@ -88,30 +88,46 @@ void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
                          const disp_rgbw_cfg_t *cfg);
 
 /**
- * @brief  Set RGBW output levels.
- * @param  r  Red PWM (0–255)
- * @param  g  Green PWM (0–255)
- * @param  b  Blue PWM (0–255)
- * @param  w  White PWM (0–255)
+ * @brief Set RGBW output levels.
+ *
+ * @tessera expose category=tile icon=◑ name=set
+ * @param r [0..255] Red PWM.
+ * @param g [0..255] Green PWM.
+ * @param b [0..255] Blue PWM.
+ * @param w [0..255] White PWM.
  */
 void tile_disp_rgbw_set(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
 
-/** @brief  Turn all LEDs off (PWM = 0). */
+/**
+ * @brief Turn all LEDs off (PWM = 0).
+ *
+ * @tessera expose category=tile icon=◑ name=off
+ */
 void tile_disp_rgbw_off(tile_t *tile);
 
 /**
- * @brief  Set per-channel current limit.
- * @param  r  Red current (0–255, fraction of max 51mA)
- * @param  g  Green current
- * @param  b  Blue current
- * @param  w  White current
+ * @brief Set per-channel current limit.
+ *
+ * @tessera expose category=tile icon=◑ name=set_current
+ * @param r [0..255] Red current (fraction of 51 mA max).
+ * @param g [0..255] Green current.
+ * @param b [0..255] Blue current.
+ * @param w [0..255] White current.
  */
 void tile_disp_rgbw_set_current(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
 
-/** @brief  Enter sleep (disable chip). */
+/**
+ * @brief Enter sleep (disable chip).
+ *
+ * @tessera expose category=tile icon=◑ name=sleep
+ */
 void tile_disp_rgbw_sleep(tile_t *tile);
 
-/** @brief  Wake (re-enable chip, LEDs retain previous state). */
+/**
+ * @brief Wake (re-enable chip, LEDs retain previous state).
+ *
+ * @tessera expose category=tile icon=◑ name=wake
+ */
 void tile_disp_rgbw_wake(tile_t *tile);
 
 /** @brief  Software reset. Must call init() again after. */
