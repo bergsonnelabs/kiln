@@ -604,7 +604,11 @@ void tile_sense_i_6p6_set_temp_enabled(tile_t *tile, uint8_t enabled);
  * Public API — Data reads (blocking, polled)
  * ================================================================ */
 
-/** @brief  Check if new sensor data is available. */
+/**
+ * @brief  Check if new sensor data is available.
+ *
+ * @tessera expose category=tile name=data_ready returns=bool
+ */
 uint8_t tile_sense_i_6p6_data_ready(tile_t *tile);
 
 /** @brief  Read raw accelerometer [X, Y, Z]. Convert: g = raw / sensitivity. */
@@ -616,7 +620,11 @@ void tile_sense_i_6p6_get_raw_gyros(tile_t *tile, int16_t *buffer);
 /** @brief  Burst read accel + gyro [AX, AY, AZ, GX, GY, GZ]. One transaction. */
 void tile_sense_i_6p6_get_raw_6dof(tile_t *tile, int16_t *buffer);
 
-/** @brief  Read temperature. Convert: degC = raw / 132.48 + 25.0 */
+/**
+ * @brief  Read temperature. Convert: degC = raw / 132.48 + 25.0
+ *
+ * @tessera expose category=tile name=get_temperature returns=int
+ */
 int16_t tile_sense_i_6p6_get_temperature(tile_t *tile);
 
 /** @brief  Read all 7 channels [Temp, AX, AY, AZ, GX, GY, GZ] in one burst. */
@@ -757,6 +765,8 @@ void tile_sense_i_6p6_pedometer_disable(tile_t *tile);
 
 /**
  * @brief  Read the step count.
+ *
+ * @tessera expose category=tile name=get_step_count returns=int
  * @return 16-bit step count (resets on power cycle or DMP reset)
  */
 uint16_t tile_sense_i_6p6_get_step_count(tile_t *tile);

@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@f1b74f9",
+  "source": "cores@6ff3654",
   "tile": "Sense.I.6P6",
   "palette": {
     "label": "Sense.I.6P6",
@@ -58,6 +58,34 @@
     {
       "qname": [
         "$slot",
+        "data_ready"
+      ],
+      "symbol": "tile_sense_i_6p6_data_ready",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Check if new sensor data is available.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_temperature"
+      ],
+      "symbol": "tile_sense_i_6p6_get_temperature",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read temperature. Convert: degC = raw / 132.48 + 25.0",
+      "params": [],
+      "returns": "int16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
         "flush_fifo"
       ],
       "symbol": "tile_sense_i_6p6_fifo_flush",
@@ -66,6 +94,20 @@
       "description": "Flush the FIFO (discard all data).",
       "params": [],
       "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_step_count"
+      ],
+      "symbol": "tile_sense_i_6p6_get_step_count",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read the step count.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
       "receiver": "tile_t *"
     },
     {
