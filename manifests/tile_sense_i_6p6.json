@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@80cfec3",
+  "source": "cores@97248fb",
   "tile": "Sense.I.6P6",
   "palette": {
     "label": "Sense.I.6P6",
@@ -132,5 +132,35 @@
       "receiver": "tile_t *"
     }
   ],
-  "events": []
+  "events": [
+    {
+      "name": "tilt",
+      "payload": []
+    },
+    {
+      "name": "tap",
+      "payload": [
+        {
+          "name": "count",
+          "type": "int"
+        },
+        {
+          "name": "axis",
+          "type": "int"
+        },
+        {
+          "name": "direction",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "data_ready",
+      "payload": []
+    },
+    {
+      "name": "wake_on_motion",
+      "payload": []
+    }
+  ]
 }

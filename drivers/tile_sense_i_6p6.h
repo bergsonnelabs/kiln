@@ -48,6 +48,10 @@
  * Datasheet: TDK InvenSense DS-000639, Rev 1.0
  *
  * @tessera tile label=Sense.I.6P6 icon=∿
+ * @tessera event name=tilt
+ * @tessera event name=tap payload=count:int,axis:int,direction:int
+ * @tessera event name=data_ready
+ * @tessera event name=wake_on_motion
  */
 
 #ifndef INC_TILE_SENSE_I_6P6_H_
