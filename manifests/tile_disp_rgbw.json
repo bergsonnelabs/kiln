@@ -1,0 +1,165 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@f726ee1",
+  "tile": "Display.RGBW",
+  "palette": {
+    "label": "Display.RGBW",
+    "icon": "◑"
+  },
+  "driver": {
+    "prefix": "tile_disp_rgbw",
+    "header": "tile_disp_rgbw.h",
+    "version": "1.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_disp_rgbw_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "set"
+      ],
+      "symbol": "tile_disp_rgbw_set",
+      "header": "tile_disp_rgbw.h",
+      "category": "tile",
+      "description": "Set RGBW output levels.",
+      "params": [
+        {
+          "name": "r",
+          "type": "int",
+          "range": [
+            0,
+            255
+          ],
+          "description": "Red PWM."
+        },
+        {
+          "name": "g",
+          "type": "int",
+          "range": [
+            0,
+            255
+          ],
+          "description": "Green PWM."
+        },
+        {
+          "name": "b",
+          "type": "int",
+          "range": [
+            0,
+            255
+          ],
+          "description": "Blue PWM."
+        },
+        {
+          "name": "w",
+          "type": "int",
+          "range": [
+            0,
+            255
+          ],
+          "description": "White PWM."
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "off"
+      ],
+      "symbol": "tile_disp_rgbw_off",
+      "header": "tile_disp_rgbw.h",
+      "category": "tile",
+      "description": "Turn all LEDs off (PWM = 0).",
+      "params": [],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_current"
+      ],
+      "symbol": "tile_disp_rgbw_set_current",
+      "header": "tile_disp_rgbw.h",
+      "category": "tile",
+      "description": "Set per-channel current limit.",
+      "params": [
+        {
+          "name": "r",
+          "type": "int",
+          "range": [
+            0,
+            255
+          ],
+          "description": "Red current (fraction of 51 mA max)."
+        },
+        {
+          "name": "g",
+          "type": "int",
+          "range": [
+            0,
+            255
+          ],
+          "description": "Green current."
+        },
+        {
+          "name": "b",
+          "type": "int",
+          "range": [
+            0,
+            255
+          ],
+          "description": "Blue current."
+        },
+        {
+          "name": "w",
+          "type": "int",
+          "range": [
+            0,
+            255
+          ],
+          "description": "White current."
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "sleep"
+      ],
+      "symbol": "tile_disp_rgbw_sleep",
+      "header": "tile_disp_rgbw.h",
+      "category": "tile",
+      "description": "Enter sleep (disable chip).",
+      "params": [],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wake"
+      ],
+      "symbol": "tile_disp_rgbw_wake",
+      "header": "tile_disp_rgbw.h",
+      "category": "tile",
+      "description": "Wake (re-enable chip, LEDs retain previous state).",
+      "params": [],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    }
+  ],
+  "events": []
+}
