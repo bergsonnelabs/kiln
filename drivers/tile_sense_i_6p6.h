@@ -48,10 +48,11 @@
  * Datasheet: TDK InvenSense DS-000639, Rev 1.0
  *
  * @tessera tile label=Sense.I.6P6 icon=∿
- * @tessera event name=tilt
- * @tessera event name=tap payload=count:int,axis:int,direction:int
- * @tessera event name=data_ready
- * @tessera event name=wake_on_motion
+ * @tessera event name=data_ready mask=ICM42686P_INT_DATA_RDY
+ * @tessera event name=fifo_watermark mask=ICM42686P_INT_FIFO_THS
+ * @tessera event name=tilt mask=ICM42686P_INT_STATUS3_TILT_DET
+ * @tessera event name=tap mask=ICM42686P_INT_STATUS3_TAP_DET payload=count:int,axis:int,direction:int
+ * @tessera event name=wake_on_motion mask=ICM42686P_INT_STATUS2_WOM_ANY
  */
 
 #ifndef INC_TILE_SENSE_I_6P6_H_

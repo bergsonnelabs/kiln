@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@97248fb",
+  "source": "cores@f1b74f9",
   "tile": "Sense.I.6P6",
   "palette": {
     "label": "Sense.I.6P6",
@@ -134,8 +134,19 @@
   ],
   "events": [
     {
+      "name": "data_ready",
+      "payload": [],
+      "mask": "ICM42686P_INT_DATA_RDY"
+    },
+    {
+      "name": "fifo_watermark",
+      "payload": [],
+      "mask": "ICM42686P_INT_FIFO_THS"
+    },
+    {
       "name": "tilt",
-      "payload": []
+      "payload": [],
+      "mask": "ICM42686P_INT_STATUS3_TILT_DET"
     },
     {
       "name": "tap",
@@ -152,15 +163,13 @@
           "name": "direction",
           "type": "int"
         }
-      ]
-    },
-    {
-      "name": "data_ready",
-      "payload": []
+      ],
+      "mask": "ICM42686P_INT_STATUS3_TAP_DET"
     },
     {
       "name": "wake_on_motion",
-      "payload": []
+      "payload": [],
+      "mask": "ICM42686P_INT_STATUS2_WOM_ANY"
     }
   ]
 }
