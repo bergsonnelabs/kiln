@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@a152f9d",
+  "source": "cores@51f47eb",
   "tile": "Sense.I.6P6",
   "palette": {
     "label": "Sense.I.6P6",
@@ -206,7 +206,9 @@
           "type": "int"
         }
       ],
-      "mask": "ICM42686P_INT_STATUS3_TAP_DET"
+      "mask": "ICM42686P_INT_STATUS3_TAP_DET",
+      "read": "tile_sense_i_6p6_get_tap_result",
+      "read_type": "sense_i_6p6_tap_result_t"
     },
     {
       "name": "wake_on_motion",

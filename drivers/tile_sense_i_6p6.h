@@ -51,7 +51,7 @@
  * @tessera event name=data_ready mask=ICM42686P_INT_DATA_RDY
  * @tessera event name=fifo_watermark mask=ICM42686P_INT_FIFO_THS
  * @tessera event name=tilt mask=ICM42686P_INT_STATUS3_TILT_DET
- * @tessera event name=tap mask=ICM42686P_INT_STATUS3_TAP_DET payload=count:int,axis:int,direction:int
+ * @tessera event name=tap mask=ICM42686P_INT_STATUS3_TAP_DET payload=count:int,axis:int,direction:int read=tile_sense_i_6p6_get_tap_result read_type=sense_i_6p6_tap_result_t
  * @tessera event name=wake_on_motion mask=ICM42686P_INT_STATUS2_WOM_ANY
  */
 
