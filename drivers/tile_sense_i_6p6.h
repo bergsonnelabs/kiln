@@ -47,7 +47,7 @@
  *
  * Datasheet: TDK InvenSense DS-000639, Rev 1.0
  *
- * @tessera tile label=Sense.I.6P6 icon=∿
+ * @tessera tile label=Sense.I.6P6 icon=triad
  * @tessera event name=data_ready mask=ICM42686P_INT_DATA_RDY
  * @tessera event name=fifo_watermark mask=ICM42686P_INT_FIFO_THS
  * @tessera event name=tilt mask=ICM42686P_INT_STATUS3_TILT_DET
