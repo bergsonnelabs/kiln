@@ -25,6 +25,8 @@
  *       tile_drive_h_play(&haptic, 1, 1);  // play effect #1 once
  *   }
  * @endcode
+ *
+ * @tessera tile label=Drive.H icon=≋
  */
 
 #ifndef INC_TILE_DRIVE_H_H_
@@ -194,9 +196,9 @@ void tile_drive_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
  * the sequence, and triggers playback. For repeats > 1,
  * re-triggers with a 200ms gap between plays.
  *
- * @param  tile     Pointer to tile handle
- * @param  index    Library effect index (1-123, see datasheet)
- * @param  repeats  Number of times to play (1 = once)
+ * @tessera expose category=tile name=play
+ * @param  index    [1..123] Library effect index (see datasheet).
+ * @param  repeats  [1..20] Number of times to play (1 = once).
  */
 void tile_drive_h_play(tile_t* tile, uint8_t index, uint8_t repeats);
 
@@ -254,7 +256,7 @@ void tile_drive_h_set_trigger(tile_t* tile, uint8_t mode);
  * Reads the GO bit in register 0x0C. The GO bit remains high
  * until playback completes.
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=is_playing returns=bool
  * @return 1 if playing, 0 if idle
  */
 uint8_t tile_drive_h_is_playing(tile_t* tile);
@@ -262,7 +264,7 @@ uint8_t tile_drive_h_is_playing(tile_t* tile);
 /**
  * @brief  Stop any currently playing effect.
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=stop
  */
 void tile_drive_h_stop(tile_t* tile);
 
@@ -274,22 +276,22 @@ void tile_drive_h_stop(tile_t* tile);
  * by tile_drive_h_rtp_write(). Call tile_drive_h_rtp_stop()
  * to return to internal trigger mode.
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=rtp_start
  */
 void tile_drive_h_rtp_start(tile_t* tile);
 
 /**
  * @brief  Write an amplitude value in RTP mode.
  *
- * @param  tile       Pointer to tile handle
- * @param  amplitude  Unsigned 8-bit amplitude (0 = off, 127 = max)
+ * @tessera expose category=tile name=rtp_write
+ * @param  amplitude  [0..127] Amplitude (0 = off, 127 = max).
  */
 void tile_drive_h_rtp_write(tile_t* tile, uint8_t amplitude);
 
 /**
  * @brief  Exit RTP mode and return to internal trigger mode.
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=rtp_stop
  */
 void tile_drive_h_rtp_stop(tile_t* tile);
 
@@ -311,7 +313,7 @@ uint8_t tile_drive_h_get_status(tile_t* tile);
  * for completion. The DRV2605L checks whether the actuator is
  * present, open, or shorted.
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=diagnose returns=bool
  * @return 1 if actuator passed diagnostics, 0 if fault detected
  */
 uint8_t tile_drive_h_diagnose(tile_t* tile);
@@ -324,7 +326,7 @@ uint8_t tile_drive_h_diagnose(tile_t* tile);
  * the DRV2605L stores optimized A_CAL_COMP and A_CAL_BEMF values
  * that improve playback fidelity.
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=calibrate returns=bool
  * @return 1 if calibration passed, 0 if it failed to converge
  */
 uint8_t tile_drive_h_calibrate(tile_t* tile);
@@ -336,7 +338,7 @@ uint8_t tile_drive_h_calibrate(tile_t* tile);
  * while the device is actively driving a waveform (RTP, library
  * playback, etc.).
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=get_vbat_mv returns=int
  * @return Battery voltage in mV (e.g. 3300 = 3.3 V), 0 if idle
  */
 uint16_t tile_drive_h_get_vbat_mv(tile_t* tile);
@@ -348,7 +350,7 @@ uint16_t tile_drive_h_get_vbat_mv(tile_t* tile);
  * valid while the device is actively driving a waveform and
  * must not be polled during braking.
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=get_resonance_hz returns=int
  * @return Resonant frequency in Hz (e.g. 235), 0 if unavailable
  */
 uint16_t tile_drive_h_get_resonance_hz(tile_t* tile);
@@ -360,7 +362,7 @@ uint16_t tile_drive_h_get_resonance_hz(tile_t* tile);
  * register values and can be woken quickly with
  * tile_drive_h_wake().
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=standby
  */
 void tile_drive_h_standby(tile_t* tile);
 
@@ -370,7 +372,7 @@ void tile_drive_h_standby(tile_t* tile);
  * Clears the STANDBY bit in the MODE register. The device
  * returns to the active state, ready for playback.
  *
- * @param  tile  Pointer to tile handle
+ * @tessera expose category=tile name=wake
  */
 void tile_drive_h_wake(tile_t* tile);
 
