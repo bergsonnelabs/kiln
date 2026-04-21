@@ -1,0 +1,211 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@73acef9",
+  "tile": "Drive.H",
+  "palette": {
+    "label": "Drive.H",
+    "icon": "≋"
+  },
+  "driver": {
+    "prefix": "tile_drive_h",
+    "header": "tile_drive_h.h",
+    "version": "1.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_drive_h_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "play"
+      ],
+      "symbol": "tile_drive_h_play",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Play a waveform effect from the built-in library.",
+      "params": [
+        {
+          "name": "index",
+          "type": "int",
+          "range": [
+            1,
+            123
+          ],
+          "description": "Library effect index (see datasheet)."
+        },
+        {
+          "name": "repeats",
+          "type": "int",
+          "range": [
+            1,
+            20
+          ],
+          "description": "Number of times to play (1 = once)."
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "is_playing"
+      ],
+      "symbol": "tile_drive_h_is_playing",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Check whether an effect or sequence is still playing.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "stop"
+      ],
+      "symbol": "tile_drive_h_stop",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Stop any currently playing effect.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "rtp_start"
+      ],
+      "symbol": "tile_drive_h_rtp_start",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Enter RTP (Real-Time Playback) mode.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "rtp_write"
+      ],
+      "symbol": "tile_drive_h_rtp_write",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Write an amplitude value in RTP mode.",
+      "params": [
+        {
+          "name": "amplitude",
+          "type": "int",
+          "range": [
+            0,
+            127
+          ],
+          "description": "Amplitude (0 = off, 127 = max)."
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "rtp_stop"
+      ],
+      "symbol": "tile_drive_h_rtp_stop",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Exit RTP mode and return to internal trigger mode.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "diagnose"
+      ],
+      "symbol": "tile_drive_h_diagnose",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Run actuator diagnostics.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "calibrate"
+      ],
+      "symbol": "tile_drive_h_calibrate",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Run auto-calibration for the connected actuator.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_vbat_mv"
+      ],
+      "symbol": "tile_drive_h_get_vbat_mv",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Read supply voltage in millivolts.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_resonance_hz"
+      ],
+      "symbol": "tile_drive_h_get_resonance_hz",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Read LRA resonant frequency in Hz.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "standby"
+      ],
+      "symbol": "tile_drive_h_standby",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Enter low-power standby.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wake"
+      ],
+      "symbol": "tile_drive_h_wake",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Wake from standby.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    }
+  ],
+  "events": []
+}

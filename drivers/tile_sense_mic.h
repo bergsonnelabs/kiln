@@ -44,6 +44,8 @@
  * @endcode
  *
  * Datasheet: Maxim MAX11644/MAX11645, 19-4544; Rev 3, 9/09
+ *
+ * @tessera tile label=Sense.MIC icon=◉
  */
 
 #ifndef INC_TILE_SENSE_MIC_H_
@@ -230,13 +232,25 @@ uint8_t tile_sense_mic_find(tiles_pal_t *hal, uint8_t instance);
 void tile_sense_mic_init(tiles_pal_t *hal, uint8_t instance,
                          tile_t *tile, const sense_mic_cfg_t *cfg);
 
-/** @brief  Enter low-power mode (no conversions). */
+/**
+ * @brief  Enter low-power mode (no conversions).
+ *
+ * @tessera expose category=tile name=sleep
+ */
 void tile_sense_mic_sleep(tile_t *tile);
 
-/** @brief  Wake from sleep, restore previous configuration. */
+/**
+ * @brief  Wake from sleep, restore previous configuration.
+ *
+ * @tessera expose category=tile name=wake
+ */
 void tile_sense_mic_wake(tile_t *tile);
 
-/** @brief  Reset the config register to power-on defaults. Must call init() again. */
+/**
+ * @brief  Reset the config register to power-on defaults. Must call init() again.
+ *
+ * @tessera expose category=tile name=reset
+ */
 void tile_sense_mic_reset(tile_t *tile);
 
 /* ================================================================
@@ -270,6 +284,8 @@ void tile_sense_mic_set_scan_mode(tile_t *tile, sense_mic_scan_t scan);
  *
  * Returns the Vref used for millivolt conversions (3300 for VDD, 2048
  * for internal, or the user-specified value for external).
+ *
+ * @tessera expose category=tile name=get_vref_mv returns=int
  */
 uint16_t tile_sense_mic_get_vref_mv(tile_t *tile);
 
@@ -283,6 +299,8 @@ uint16_t tile_sense_mic_get_vref_mv(tile_t *tile);
  * The MAX11645 auto-converts on every read — no trigger needed.
  * Conversion time is ~3.5 µs (internal clock); the I2C transaction
  * itself dominates the timing (~55 µs at 400 kHz).
+ *
+ * @tessera expose category=tile name=get_raw returns=int
  */
 uint16_t tile_sense_mic_get_raw(tile_t *tile);
 
@@ -290,6 +308,8 @@ uint16_t tile_sense_mic_get_raw(tile_t *tile);
  * @brief  Read a single sample and convert to millivolts.
  *
  * Conversion: mv = raw * vref_mv / 4096
+ *
+ * @tessera expose category=tile name=get_raw_mv returns=int
  */
 uint16_t tile_sense_mic_get_raw_mv(tile_t *tile);
 
@@ -299,6 +319,7 @@ uint16_t tile_sense_mic_get_raw_mv(tile_t *tile);
  * Returns: (raw - dc_offset) where dc_offset is auto-calibrated during init().
  * Useful for audio waveform capture where DC bias is removed.
  *
+ * @tessera expose category=tile name=get_audio_sample returns=int
  * @return Signed 16-bit value. 0 = silence.
  */
 int16_t tile_sense_mic_get_audio_sample(tile_t *tile);
@@ -308,6 +329,8 @@ int16_t tile_sense_mic_get_audio_sample(tile_t *tile);
  *
  * Measured during init() by averaging 64 samples. Typically 600–900
  * with VDD reference, depending on supply voltage and PCB layout.
+ *
+ * @tessera expose category=tile name=get_dc_offset returns=int
  */
 uint16_t tile_sense_mic_get_dc_offset(tile_t *tile);
 
@@ -316,6 +339,8 @@ uint16_t tile_sense_mic_get_dc_offset(tile_t *tile);
  *
  * Averages 64 samples to update the stored bias point.
  * @note   Call in a quiet environment for best results.
+ *
+ * @tessera expose category=tile name=calibrate
  */
 void tile_sense_mic_calibrate(tile_t *tile);
 
@@ -368,8 +393,8 @@ uint16_t tile_sense_mic_rms(const uint16_t *samples, uint16_t count,
  * Uses the configured reference voltage to scale a peak-to-peak raw
  * ADC count into millivolts: mv = pp_raw * vref_mv / 4096.
  *
- * @param  tile    Initialised tile handle.
- * @param  pp_raw  Peak-to-peak amplitude in raw ADC counts (from peak_to_peak()).
+ * @tessera expose category=tile name=amplitude_mv returns=int
+ * @param  pp_raw  [0..4095] Peak-to-peak amplitude in raw ADC counts.
  * @return Amplitude in millivolts.
  */
 uint16_t tile_sense_mic_amplitude_mv(tile_t *tile, uint16_t pp_raw);

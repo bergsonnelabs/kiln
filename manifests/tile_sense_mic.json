@@ -1,0 +1,167 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@73acef9",
+  "tile": "Sense.MIC",
+  "palette": {
+    "label": "Sense.MIC",
+    "icon": "◉"
+  },
+  "driver": {
+    "prefix": "tile_sense_mic",
+    "header": "tile_sense_mic.h",
+    "version": "1.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_sense_mic_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "sleep"
+      ],
+      "symbol": "tile_sense_mic_sleep",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Enter low-power mode (no conversions).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wake"
+      ],
+      "symbol": "tile_sense_mic_wake",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Wake from sleep, restore previous configuration.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "reset"
+      ],
+      "symbol": "tile_sense_mic_reset",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Reset the config register to power-on defaults. Must call init() again.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_vref_mv"
+      ],
+      "symbol": "tile_sense_mic_get_vref_mv",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Get the currently configured reference voltage in millivolts.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_raw"
+      ],
+      "symbol": "tile_sense_mic_get_raw",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Read a single 12-bit ADC sample (0–4095).",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_raw_mv"
+      ],
+      "symbol": "tile_sense_mic_get_raw_mv",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Read a single sample and convert to millivolts.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_audio_sample"
+      ],
+      "symbol": "tile_sense_mic_get_audio_sample",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Read a single AC-coupled audio sample (signed, relative to DC offset).",
+      "params": [],
+      "returns": "int16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_dc_offset"
+      ],
+      "symbol": "tile_sense_mic_get_dc_offset",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Get the auto-calibrated DC offset (mic bias point).",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "calibrate"
+      ],
+      "symbol": "tile_sense_mic_calibrate",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Re-calibrate the DC offset (e.g., after changing reference).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "amplitude_mv"
+      ],
+      "symbol": "tile_sense_mic_amplitude_mv",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Convert peak-to-peak raw amplitude to millivolts.",
+      "params": [
+        {
+          "name": "pp_raw",
+          "type": "int",
+          "range": [
+            0,
+            4095
+          ],
+          "description": "Peak-to-peak amplitude in raw ADC counts."
+        }
+      ],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    }
+  ],
+  "events": []
+}
