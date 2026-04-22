@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@cf48aed",
+  "source": "cores@8594792",
   "tile": "Sense.MIC",
   "palette": {
     "label": "Sense.MIC",

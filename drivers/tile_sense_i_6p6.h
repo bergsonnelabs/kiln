@@ -611,13 +611,28 @@ void tile_sense_i_6p6_set_temp_enabled(tile_t *tile, uint8_t enabled);
  */
 uint8_t tile_sense_i_6p6_data_ready(tile_t *tile);
 
-/** @brief  Read raw accelerometer [X, Y, Z]. Convert: g = raw / sensitivity. */
+/**
+ * @brief  Read raw accelerometer [X, Y, Z]. Convert: g = raw / sensitivity.
+ *
+ * @tessera expose category=tile name=get_raw_accels returns=int[3]
+ * @tessera out_buffer buffer type=int16_t length=3
+ */
 void tile_sense_i_6p6_get_raw_accels(tile_t *tile, int16_t *buffer);
 
-/** @brief  Read raw gyroscope [X, Y, Z]. Convert: dps = raw / sensitivity. */
+/**
+ * @brief  Read raw gyroscope [X, Y, Z]. Convert: dps = raw / sensitivity.
+ *
+ * @tessera expose category=tile name=get_raw_gyros returns=int[3]
+ * @tessera out_buffer buffer type=int16_t length=3
+ */
 void tile_sense_i_6p6_get_raw_gyros(tile_t *tile, int16_t *buffer);
 
-/** @brief  Burst read accel + gyro [AX, AY, AZ, GX, GY, GZ]. One transaction. */
+/**
+ * @brief  Burst read accel + gyro [AX, AY, AZ, GX, GY, GZ]. One transaction.
+ *
+ * @tessera expose category=tile name=get_raw_6dof returns=int[6]
+ * @tessera out_buffer buffer type=int16_t length=6
+ */
 void tile_sense_i_6p6_get_raw_6dof(tile_t *tile, int16_t *buffer);
 
 /**
@@ -627,7 +642,12 @@ void tile_sense_i_6p6_get_raw_6dof(tile_t *tile, int16_t *buffer);
  */
 int16_t tile_sense_i_6p6_get_temperature(tile_t *tile);
 
-/** @brief  Read all 7 channels [Temp, AX, AY, AZ, GX, GY, GZ] in one burst. */
+/**
+ * @brief  Read all 7 channels [Temp, AX, AY, AZ, GX, GY, GZ] in one burst.
+ *
+ * @tessera expose category=tile name=get_raw_all returns=int[7]
+ * @tessera out_buffer buffer type=int16_t length=7
+ */
 void tile_sense_i_6p6_get_raw_all(tile_t *tile, int16_t *buffer);
 
 /* ================================================================

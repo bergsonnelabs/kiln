@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@cf48aed",
+  "source": "cores@8594792",
   "tile": "Sense.I.6P6",
   "palette": {
     "label": "Sense.I.6P6",
@@ -72,6 +72,60 @@
     {
       "qname": [
         "$slot",
+        "get_raw_accels"
+      ],
+      "symbol": "tile_sense_i_6p6_get_raw_accels",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read raw accelerometer [X, Y, Z]. Convert: g = raw / sensitivity.",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[3]",
+      "c_out_buffer": {
+        "type": "int16_t",
+        "length": 3
+      },
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_raw_gyros"
+      ],
+      "symbol": "tile_sense_i_6p6_get_raw_gyros",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read raw gyroscope [X, Y, Z]. Convert: dps = raw / sensitivity.",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[3]",
+      "c_out_buffer": {
+        "type": "int16_t",
+        "length": 3
+      },
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_raw_6dof"
+      ],
+      "symbol": "tile_sense_i_6p6_get_raw_6dof",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Burst read accel + gyro [AX, AY, AZ, GX, GY, GZ]. One transaction.",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[6]",
+      "c_out_buffer": {
+        "type": "int16_t",
+        "length": 6
+      },
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
         "get_temperature"
       ],
       "symbol": "tile_sense_i_6p6_get_temperature",
@@ -81,6 +135,24 @@
       "params": [],
       "returns": "int16_t",
       "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_raw_all"
+      ],
+      "symbol": "tile_sense_i_6p6_get_raw_all",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read all 7 channels [Temp, AX, AY, AZ, GX, GY, GZ] in one burst.",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[7]",
+      "c_out_buffer": {
+        "type": "int16_t",
+        "length": 7
+      },
       "receiver": "tile_t *"
     },
     {
