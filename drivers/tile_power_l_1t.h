@@ -16,6 +16,8 @@
  * Datasheet: https://www.bergsonne.io/tiles/power/l1t
  * IC datasheet: https://www.ti.com/lit/ds/symlink/bq25150.pdf
  *
+ * @tessera tile label=Power.L.1T icon=☷
+ *
  * Quick start:
  * @code
  *   #include "core_tiles.h"
@@ -123,6 +125,7 @@ void tile_power_l_1t_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
 /**
  * @brief  Read the raw battery voltage from the ADC.
  *
+ * @tessera expose category=tile name=get_vbat returns=int
  * @param  tile  Pointer to tile handle
  * @return 16-bit raw ADC value (MSB:LSB)
  */
@@ -131,6 +134,7 @@ uint16_t tile_power_l_1t_get_vbat(tile_t* tile);
 /**
  * @brief  Read the battery charge percentage.
  *
+ * @tessera expose category=tile name=get_percent returns=int
  * @param  tile  Pointer to tile handle
  * @return Battery percentage (0–100)
  */
@@ -139,6 +143,7 @@ uint8_t tile_power_l_1t_get_percent(tile_t* tile);
 /**
  * @brief  Read a status register.
  *
+ * @tessera expose category=tile name=read_status returns=int
  * @param  tile  Pointer to tile handle
  * @param  reg   Status register address (BQ25150_REG_STAT0/1/2)
  * @return 8-bit register value

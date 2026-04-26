@@ -1,0 +1,77 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@7b590aa",
+  "tile": "Power.L.1T",
+  "palette": {
+    "label": "Power.L.1T",
+    "icon": "☷"
+  },
+  "driver": {
+    "prefix": "tile_power_l_1t",
+    "header": "tile_power_l_1t.h",
+    "version": "2.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_power_l_1t_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "get_vbat"
+      ],
+      "symbol": "tile_power_l_1t_get_vbat",
+      "header": "tile_power_l_1t.h",
+      "category": "tile",
+      "description": "Read the raw battery voltage from the ADC.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_percent"
+      ],
+      "symbol": "tile_power_l_1t_get_percent",
+      "header": "tile_power_l_1t.h",
+      "category": "tile",
+      "description": "Read the battery charge percentage.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read_status"
+      ],
+      "symbol": "tile_power_l_1t_read_status",
+      "header": "tile_power_l_1t.h",
+      "category": "tile",
+      "description": "Read a status register.",
+      "params": [
+        {
+          "name": "reg",
+          "type": "int",
+          "description": "Status register address (BQ25150_REG_STAT0/1/2)"
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    }
+  ],
+  "events": [],
+  "bus_addresses": {
+    "I2C": [
+      {
+        "address": "0x6B",
+        "is_default": true
+      }
+    ]
+  }
+}

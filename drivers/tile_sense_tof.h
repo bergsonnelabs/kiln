@@ -36,6 +36,8 @@
  *
  * Datasheet: https://ams.com/tmf8806
  *
+ * @tessera tile label=Sense.TOF icon=◊
+ *
  * @note All bus I/O is routed through tiles_pal_t function pointers.
  *       This driver contains no platform-specific code.
  */
@@ -248,6 +250,7 @@ void tile_sense_tof_init(tiles_pal_t *hal, uint8_t instance,
 
 /**
  * @brief  Enter standby mode (ENABLE = 0x00).
+ * @tessera expose category=tile name=sleep
  *
  * Stops any active measurement and powers down the sensor. Use
  * tile_sense_tof_wake() to resume without full re-initialisation.
@@ -258,6 +261,7 @@ void tile_sense_tof_sleep(tile_t *tile);
 
 /**
  * @brief  Resume from standby mode.
+ * @tessera expose category=tile name=wake
  *
  * Re-executes the bootloader wake and App0 request sequence. Does not
  * restart measurements — call tile_sense_tof_start() after waking.
@@ -280,6 +284,7 @@ void tile_sense_tof_reset(tile_t *tile);
 
 /**
  * @brief  Start continuous or single-shot measurement.
+ * @tessera expose category=tile name=start
  *
  * Writes the factory calibration data (if loaded), configures the
  * measurement command payload from the current cfg, and issues the
@@ -294,6 +299,7 @@ void tile_sense_tof_start(tile_t *tile);
 
 /**
  * @brief  Stop an active measurement.
+ * @tessera expose category=tile name=stop
  *
  * Sends the stop command and waits for the sensor to acknowledge.
  * No-op if no measurement is active.
@@ -321,6 +327,7 @@ uint8_t tile_sense_tof_measure_single(tile_t *tile, sense_tof_result_t *result,
 
 /**
  * @brief  Read the distance from the most recent result.
+ * @tessera expose category=tile name=get_distance_mm returns=int
  *
  * Returns the peak distance in millimeters. Does not check whether
  * new data is available — call tile_sense_tof_result_ready() first
@@ -345,6 +352,7 @@ void tile_sense_tof_get_result(tile_t *tile, sense_tof_result_t *result);
 
 /**
  * @brief  Check if a new measurement result is available.
+ * @tessera expose category=tile name=result_ready returns=bool
  *
  * Reads the INT_STATUS register and checks the result interrupt bit.
  * Does not clear the interrupt — that is done by get_result() or
@@ -359,6 +367,7 @@ uint8_t tile_sense_tof_result_ready(tile_t *tile);
 
 /**
  * @brief  Run the factory calibration procedure.
+ * @tessera expose category=tile name=factory_calibrate returns=bool
  *
  * Performs a calibration measurement using the current mode settings.
  * The sensor must be positioned with a known target or open field per
@@ -426,6 +435,7 @@ uint8_t tile_sense_tof_get_serial_number(tile_t *tile, uint8_t *serial);
 
 /**
  * @brief  Change the distance mode on the fly.
+ * @tessera expose category=tile name=set_distance_mode
  *
  * Stops any active measurement, updates the cached mode, and restarts.
  * If no measurement was running, only updates the config for the next start().
@@ -437,6 +447,7 @@ void tile_sense_tof_set_distance_mode(tile_t *tile, sense_tof_distance_mode_t mo
 
 /**
  * @brief  Change the measurement repetition period on the fly.
+ * @tessera expose category=tile name=set_period
  *
  * Stops any active measurement, updates the cached period, and restarts.
  * If no measurement was running, only updates the config for the next start().

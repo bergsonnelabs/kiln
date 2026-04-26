@@ -1,0 +1,235 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@7b590aa",
+  "tile": "Sense.I.9",
+  "palette": {
+    "label": "Sense.I.9",
+    "icon": "⊙"
+  },
+  "driver": {
+    "prefix": "tile_sense_i_9",
+    "header": "tile_sense_i_9.h",
+    "version": "2.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_sense_i_9_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "data_ready"
+      ],
+      "symbol": "tile_sense_i_9_data_ready",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Check if new IMU data is available.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_accel_range"
+      ],
+      "symbol": "tile_sense_i_9_set_accel_range",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Set the accelerometer full-scale range.",
+      "params": [
+        {
+          "name": "range",
+          "type": "?sense_i_9_accel_range_t",
+          "description": "One of the sense_i_9_accel_range_t values"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_gyro_range"
+      ],
+      "symbol": "tile_sense_i_9_set_gyro_range",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Set the gyroscope full-scale range.",
+      "params": [
+        {
+          "name": "range",
+          "type": "?sense_i_9_gyro_range_t",
+          "description": "One of the sense_i_9_gyro_range_t values"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_mag_mode"
+      ],
+      "symbol": "tile_sense_i_9_set_mag_mode",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Set the magnetometer operating mode.",
+      "params": [
+        {
+          "name": "mode",
+          "type": "?sense_i_9_mag_mode_t",
+          "description": "One of the sense_i_9_mag_mode_t values"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_accel_odr"
+      ],
+      "symbol": "tile_sense_i_9_set_accel_odr",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Set the accelerometer output data rate.",
+      "params": [
+        {
+          "name": "divider",
+          "type": "int",
+          "description": "11-bit sample rate divider (0–4095)"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_gyro_odr"
+      ],
+      "symbol": "tile_sense_i_9_set_gyro_odr",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Set the gyroscope output data rate.",
+      "params": [
+        {
+          "name": "divider",
+          "type": "int",
+          "description": "8-bit sample rate divider (0–255)"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_raw_accels"
+      ],
+      "symbol": "tile_sense_i_9_get_raw_accels",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Read raw accelerometer data (3-axis).",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[3]",
+      "c_out_buffer": {
+        "type": "int16_t",
+        "length": 3
+      },
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_raw_gyros"
+      ],
+      "symbol": "tile_sense_i_9_get_raw_gyros",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Read raw gyroscope data (3-axis).",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[3]",
+      "c_out_buffer": {
+        "type": "int16_t",
+        "length": 3
+      },
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_raw_6dof"
+      ],
+      "symbol": "tile_sense_i_9_get_raw_6dof",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Read raw accelerometer + gyroscope data in a single burst.",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[6]",
+      "c_out_buffer": {
+        "type": "int16_t",
+        "length": 6
+      },
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_temperature"
+      ],
+      "symbol": "tile_sense_i_9_get_temperature",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Read the on-chip temperature sensor.",
+      "params": [],
+      "returns": "int16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "sleep"
+      ],
+      "symbol": "tile_sense_i_9_sleep",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Enter low-power sleep mode.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wake"
+      ],
+      "symbol": "tile_sense_i_9_wake",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Wake from sleep mode and resume sampling.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    }
+  ],
+  "events": [],
+  "bus_addresses": {
+    "I2C": [
+      {
+        "address": "0x68"
+      },
+      {
+        "address": "0x69",
+        "is_default": true
+      }
+    ]
+  }
+}

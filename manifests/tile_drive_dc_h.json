@@ -1,0 +1,239 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@7b590aa",
+  "tile": "Drive.DC.H",
+  "palette": {
+    "label": "Drive.DC.H",
+    "icon": "⚙"
+  },
+  "driver": {
+    "prefix": "tile_drive_dc_h",
+    "header": "tile_drive_dc_h.h",
+    "version": "3.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_drive_dc_h_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "forward"
+      ],
+      "symbol": "tile_drive_dc_h_forward",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Drive motor forward (OUT1=H, OUT2=L).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "reverse"
+      ],
+      "symbol": "tile_drive_dc_h_reverse",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Drive motor in reverse (OUT1=L, OUT2=H).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "brake"
+      ],
+      "symbol": "tile_drive_dc_h_brake",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Active brake (slow-decay, both low-side FETs on).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "coast"
+      ],
+      "symbol": "tile_drive_dc_h_coast",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Coast (Hi-Z, all FETs off).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_target"
+      ],
+      "symbol": "tile_drive_dc_h_set_target",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Set the regulation target (WSET_VSET).",
+      "params": [
+        {
+          "name": "value",
+          "type": "int",
+          "description": "Target setpoint (0-255)"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_fault"
+      ],
+      "symbol": "tile_drive_dc_h_get_fault",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Read the raw FAULT register (0x00).",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "clear_fault"
+      ],
+      "symbol": "tile_drive_dc_h_clear_fault",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Clear all latched faults.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "is_stalled"
+      ],
+      "symbol": "tile_drive_dc_h_is_stalled",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Check if a motor stall condition is active.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_voltage_mv"
+      ],
+      "symbol": "tile_drive_dc_h_get_voltage_mv",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Read motor terminal voltage in millivolts.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_current_ma"
+      ],
+      "symbol": "tile_drive_dc_h_get_current_ma",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Read motor current in milliamps.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_speed"
+      ],
+      "symbol": "tile_drive_dc_h_get_speed",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Read the ripple speed estimate.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_ripple_count"
+      ],
+      "symbol": "tile_drive_dc_h_get_ripple_count",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Read the 16-bit ripple count.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "clear_ripple_count"
+      ],
+      "symbol": "tile_drive_dc_h_clear_ripple_count",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Reset the ripple counter to zero.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "sleep"
+      ],
+      "symbol": "tile_drive_dc_h_sleep",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Disable the output stage (all FETs Hi-Z).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wake"
+      ],
+      "symbol": "tile_drive_dc_h_wake",
+      "header": "tile_drive_dc_h.h",
+      "category": "tile",
+      "description": "Re-enable the output stage.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    }
+  ],
+  "events": [],
+  "bus_addresses": {
+    "I2C": [
+      {
+        "address": "0x34",
+        "is_default": true
+      },
+      {
+        "address": "0x30-0x38"
+      }
+    ]
+  }
+}

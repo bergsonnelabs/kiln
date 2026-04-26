@@ -1,0 +1,142 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@7b590aa",
+  "tile": "Drive.P",
+  "palette": {
+    "label": "Drive.P",
+    "icon": "♪"
+  },
+  "driver": {
+    "prefix": "tile_drive_p",
+    "header": "tile_drive_p.h",
+    "version": "2.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_drive_p_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "set_mode"
+      ],
+      "symbol": "tile_drive_p_set_mode",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Set the operating mode.",
+      "params": [
+        {
+          "name": "mode",
+          "type": "?drive_p_mode_t",
+          "description": "One of the drive_p_mode_t values"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read"
+      ],
+      "symbol": "tile_drive_p_read",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Read the current return register value.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read_sense"
+      ],
+      "symbol": "tile_drive_p_read_sense",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Read the sensed piezo voltage.",
+      "params": [],
+      "returns": "int16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read_status"
+      ],
+      "symbol": "tile_drive_p_read_status",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Read the IC status register.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "write_fifo"
+      ],
+      "symbol": "tile_drive_p_write_fifo",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Write a sample to the FIFO.",
+      "params": [
+        {
+          "name": "sample",
+          "type": "int",
+          "description": "Signed 16-bit waveform sample"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "sleep"
+      ],
+      "symbol": "tile_drive_p_sleep",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Enter low-power sleep mode.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "check_and_recover"
+      ],
+      "symbol": "tile_drive_p_check_and_recover",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Check status and recover from error/fault states.",
+      "params": [
+        {
+          "name": "restore_mode",
+          "type": "?drive_p_mode_t",
+          "description": "Mode to re-enter after recovery"
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    }
+  ],
+  "events": [],
+  "bus_addresses": {
+    "I2C": [
+      {
+        "address": "0x5A",
+        "is_default": true
+      }
+    ]
+  }
+}

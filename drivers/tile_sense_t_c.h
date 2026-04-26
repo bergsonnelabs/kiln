@@ -67,6 +67,8 @@
  * electrode). A single tile surface alone cannot produce a slider output.
  *
  * Datasheet: Azoteq IQS323, Rev v1.11, August 2025
+ *
+ * @tessera tile label=Sense.T.C icon=◕
  */
 
 #ifndef INC_TILE_SENSE_T_C_H_
@@ -324,6 +326,7 @@ void tile_sense_t_c_init(tiles_pal_t *hal, uint8_t instance,
 
 /**
  * @brief  Read pending touch/proximity events and update internal state.
+ * @tessera expose category=tile name=process
  *
  * Call from your main loop.
  * In polled mode: reads status register, fires callback if events present.
@@ -344,28 +347,85 @@ void tile_sense_t_c_on_event(tile_t *tile, sense_t_c_event_cb_t cb, void *ctx);
 
 /* ---- Lifecycle ---- */
 
+/**
+ * @brief  Enter low-power sleep mode.
+ * @tessera expose category=tile name=sleep
+ */
 void tile_sense_t_c_sleep(tile_t *tile);
+
+/**
+ * @brief  Wake from sleep mode.
+ * @tessera expose category=tile name=wake
+ */
 void tile_sense_t_c_wake(tile_t *tile);
+
 void tile_sense_t_c_reset(tile_t *tile);
 
 /* ---- Status (from last process() call) ---- */
 
+/**
+ * @brief  Read the cached System Status word from the last process() call.
+ * @tessera expose category=tile name=get_status returns=int
+ */
 uint16_t tile_sense_t_c_get_status(tile_t *tile);
+
+/**
+ * @brief  Read the cached Gesture Status word from the last process() call.
+ * @tessera expose category=tile name=get_gestures returns=int
+ */
 uint16_t tile_sense_t_c_get_gestures(tile_t *tile);
+
+/**
+ * @brief  Check if the given channel is currently touched.
+ * @tessera expose category=tile name=is_touched returns=bool
+ */
 uint8_t  tile_sense_t_c_is_touched(tile_t *tile, uint8_t channel);
+
+/**
+ * @brief  Check if the given channel currently reports proximity.
+ * @tessera expose category=tile name=is_prox returns=bool
+ */
 uint8_t  tile_sense_t_c_is_prox(tile_t *tile, uint8_t channel);
 
 /* ---- Data ---- */
 
+/**
+ * @brief  Read the raw counts value for a channel.
+ * @tessera expose category=tile name=get_counts returns=int
+ */
 uint16_t tile_sense_t_c_get_counts(tile_t *tile, uint8_t channel);
+
+/**
+ * @brief  Read the long-term average (LTA) for a channel.
+ * @tessera expose category=tile name=get_lta returns=int
+ */
 uint16_t tile_sense_t_c_get_lta(tile_t *tile, uint8_t channel);
+
+/**
+ * @brief  Read the delta (counts - LTA) for a channel.
+ * @tessera expose category=tile name=get_delta returns=int
+ */
 int16_t  tile_sense_t_c_get_delta(tile_t *tile, uint8_t channel);
+
+/**
+ * @brief  Read the slider position (if a slider is configured).
+ * @tessera expose category=tile name=get_slider returns=int
+ */
 uint16_t tile_sense_t_c_get_slider(tile_t *tile);
 
 /* ---- Configuration ---- */
 
+/**
+ * @brief  Set proximity and touch thresholds for a channel.
+ * @tessera expose category=tile name=set_thresholds
+ */
 void tile_sense_t_c_set_thresholds(tile_t *tile, uint8_t channel,
                                    uint8_t prox_thresh, uint8_t touch_thresh);
+
+/**
+ * @brief  Set the device power mode.
+ * @tessera expose category=tile name=set_power_mode
+ */
 void tile_sense_t_c_set_power_mode(tile_t *tile, sense_t_c_power_mode_t mode);
 void tile_sense_t_c_enable_events(tile_t *tile, uint16_t mask);
 void tile_sense_t_c_ati(tile_t *tile);

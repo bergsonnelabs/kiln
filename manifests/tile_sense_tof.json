@@ -1,0 +1,167 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@7b590aa",
+  "tile": "Sense.TOF",
+  "palette": {
+    "label": "Sense.TOF",
+    "icon": "◊"
+  },
+  "driver": {
+    "prefix": "tile_sense_tof",
+    "header": "tile_sense_tof.h",
+    "version": "1.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_sense_tof_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "sleep"
+      ],
+      "symbol": "tile_sense_tof_sleep",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Enter standby mode (ENABLE = 0x00).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wake"
+      ],
+      "symbol": "tile_sense_tof_wake",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Resume from standby mode.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "start"
+      ],
+      "symbol": "tile_sense_tof_start",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Start continuous or single-shot measurement.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "stop"
+      ],
+      "symbol": "tile_sense_tof_stop",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Stop an active measurement.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_distance_mm"
+      ],
+      "symbol": "tile_sense_tof_get_distance_mm",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Read the distance from the most recent result.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "result_ready"
+      ],
+      "symbol": "tile_sense_tof_result_ready",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Check if a new measurement result is available.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "factory_calibrate"
+      ],
+      "symbol": "tile_sense_tof_factory_calibrate",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Run the factory calibration procedure.",
+      "params": [
+        {
+          "name": "timeout_ms",
+          "type": "int",
+          "description": "Maximum wait time in milliseconds."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_distance_mode"
+      ],
+      "symbol": "tile_sense_tof_set_distance_mode",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Change the distance mode on the fly.",
+      "params": [
+        {
+          "name": "mode",
+          "type": "?sense_tof_distance_mode_t",
+          "description": "New distance mode."
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_period"
+      ],
+      "symbol": "tile_sense_tof_set_period",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Change the measurement repetition period on the fly.",
+      "params": [
+        {
+          "name": "period_ms",
+          "type": "int",
+          "description": "New period code (0x00=single, 0x1E=30ms, 0xFE=1s, 0xFF=2s)."
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    }
+  ],
+  "events": [],
+  "bus_addresses": {
+    "I2C": [
+      {
+        "address": "0x41",
+        "is_default": true
+      }
+    ]
+  }
+}
