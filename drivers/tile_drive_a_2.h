@@ -49,6 +49,8 @@
  *
  * Datasheet (DAC): https://www.ti.com/product/DAC63202W
  * Datasheet (Amp): https://www.ti.com/product/TPA2028D1
+ *
+ * @tessera tile label=Drive.A.2 icon=♬
  */
 
 #ifndef INC_TILE_DRIVE_A_2_H_
@@ -255,6 +257,7 @@ void tile_drive_a_2_init(tiles_pal_t *hal, uint8_t instance,
 
 /**
  * @brief  Enter low-power sleep.
+ * @tessera expose category=tile name=sleep
  *
  * Powers down both DAC VOUT channels (Hi-Z) and puts the amplifiers
  * into software shutdown.
@@ -263,6 +266,7 @@ void tile_drive_a_2_sleep(tile_t *tile);
 
 /**
  * @brief  Wake from sleep.
+ * @tessera expose category=tile name=wake
  *
  * Powers up both DAC VOUT channels and re-enables the amplifiers.
  * Restores cached gain settings.
@@ -283,6 +287,7 @@ void tile_drive_a_2_reset(tile_t *tile);
 
 /**
  * @brief  Set a DAC channel output by raw 12-bit code (0–4095).
+ * @tessera expose category=tile name=set
  *
  * @param  tile     Tile handle
  * @param  channel  0 or 1
@@ -292,6 +297,7 @@ void tile_drive_a_2_set(tile_t *tile, uint8_t channel, uint16_t value);
 
 /**
  * @brief  Set a DAC channel output in millivolts.
+ * @tessera expose category=tile name=set_mv
  *
  * Computes the DAC code from the cached reference voltage and gain.
  *
@@ -303,6 +309,7 @@ void tile_drive_a_2_set_mv(tile_t *tile, uint8_t channel, uint16_t mv);
 
 /**
  * @brief  Read back the current DAC code for a channel.
+ * @tessera expose category=tile name=get returns=int
  *
  * @param  tile     Tile handle
  * @param  channel  0 or 1
@@ -316,6 +323,7 @@ uint16_t tile_drive_a_2_get(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Set the voltage output gain for a DAC channel.
+ * @tessera expose category=tile name=set_gain
  *
  * Automatically enables the internal reference when an internal-reference
  * gain is selected, and updates the cached Vref for set_mv() calculations.
@@ -333,6 +341,7 @@ void tile_drive_a_2_set_gain(tile_t *tile, uint8_t channel,
 
 /**
  * @brief  Configure the waveform shape for a channel.
+ * @tessera expose category=tile name=set_waveform
  *
  * Sets FUNC-CONFIG-X in DAC-X-FUNC-CONFIG. The waveform oscillates
  * between DAC-X-MARGIN-LOW and DAC-X-MARGIN-HIGH at the configured
@@ -347,6 +356,7 @@ void tile_drive_a_2_set_waveform(tile_t *tile, uint8_t channel,
 
 /**
  * @brief  Start waveform generation on a channel.
+ * @tessera expose category=tile name=start_waveform
  *
  * @param  tile     Tile handle
  * @param  channel  0 or 1
@@ -355,6 +365,7 @@ void tile_drive_a_2_start_waveform(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Stop waveform generation on a channel.
+ * @tessera expose category=tile name=stop_waveform
  *
  * @param  tile     Tile handle
  * @param  channel  0 or 1
@@ -367,6 +378,7 @@ void tile_drive_a_2_stop_waveform(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Set the amplifier fixed gain.
+ * @tessera expose category=tile name=amp_set_gain
  *
  * Both TPA2028D1 amplifiers share I2C address 0x58, so this write
  * affects both channels simultaneously.  No-op in SPI mode.
@@ -378,6 +390,7 @@ void tile_drive_a_2_amp_set_gain(tile_t *tile, int8_t gain_db);
 
 /**
  * @brief  Read the current amplifier fixed gain.
+ * @tessera expose category=tile name=amp_get_gain returns=int
  *
  * @param  tile  Tile handle
  * @return Gain in dB (-28 to +30), or 0 if amp not available
@@ -386,6 +399,7 @@ int8_t tile_drive_a_2_amp_get_gain(tile_t *tile);
 
 /**
  * @brief  Enable the amplifiers (clear software shutdown).
+ * @tessera expose category=tile name=amp_enable
  *
  * No-op in SPI mode.
  */
@@ -393,6 +407,7 @@ void tile_drive_a_2_amp_enable(tile_t *tile);
 
 /**
  * @brief  Disable the amplifiers (enter software shutdown).
+ * @tessera expose category=tile name=amp_disable
  *
  * No-op in SPI mode.
  */
@@ -412,6 +427,7 @@ void tile_drive_a_2_amp_set_agc(tile_t *tile, const drive_a_2_agc_cfg_t *cfg);
 
 /**
  * @brief  Read the amplifier status register.
+ * @tessera expose category=tile name=amp_read_status returns=int
  *
  * Check bit 3 (FAULT) for short-circuit and bit 2 (Thermal) for
  * over-temperature.  Write 0 to the respective bit to clear.
@@ -427,6 +443,7 @@ uint8_t tile_drive_a_2_amp_read_status(tile_t *tile);
 
 /**
  * @brief  Read the DAC GENERAL-STATUS register.
+ * @tessera expose category=tile name=read_status returns=int
  *
  * Contains DEVICE-ID, VERSION-ID, NVM CRC status, and DAC busy flags.
  *

@@ -1,0 +1,248 @@
+{
+  "schema": "tessera-manifest/v1",
+  "source": "cores@7b590aa",
+  "tile": "Sense.T.C",
+  "palette": {
+    "label": "Sense.T.C",
+    "icon": "◕"
+  },
+  "driver": {
+    "prefix": "tile_sense_t_c",
+    "header": "tile_sense_t_c.h",
+    "version": "1.0.0"
+  },
+  "handle": {
+    "type": "tile_t",
+    "init": "tile_sense_t_c_init"
+  },
+  "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "process"
+      ],
+      "symbol": "tile_sense_t_c_process",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Read pending touch/proximity events and update internal state.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "sleep"
+      ],
+      "symbol": "tile_sense_t_c_sleep",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Enter low-power sleep mode.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wake"
+      ],
+      "symbol": "tile_sense_t_c_wake",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Wake from sleep mode.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_status"
+      ],
+      "symbol": "tile_sense_t_c_get_status",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Read the cached System Status word from the last process() call.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_gestures"
+      ],
+      "symbol": "tile_sense_t_c_get_gestures",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Read the cached Gesture Status word from the last process() call.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "is_touched"
+      ],
+      "symbol": "tile_sense_t_c_is_touched",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Check if the given channel is currently touched.",
+      "params": [
+        {
+          "name": "channel",
+          "type": "int"
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "is_prox"
+      ],
+      "symbol": "tile_sense_t_c_is_prox",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Check if the given channel currently reports proximity.",
+      "params": [
+        {
+          "name": "channel",
+          "type": "int"
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_counts"
+      ],
+      "symbol": "tile_sense_t_c_get_counts",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Read the raw counts value for a channel.",
+      "params": [
+        {
+          "name": "channel",
+          "type": "int"
+        }
+      ],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_lta"
+      ],
+      "symbol": "tile_sense_t_c_get_lta",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Read the long-term average (LTA) for a channel.",
+      "params": [
+        {
+          "name": "channel",
+          "type": "int"
+        }
+      ],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_delta"
+      ],
+      "symbol": "tile_sense_t_c_get_delta",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Read the delta (counts - LTA) for a channel.",
+      "params": [
+        {
+          "name": "channel",
+          "type": "int"
+        }
+      ],
+      "returns": "int16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_slider"
+      ],
+      "symbol": "tile_sense_t_c_get_slider",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Read the slider position (if a slider is configured).",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_thresholds"
+      ],
+      "symbol": "tile_sense_t_c_set_thresholds",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Set proximity and touch thresholds for a channel.",
+      "params": [
+        {
+          "name": "channel",
+          "type": "int"
+        },
+        {
+          "name": "prox_thresh",
+          "type": "int"
+        },
+        {
+          "name": "touch_thresh",
+          "type": "int"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_power_mode"
+      ],
+      "symbol": "tile_sense_t_c_set_power_mode",
+      "header": "tile_sense_t_c.h",
+      "category": "tile",
+      "description": "Set the device power mode.",
+      "params": [
+        {
+          "name": "mode",
+          "type": "?sense_t_c_power_mode_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    }
+  ],
+  "events": [],
+  "bus_addresses": {
+    "I2C": [
+      {
+        "address": "0x44"
+      }
+    ]
+  }
+}

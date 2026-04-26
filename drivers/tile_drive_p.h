@@ -15,6 +15,8 @@
  * Datasheet: https://www.bergsonne.io/tiles/drive/p
  * IC datasheet: https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/5/Bor_as_Technologies-BOS1921.pdf
  *
+ * @tessera tile label=Drive.P icon=♪
+ *
  * Quick start:
  * @code
  *   #include "core_tiles.h"
@@ -154,6 +156,7 @@ void tile_drive_p_reset(tile_t* tile);
 
 /**
  * @brief  Set the operating mode.
+ * @tessera expose category=tile name=set_mode
  *
  * @param  tile  Pointer to tile handle
  * @param  mode  One of the drive_p_mode_t values
@@ -162,6 +165,7 @@ void tile_drive_p_set_mode(tile_t* tile, drive_p_mode_t mode);
 
 /**
  * @brief  Read the current return register value.
+ * @tessera expose category=tile name=read returns=int
  *
  * @param  tile  Pointer to tile handle
  * @return 16-bit value from the currently selected return register
@@ -170,6 +174,7 @@ uint16_t tile_drive_p_read(tile_t* tile);
 
 /**
  * @brief  Read the sensed piezo voltage.
+ * @tessera expose category=tile name=read_sense returns=int
  *
  * Must be in SENSE_FINE or SENSE_COARSE mode.
  *
@@ -180,6 +185,7 @@ int16_t tile_drive_p_read_sense(tile_t* tile);
 
 /**
  * @brief  Read the IC status register.
+ * @tessera expose category=tile name=read_status returns=int
  *
  * @param  tile  Pointer to tile handle
  * @return 16-bit IC_STATUS value
@@ -188,6 +194,7 @@ uint16_t tile_drive_p_read_status(tile_t* tile);
 
 /**
  * @brief  Write a sample to the FIFO.
+ * @tessera expose category=tile name=write_fifo
  *
  * @param  tile    Pointer to tile handle
  * @param  sample  Signed 16-bit waveform sample
@@ -214,6 +221,7 @@ void tile_drive_p_wfs_write(tile_t* tile, const uint16_t* words, uint16_t count)
 
 /**
  * @brief  Enter low-power sleep mode.
+ * @tessera expose category=tile name=sleep
  *
  * @param  tile  Pointer to tile handle
  */
@@ -221,6 +229,7 @@ void tile_drive_p_sleep(tile_t* tile);
 
 /**
  * @brief  Check status and recover from error/fault states.
+ * @tessera expose category=tile name=check_and_recover returns=bool
  *
  * @param  tile          Pointer to tile handle
  * @param  restore_mode  Mode to re-enter after recovery

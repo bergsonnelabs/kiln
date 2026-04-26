@@ -13,6 +13,8 @@
  *
  * Datasheet: https://www.bergsonne.io/tiles/sense/i9
  *
+ * @tessera tile label=Sense.I.9 icon=⊙
+ *
  * Quick start:
  * @code
  *   #include "core_tiles.h"
@@ -208,6 +210,7 @@ void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
 
 /**
  * @brief  Check if new IMU data is available.
+ * @tessera expose category=tile name=data_ready returns=bool
  *
  * Reads the ICM-20948 interrupt status register.
  *
@@ -218,6 +221,7 @@ uint8_t tile_sense_i_9_data_ready(tile_t* tile);
 
 /**
  * @brief  Set the accelerometer full-scale range.
+ * @tessera expose category=tile name=set_accel_range
  *
  * @param  tile   Pointer to tile handle
  * @param  range  One of the sense_i_9_accel_range_t values
@@ -226,6 +230,7 @@ void tile_sense_i_9_set_accel_range(tile_t* tile, sense_i_9_accel_range_t range)
 
 /**
  * @brief  Set the gyroscope full-scale range.
+ * @tessera expose category=tile name=set_gyro_range
  *
  * @param  tile   Pointer to tile handle
  * @param  range  One of the sense_i_9_gyro_range_t values
@@ -234,6 +239,7 @@ void tile_sense_i_9_set_gyro_range(tile_t* tile, sense_i_9_gyro_range_t range);
 
 /**
  * @brief  Set the magnetometer operating mode.
+ * @tessera expose category=tile name=set_mag_mode
  *
  * @param  tile  Pointer to tile handle
  * @param  mode  One of the sense_i_9_mag_mode_t values
@@ -244,6 +250,7 @@ void tile_sense_i_9_set_mag_mode(tile_t* tile, sense_i_9_mag_mode_t mode);
 
 /**
  * @brief  Set the accelerometer output data rate.
+ * @tessera expose category=tile name=set_accel_odr
  *
  * ODR = 1125 / (1 + divider) Hz.  Examples:
  *   divider = 0   → 1125 Hz
@@ -258,6 +265,7 @@ void tile_sense_i_9_set_accel_odr(tile_t* tile, uint16_t divider);
 
 /**
  * @brief  Set the gyroscope output data rate.
+ * @tessera expose category=tile name=set_gyro_odr
  *
  * ODR = 1100 / (1 + divider) Hz.
  *
@@ -268,6 +276,8 @@ void tile_sense_i_9_set_gyro_odr(tile_t* tile, uint8_t divider);
 
 /**
  * @brief  Read raw accelerometer data (3-axis).
+ * @tessera expose category=tile name=get_raw_accels returns=int[3]
+ * @tessera out_buffer buffer type=int16_t length=3
  *
  * Returns signed 16-bit ADC counts. Convert to milli-g using the
  * sensitivity for the configured range (e.g. ±2 G → 1 LSB ≈ 0.061 mg).
@@ -279,6 +289,8 @@ void tile_sense_i_9_get_raw_accels(tile_t* tile, int16_t* buffer);
 
 /**
  * @brief  Read raw gyroscope data (3-axis).
+ * @tessera expose category=tile name=get_raw_gyros returns=int[3]
+ * @tessera out_buffer buffer type=int16_t length=3
  *
  * Returns signed 16-bit ADC counts. Convert to °/s using the
  * sensitivity for the configured range (e.g. ±250 DPS → 131 LSB/°/s).
@@ -290,6 +302,8 @@ void tile_sense_i_9_get_raw_gyros(tile_t* tile, int16_t* buffer);
 
 /**
  * @brief  Read raw accelerometer + gyroscope data in a single burst.
+ * @tessera expose category=tile name=get_raw_6dof returns=int[6]
+ * @tessera out_buffer buffer type=int16_t length=6
  *
  * More efficient than calling get_raw_accels + get_raw_gyros separately
  * (one I2C transaction instead of two). Data is time-coherent.
@@ -315,6 +329,7 @@ void tile_sense_i_9_get_raw_mags(tile_t* tile, int16_t* buffer);
 
 /**
  * @brief  Read the on-chip temperature sensor.
+ * @tessera expose category=tile name=get_temperature returns=int
  *
  * Convert raw value to °C:  temp_degC = (raw / 333.87) + 21.0
  *
@@ -325,6 +340,7 @@ int16_t tile_sense_i_9_get_temperature(tile_t* tile);
 
 /**
  * @brief  Enter low-power sleep mode.
+ * @tessera expose category=tile name=sleep
  *
  * Stops all sensor sampling. Current draw drops to ~8 µA.
  * Call tile_sense_i_9_wake() to resume.
@@ -335,6 +351,7 @@ void tile_sense_i_9_sleep(tile_t* tile);
 
 /**
  * @brief  Wake from sleep mode and resume sampling.
+ * @tessera expose category=tile name=wake
  *
  * Restores auto clock selection. Previously configured ranges
  * and ODRs are preserved across sleep/wake cycles.

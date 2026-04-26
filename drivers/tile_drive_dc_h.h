@@ -37,6 +37,8 @@
  * Datasheet: https://www.bergsonne.io/tiles/drive/dc-h
  * IC datasheet: https://www.ti.com/lit/ds/symlink/drv8214.pdf
  *
+ * @tessera tile label=Drive.DC.H icon=⚙
+ *
  * Quick start:
  * @code
  *   #include "core_tiles.h"
@@ -243,6 +245,7 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
 
 /**
  * @brief  Drive motor forward (OUT1=H, OUT2=L).
+ * @tessera expose category=tile name=forward
  *
  * @param  tile  Pointer to tile handle
  */
@@ -250,6 +253,7 @@ void tile_drive_dc_h_forward(tile_t* tile);
 
 /**
  * @brief  Drive motor in reverse (OUT1=L, OUT2=H).
+ * @tessera expose category=tile name=reverse
  *
  * @param  tile  Pointer to tile handle
  */
@@ -257,6 +261,7 @@ void tile_drive_dc_h_reverse(tile_t* tile);
 
 /**
  * @brief  Active brake (slow-decay, both low-side FETs on).
+ * @tessera expose category=tile name=brake
  *
  * Motor is actively held. Current recirculates through the
  * low-side FETs, providing strong braking force.
@@ -267,6 +272,7 @@ void tile_drive_dc_h_brake(tile_t* tile);
 
 /**
  * @brief  Coast (Hi-Z, all FETs off).
+ * @tessera expose category=tile name=coast
  *
  * Motor freewheels. No braking force is applied. This is the
  * initial state after init().
@@ -279,6 +285,7 @@ void tile_drive_dc_h_coast(tile_t* tile);
 
 /**
  * @brief  Set the regulation target (WSET_VSET).
+ * @tessera expose category=tile name=set_target
  *
  * In voltage mode: sets target motor terminal voltage.
  *   With VM_GAIN_SEL=0: value * 15700/255 mV (61.6 mV/bit)
@@ -296,6 +303,7 @@ void tile_drive_dc_h_set_target(tile_t* tile, uint8_t value);
 
 /**
  * @brief  Read the raw FAULT register (0x00).
+ * @tessera expose category=tile name=get_fault returns=int
  *
  * Contains FAULT[7], STALL[5], OCP[4], OVP[3], TSD[2],
  * NPOR[1], CNT_DONE[0]. Use the DRV8214_FAULT_* masks to
@@ -308,6 +316,7 @@ uint8_t tile_drive_dc_h_get_fault(tile_t* tile);
 
 /**
  * @brief  Clear all latched faults.
+ * @tessera expose category=tile name=clear_fault
  *
  * Sets CLR_FLT in CONFIG0. Clears FAULT, OCP, OVP, TSD,
  * and NPOR bits. The CLR_FLT bit is self-clearing.
@@ -318,6 +327,7 @@ void tile_drive_dc_h_clear_fault(tile_t* tile);
 
 /**
  * @brief  Check if a motor stall condition is active.
+ * @tessera expose category=tile name=is_stalled returns=bool
  *
  * @param  tile  Pointer to tile handle
  * @return 1 if STALL bit is set, 0 otherwise
@@ -326,6 +336,7 @@ uint8_t tile_drive_dc_h_is_stalled(tile_t* tile);
 
 /**
  * @brief  Read motor terminal voltage in millivolts.
+ * @tessera expose category=tile name=get_voltage_mv returns=int
  *
  * Reads the VMTR register. The reading is proportional to the
  * voltage across OUT1-OUT2 terminals. Valid while driving.
@@ -337,6 +348,7 @@ uint16_t tile_drive_dc_h_get_voltage_mv(tile_t* tile);
 
 /**
  * @brief  Read motor current in milliamps.
+ * @tessera expose category=tile name=get_current_ma returns=int
  *
  * Reads the IMTR register and converts using the current
  * CS_GAIN_SEL setting. The reading reflects the current
@@ -349,6 +361,7 @@ uint16_t tile_drive_dc_h_get_current_ma(tile_t* tile);
 
 /**
  * @brief  Read the ripple speed estimate.
+ * @tessera expose category=tile name=get_speed returns=int
  *
  * Returns the raw SPEED register from the ripple counting
  * algorithm. Value is proportional to motor speed but requires
@@ -361,6 +374,7 @@ uint8_t tile_drive_dc_h_get_speed(tile_t* tile);
 
 /**
  * @brief  Read the 16-bit ripple count.
+ * @tessera expose category=tile name=get_ripple_count returns=int
  *
  * Returns the total number of commutation ripples counted
  * since the last clear. Proportional to rotor position.
@@ -372,6 +386,7 @@ uint16_t tile_drive_dc_h_get_ripple_count(tile_t* tile);
 
 /**
  * @brief  Reset the ripple counter to zero.
+ * @tessera expose category=tile name=clear_ripple_count
  *
  * Sets CLR_CNT in CONFIG0. Also clears CNT_DONE flag.
  * The CLR_CNT bit is self-clearing.
@@ -384,6 +399,7 @@ void tile_drive_dc_h_clear_ripple_count(tile_t* tile);
 
 /**
  * @brief  Disable the output stage (all FETs Hi-Z).
+ * @tessera expose category=tile name=sleep
  *
  * Clears EN_OUT in CONFIG0. The device remains on the I2C bus
  * and registers are accessible, but no current flows through
@@ -395,6 +411,7 @@ void tile_drive_dc_h_sleep(tile_t* tile);
 
 /**
  * @brief  Re-enable the output stage.
+ * @tessera expose category=tile name=wake
  *
  * Sets EN_OUT in CONFIG0. The bridge returns to the last
  * commanded state (coast/brake/forward/reverse).
