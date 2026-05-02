@@ -208,10 +208,14 @@ void tile_drive_h_play(tile_t* tile, uint8_t index, uint8_t repeats);
  * Loads effects into the waveform sequencer registers (0x04-0x0B),
  * terminates the sequence, and triggers playback. Returns
  * immediately — use tile_drive_h_is_playing() to poll for
- * completion.
+ * completion. DSL pads short sequences with 0 (DRV2605 effect 0
+ * is "stop"), so a 3-effect sequence written as `[5, 10, 15, 0,
+ * 0, 0, 0, 0]` plays effects 5/10/15 then halts.
  *
+ * @tessera expose category=tile name=play_sequence
+ * @tessera in_buffer effects type=uint8_t length=8 length_param=count
  * @param  tile     Pointer to tile handle
- * @param  effects  Array of effect indices (1-123)
+ * @param  effects  Array of effect indices (1-123, 0 = stop)
  * @param  count    Number of effects (1-8)
  */
 void tile_drive_h_play_sequence(tile_t* tile, const uint8_t *effects,
@@ -224,8 +228,10 @@ void tile_drive_h_play_sequence(tile_t* tile, const uint8_t *effects,
  * the GO bit. Use this to pre-load effects before switching to
  * external trigger mode (edge or level).
  *
+ * @tessera expose category=tile name=load_sequence
+ * @tessera in_buffer effects type=uint8_t length=8 length_param=count
  * @param  tile     Pointer to tile handle
- * @param  effects  Array of effect indices (1-123)
+ * @param  effects  Array of effect indices (1-123, 0 = stop)
  * @param  count    Number of effects (1-8)
  */
 void tile_drive_h_load_sequence(tile_t* tile, const uint8_t *effects,
