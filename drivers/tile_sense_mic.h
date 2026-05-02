@@ -2,7 +2,7 @@
  * @file   tile_sense_mic.h
  * @brief  Complete driver for the Sense.MIC tile (MAX11645 ADC + AMM-2742 MEMS mic).
  *         I2C-only, command-based protocol via tiles_pal_t raw I2C.
- * @version 1.0.0
+ * @version 2.0.0
  *
  * I2C-output MEMS microphone tile combining:
  *   - PUI Audio AMM-2742-T-R: omnidirectional MEMS mic, 20 Hz–20 kHz,
@@ -49,23 +49,14 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="External reference voltage"
- *   MAX11645 command byte can select an external reference on
- *   REF/AIN1, but driver only exposes the chip's two internal
- *   references (2.048 V / 4.096 V). External-ref support would
- *   require dedicating a tile pad and rewriting set_reference.
- *
- * @tessera unsupported severity=advanced category="Bipolar / pseudo-differential input mode"
- *   Command byte bits [4:3] select between unipolar (0–VREF),
- *   bipolar (±VREF/2), and pseudo-differential modes. Driver
- *   uses unipolar single-ended; bipolar / differential aren't
- *   exposed (relevant for true differential mic wiring).
- *
- * @tessera unsupported severity=niche category="External-clock conversion mode"
- *   MAX11645 can clock conversions from SCL (host-controlled
- *   timing) instead of its internal 2.8 MHz oscillator. Driver
- *   uses internal-clock; external-clock matters for tightly
- *   synchronized multi-ADC sampling.
+ * @tessera unsupported severity=advanced category="External reference voltage on REF pin"
+ *   The MAX11645 supports an external reference on its REF/AIN1
+ *   pin, but the Sense.MIC tile does not route REF/AIN1 to any
+ *   pad (pad 6 carries the chip's analog audio output, not the
+ *   ADC reference). Closing this gap requires a tile hardware
+ *   revision that breaks REF out to a connector pad. Until then,
+ *   the SENSE_MIC_REF_EXTERNAL* enum values configure the chip
+ *   but have no usable external pin.
  */
 
 #ifndef INC_TILE_SENSE_MIC_H_
@@ -78,7 +69,7 @@
  * Driver version
  * ================================================================ */
 
-#define TILE_SENSE_MIC_VERSION_MAJOR  1
+#define TILE_SENSE_MIC_VERSION_MAJOR  2
 #define TILE_SENSE_MIC_VERSION_MINOR  0
 #define TILE_SENSE_MIC_VERSION_PATCH  0
 
@@ -210,17 +201,59 @@ typedef enum {
     SENSE_MIC_SCAN_8X     = 0x01,  /**< Convert CS0 8 times (averaging) */
 } sense_mic_scan_t;
 
+/**
+ * @brief  Conversion-clock source.
+ *
+ * | Enum value | Behavior                                          |
+ * |------------|---------------------------------------------------|
+ * | INTERNAL   | Chip's 2.8 MHz internal oscillator (default)      |
+ * | EXTERNAL   | Conversions clocked from the I2C SCL line         |
+ *
+ * External-clock mode lets the host drive conversion timing exactly
+ * by holding SCL — useful for tightly synchronized multi-ADC sampling.
+ * In external-clock mode the effective sample rate is set by the I2C
+ * bus speed; SCL must remain active for the full conversion window.
+ */
+typedef enum {
+    SENSE_MIC_CLOCK_INTERNAL = 0,  /**< Internal 2.8 MHz oscillator (default) */
+    SENSE_MIC_CLOCK_EXTERNAL = 1,  /**< Host-clocked via SCL */
+} sense_mic_clock_t;
+
+/**
+ * @brief  Output coding (unipolar vs bipolar).
+ *
+ * | Enum value | Output range          | Encoding                  |
+ * |------------|-----------------------|---------------------------|
+ * | UNIPOLAR   | 0 .. VREF             | Straight binary (default) |
+ * | BIPOLAR    | -VREF/2 .. +VREF/2    | Two's complement          |
+ *
+ * @note  The Sense.MIC's MEMS mic is single-ended around a positive
+ *        DC bias, so unipolar mode is the natural fit. Bipolar mode
+ *        re-encodes the same single-ended sample as a signed value
+ *        centred on VREF/2 — useful if your code wants signed audio
+ *        directly out of get_raw(), but does NOT enable true
+ *        differential reads (the tile has no second analog input
+ *        wired to AIN1).
+ */
+typedef enum {
+    SENSE_MIC_POLARITY_UNIPOLAR = 0,  /**< 0 .. VREF, straight binary (default) */
+    SENSE_MIC_POLARITY_BIPOLAR  = 1,  /**< ±VREF/2, two's complement */
+} sense_mic_polarity_t;
+
 /* ================================================================
  * Configuration
  * ================================================================ */
 
 /**
- * Optional init config. Pass NULL for defaults (VDD ref, AIN0, single-ended).
+ * Optional init config. Pass NULL for defaults (VDD ref, AIN0,
+ * single-ended, internal clock, unipolar coding).
  */
 typedef struct {
     uint8_t  ref;       /**< Voltage reference (sense_mic_ref_t). Default: SENSE_MIC_REF_VDD. */
     uint8_t  channel;   /**< ADC channel (sense_mic_channel_t). Default: SENSE_MIC_CH_AIN0. */
     uint8_t  scan;      /**< Scan mode (sense_mic_scan_t). Default: SENSE_MIC_SCAN_SINGLE. */
+    uint8_t  clock;     /**< Conversion clock (sense_mic_clock_t). Default: SENSE_MIC_CLOCK_INTERNAL. */
+    uint8_t  polarity;  /**< Output coding (sense_mic_polarity_t). Default: SENSE_MIC_POLARITY_UNIPOLAR. */
     uint16_t vref_mv;   /**< Reference voltage in mV. 0 = auto (3300 for VDD, 2048 for internal). Set manually only for external ref. */
 } sense_mic_cfg_t;
 
@@ -298,6 +331,48 @@ void tile_sense_mic_set_channel(tile_t *tile, sense_mic_channel_t ch);
  * @param  scan  SENSE_MIC_SCAN_SINGLE, SENSE_MIC_SCAN_UP, or SENSE_MIC_SCAN_8X
  */
 void tile_sense_mic_set_scan_mode(tile_t *tile, sense_mic_scan_t scan);
+
+/**
+ * @brief  Switch the conversion-clock source.
+ *
+ * Selects whether the MAX11645 clocks conversions from its internal
+ * 2.8 MHz oscillator (default) or from the I2C SCL line.
+ *
+ * In external-clock mode, conversion timing is locked to the host
+ * I2C bus, which makes it possible to synchronise multiple Sense.MIC
+ * tiles or to align ADC sampling with another time-base.
+ *
+ * @note  External-clock mode only takes effect during the next read
+ *        transaction; SCL must remain active for the full conversion
+ *        window or the result will be invalid.
+ *
+ * @param  clk  SENSE_MIC_CLOCK_INTERNAL or SENSE_MIC_CLOCK_EXTERNAL
+ *
+ * @tessera expose category=tile name=set_clock_mode
+ */
+void tile_sense_mic_set_clock_mode(tile_t *tile, sense_mic_clock_t clk);
+
+/**
+ * @brief  Switch the output coding (unipolar vs bipolar).
+ *
+ * Unipolar (default) returns 0–4095 straight binary, mid-bias near
+ * 2048. Bipolar returns the same sample re-encoded as a signed
+ * 12-bit two's-complement value centred on VREF/2.
+ *
+ * Both modes use the chip's single-ended input on AIN0 — bipolar
+ * does NOT enable true differential reads (the tile does not route
+ * an opposing analog input to AIN1). It just changes how get_raw()
+ * encodes the same physical sample.
+ *
+ * After switching to bipolar, treat get_raw() output as a signed
+ * 12-bit value (sign-extend before use): see get_audio_sample()
+ * for an alternative that subtracts the calibrated DC offset.
+ *
+ * @param  pol  SENSE_MIC_POLARITY_UNIPOLAR or SENSE_MIC_POLARITY_BIPOLAR
+ *
+ * @tessera expose category=tile name=set_polarity
+ */
+void tile_sense_mic_set_polarity(tile_t *tile, sense_mic_polarity_t pol);
 
 /**
  * @brief  Get the currently configured reference voltage in millivolts.

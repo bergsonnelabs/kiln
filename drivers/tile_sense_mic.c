@@ -34,6 +34,9 @@ static uint8_t resolve_id(uint8_t instance)
 typedef struct {
     uint8_t  setup_byte;    /* Cached setup byte (Vref, clock, polarity) */
     uint8_t  config_byte;   /* Cached config byte (scan, channel, SGL/DIF) */
+    uint8_t  ref_sel;       /* Cached reference selection (sense_mic_ref_t) */
+    uint8_t  clock_sel;     /* Cached clock selection (sense_mic_clock_t) */
+    uint8_t  polarity_sel;  /* Cached output coding (sense_mic_polarity_t) */
     uint16_t vref_mv;       /* Reference voltage in mV (for conversions) */
     uint16_t dc_offset;     /* Measured DC bias point (auto-calibrated at init) */
 } mic_state_t;
@@ -77,13 +80,17 @@ static void memzero(void *p, uint8_t n)
     while (n--) *b++ = 0;
 }
 
-/* Build a setup byte from ref enum */
-static uint8_t build_setup(uint8_t ref_sel)
+/* Build a setup byte from ref + clock + polarity enums */
+static uint8_t build_setup(uint8_t ref_sel, uint8_t clock_sel, uint8_t polarity_sel)
 {
+    uint8_t clk_bits = (clock_sel == SENSE_MIC_CLOCK_EXTERNAL)
+                     ? MAX11645_CLK_EXTERNAL : MAX11645_CLK_INTERNAL;
+    uint8_t pol_bits = (polarity_sel == SENSE_MIC_POLARITY_BIPOLAR)
+                     ? MAX11645_BIP : MAX11645_UNI;
     return MAX11645_SETUP_REG
          | ((uint8_t)ref_sel << 4)
-         | MAX11645_CLK_INTERNAL
-         | MAX11645_UNI
+         | clk_bits
+         | pol_bits
          | MAX11645_RST_NORESET;
 }
 
@@ -147,13 +154,18 @@ void tile_sense_mic_init(tiles_pal_t *hal, uint8_t instance,
     memzero(s, sizeof(mic_state_t));
 
     /* Apply config or defaults */
-    uint8_t ref_sel = (cfg && cfg->ref) ? cfg->ref : SENSE_MIC_REF_VDD;
-    uint8_t channel = (cfg && cfg->channel) ? cfg->channel : SENSE_MIC_CH_AIN0;
-    uint8_t scan    = (cfg) ? cfg->scan : 0;  /* 0 = SCAN_UP (scan from AIN0) */
+    uint8_t ref_sel  = (cfg && cfg->ref) ? cfg->ref : SENSE_MIC_REF_VDD;
+    uint8_t channel  = (cfg && cfg->channel) ? cfg->channel : SENSE_MIC_CH_AIN0;
+    uint8_t scan     = (cfg) ? cfg->scan : 0;  /* 0 = SCAN_UP (scan from AIN0) */
+    uint8_t clock    = (cfg) ? cfg->clock : SENSE_MIC_CLOCK_INTERNAL;
+    uint8_t polarity = (cfg) ? cfg->polarity : SENSE_MIC_POLARITY_UNIPOLAR;
 
-    s->setup_byte  = build_setup(ref_sel);
-    s->config_byte = build_config(scan, channel);
-    s->vref_mv     = resolve_vref(ref_sel, cfg ? cfg->vref_mv : 0);
+    s->ref_sel      = ref_sel;
+    s->clock_sel    = clock;
+    s->polarity_sel = polarity;
+    s->setup_byte   = build_setup(ref_sel, clock, polarity);
+    s->config_byte  = build_config(scan, channel);
+    s->vref_mv      = resolve_vref(ref_sel, cfg ? cfg->vref_mv : 0);
 
     /* Send setup byte — configures Vref, clock, polarity */
     mic_write_cmd(tile, s->setup_byte);
@@ -235,12 +247,35 @@ void tile_sense_mic_set_reference(tile_t *tile, sense_mic_ref_t ref)
 {
     mic_state_t *s = state_for(tile);
 
-    /* Rebuild setup byte with new reference */
-    s->setup_byte = build_setup((uint8_t)ref);
-    s->vref_mv = resolve_vref((uint8_t)ref, 0);
+    /* Rebuild setup byte with new reference, preserving clock + polarity */
+    s->ref_sel    = (uint8_t)ref;
+    s->setup_byte = build_setup((uint8_t)ref, s->clock_sel, s->polarity_sel);
+    s->vref_mv    = resolve_vref((uint8_t)ref, 0);
 
     mic_write_cmd(tile, s->setup_byte);
     tile->hal->delay_ms(1);  /* Reference settling time */
+}
+
+/** @brief Switch the conversion-clock source. */
+void tile_sense_mic_set_clock_mode(tile_t *tile, sense_mic_clock_t clk)
+{
+    mic_state_t *s = state_for(tile);
+
+    s->clock_sel  = (uint8_t)clk;
+    s->setup_byte = build_setup(s->ref_sel, s->clock_sel, s->polarity_sel);
+
+    mic_write_cmd(tile, s->setup_byte);
+}
+
+/** @brief Switch the output coding (unipolar vs bipolar). */
+void tile_sense_mic_set_polarity(tile_t *tile, sense_mic_polarity_t pol)
+{
+    mic_state_t *s = state_for(tile);
+
+    s->polarity_sel = (uint8_t)pol;
+    s->setup_byte   = build_setup(s->ref_sel, s->clock_sel, s->polarity_sel);
+
+    mic_write_cmd(tile, s->setup_byte);
 }
 
 /** @brief Change the active ADC channel. */
