@@ -15,13 +15,11 @@
  *   - Ripple count:  sensorless position/speed via commutation ripples
  *   - Protection:    UVLO, OCP, OVP, thermal shutdown
  *
- * The tile also exposes EN/PH control pads (pads 2, 3) for direct
- * GPIO-based motor control without I2C, and an analog current
- * proportional output on pad 6 (NPROP/IPROPI) that mirrors the
- * motor winding current scaled by the CS_GAIN_SEL setting.
- * External pad control still requires a one-time I2C write to
- * enable the output stage (EN_OUT=1). A future driver revision
- * will add pad-control mode helpers.
+ * The tile also exposes EN/PH (or IN1/IN2) control pads (pads 2, 3) for
+ * direct GPIO/PWM-based motor control without I²C, and an analog
+ * current-proportional output on pad 6 (NPROP/IPROPI) that mirrors the
+ * motor winding current scaled by the CS_GAIN_SEL setting. Switch the
+ * bridge control source at runtime with set_control_mode().
  *
  * The DRV8214 integrates a sensorless ripple counting algorithm
  * that counts commutation ripples in the motor current waveform
@@ -54,50 +52,24 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="External pad control modes (PMODE / I2C_BC)"
- *   Chip supports three control modes: I²C-only (driver default),
- *   EN/PH (one PWM input + direction on pads 2/3), and IN1/IN2
- *   (independent half-bridge PWMs on pads 2/3). Driver hardcodes
- *   I²C-only — users wanting GPIO-PWM control of the bridge can't
- *   switch modes. Tile pads 2/3 are wired but currently unused.
- *
- * @tessera unsupported severity=common category="Regulation mode select (REG_CTRL)"
- *   set_target() works in the chip's currently-configured loop mode,
- *   but driver doesn't expose REG_CTRL — users can't choose between
- *   open-loop, voltage regulation (closed-loop on terminal voltage),
- *   or speed regulation (closed-loop on ripple-rate feedback). Speed
- *   mode requires ripple-counter tuning to be useful.
- *
- * @tessera unsupported severity=advanced category="Ripple counter tuning"
- *   Chip's ripple-counter algorithm needs motor-specific tuning via
- *   INV_R_SCALE / KMC_SCALE / FLT_K / FLT_GAIN_SEL / RC_THR
- *   registers to count accurately. Driver exposes get_ripple_count
- *   but doesn't let the user calibrate the filter for the wired
- *   motor — counts will be inaccurate for non-default motors.
- *
- * @tessera unsupported severity=advanced category="Current regulation (IMODE / ITRIP)"
- *   Chip can cycle-by-cycle or fixed-off-time regulate motor current
- *   above ITRIP (set via VREF + CS_GAIN_SEL). Driver doesn't expose
- *   the ITRIP threshold or the regulation-mode select — users can't
- *   protect the motor from over-current via the chip's own loop.
- *
- * @tessera unsupported severity=advanced category="Stall-detection tuning (EN_STALL / TINRUSH / SMODE / STALL_REP)"
- *   is_stalled() reports the chip's STALL flag, but driver uses
- *   default thresholds and recovery behavior. Users can't tune
- *   inrush blanking time (TINRUSH), stall threshold (INT_VREF), or
- *   recovery mode (SMODE: latch-disable vs continue-driving).
- *
- * @tessera unsupported severity=advanced category="nSLEEP pin"
+ * @tessera unsupported severity=advanced category="nSLEEP pin (hardware-gated)"
  *   Chip's nSLEEP pin (~100 nA quiescent in sleep, ~1.3 mA active)
- *   isn't exposed in the tile JSON — likely strapped active on the
- *   PCB. Driver's sleep()/wake() only toggle the I²C-side EN_OUT
- *   bit; the chip itself doesn't enter low-power sleep. Battery-
- *   powered designs can't reach the chip's quiescent current floor.
+ *   is not routed to any tile pad in the Drive.DC.H rev-a layout
+ *   (verify in kiln/definitions/Drive-DC-H-a.json — pads 1–10 are
+ *   GND, EN/IN1, PH/IN2, I²C.CLK, I²C.DAT, NPROP, OUT1, OUT2, VM,
+ *   V+; nSLEEP is strapped active on the PCB). sleep()/wake() only
+ *   toggle the I²C-side EN_OUT bit; the chip itself can't reach its
+ *   true quiescent floor. Closing this gap requires a tile hardware
+ *   revision that routes nSLEEP to a connector pad.
  *
- * @tessera unsupported severity=niche category="Address selection (4 variants)"
- *   Chip ships in 4 factory I²C-address variants (0x30/0x31/0x33/
- *   0x34); driver hardcodes one address. Relevant if multiple
- *   Drive.DC.H tiles share an I²C bus on a future Core.
+ * @tessera unsupported severity=niche category="Address selection (factory variants)"
+ *   The DRV8214 derives its 7-bit I²C address from tri-level pins
+ *   A0/A1, but the Drive.DC.H tile straps these to fixed values per
+ *   factory variant: A30 (0x30), A31 (0x31), A33 (0x33), A34 (0x34
+ *   default). Address is chip-gated at order time, not runtime-
+ *   settable. The 9-entry instance table in this driver covers the
+ *   full chip address space, but only those four straps are sold —
+ *   pick a tile variant per Drive.DC.H tile sharing a bus.
  */
 
 #ifndef INC_TILE_DRIVE_DC_H_H_
@@ -110,7 +82,7 @@
 /* Driver version                                                  */
 /* -------------------------------------------------------------- */
 
-#define TILE_DRIVE_DC_H_VERSION_MAJOR  3
+#define TILE_DRIVE_DC_H_VERSION_MAJOR  4
 #define TILE_DRIVE_DC_H_VERSION_MINOR  0
 #define TILE_DRIVE_DC_H_VERSION_PATCH  0
 
@@ -188,18 +160,18 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 #define DRV8214_FAULT_CNT_DONE      0x01  /**< Bit 0 — ripple count done */
 
 /* -------------------------------------------------------------- */
-/* Regulation mode selection                                       */
+/* Init-time mode selection                                        */
 /* -------------------------------------------------------------- */
 
 /** Voltage regulation — internal PI loop maintains target motor voltage.
  *  WSET_VSET sets the target; VM_GAIN_SEL selects the voltage range.
  *  Ripple counting is disabled. */
-#define DRIVE_DC_H_MODE_VOLTAGE     0
+#define DRIVE_DC_H_MODE_VOLTAGE      0
 
 /** Speed regulation — internal PI loop maintains target motor speed
  *  using the ripple counting algorithm. Requires motor_mohm,
  *  ripples_per_rev, and kv_uv_per_rpm in the config struct. */
-#define DRIVE_DC_H_MODE_SPEED       1
+#define DRIVE_DC_H_MODE_SPEED        1
 
 /** Voltage regulation with ripple counting enabled. Motor runs at the
  *  target voltage while counting commutation ripples for position
@@ -217,7 +189,52 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
  *  monitoring (get_voltage_mv, get_current_ma, get_fault, etc.)
  *  still works over I2C. forward/reverse/brake/coast functions
  *  are NOT available in this mode — use GPIO/PWM instead. */
-#define DRIVE_DC_H_MODE_PAD_PHEN    3
+#define DRIVE_DC_H_MODE_PAD_PHEN     3
+
+/** External pad control in IN1/IN2 mode. Same as PAD_PHEN but
+ *  PMODE=1 (PWM mode), so each pad drives one half-bridge:
+ *    - IN1 (tile pad 2): PWM for OUT1 (HIGH = OUT1 high)
+ *    - IN2 (tile pad 3): PWM for OUT2 (HIGH = OUT2 high)
+ *  Both 0 = coast, both 1 = brake, complementary = drive. */
+#define DRIVE_DC_H_MODE_PAD_IN1IN2   4
+
+/* -------------------------------------------------------------- */
+/* Runtime mode setters (control modes / regulation / current /    */
+/* stall — closes the corresponding driver gaps)                   */
+/* -------------------------------------------------------------- */
+
+/** Bridge control source — value passed to set_control_mode().
+ *  Mirrors the four init-time modes but switchable at runtime.   */
+typedef enum {
+    DRIVE_DC_H_CTRL_I2C        = 0,  /**< I²C registers control bridge (PWM mode). */
+    DRIVE_DC_H_CTRL_PAD_PHEN   = 1,  /**< Pads 2/3 = EN/PH (one PWM + dir). */
+    DRIVE_DC_H_CTRL_PAD_IN1IN2 = 2,  /**< Pads 2/3 = IN1/IN2 (independent half-bridge PWM). */
+} drive_dc_h_control_mode_t;
+
+/** Regulation loop selection — value passed to set_regulation_mode().
+ *  Maps to REG_CTRL[1:0] in REG_CTRL0 (offset 0x0E).             */
+typedef enum {
+    DRIVE_DC_H_REG_OPEN_LOOP      = 0,  /**< 00b: fixed-off-time current reg only (open-loop drive). */
+    DRIVE_DC_H_REG_CYCLE_BY_CYCLE = 1,  /**< 01b: cycle-by-cycle current reg. */
+    DRIVE_DC_H_REG_SPEED          = 2,  /**< 10b: speed regulation (requires ripple counting). */
+    DRIVE_DC_H_REG_VOLTAGE        = 3,  /**< 11b: voltage regulation (default). */
+} drive_dc_h_reg_mode_t;
+
+/** Current regulation mode — value passed to set_current_regulation_mode().
+ *  Maps to IMODE[1:0] in CONFIG3 (offset 0x0C).                   */
+typedef enum {
+    DRIVE_DC_H_IMODE_DISABLED     = 0,  /**< 00b: no current regulation. */
+    DRIVE_DC_H_IMODE_INRUSH       = 1,  /**< 01b: regulate during tINRUSH only (default for I²C). */
+    DRIVE_DC_H_IMODE_ALWAYS       = 2,  /**< 10b: always regulate at ITRIP threshold. */
+    DRIVE_DC_H_IMODE_DISABLED_ALT = 3,  /**< 11b: disabled (alt encoding). */
+} drive_dc_h_imode_t;
+
+/** Stall recovery behavior — value passed to set_stall_recovery().
+ *  Maps to SMODE bit in CONFIG3 (offset 0x0C, bit 5).             */
+typedef enum {
+    DRIVE_DC_H_STALL_LATCH    = 0,  /**< 0b: latch outputs off on stall. */
+    DRIVE_DC_H_STALL_REPORT   = 1,  /**< 1b: report only, keep driving (default). */
+} drive_dc_h_stall_recovery_t;
 
 /* -------------------------------------------------------------- */
 /* Public API                                                      */
@@ -247,7 +264,8 @@ uint8_t tile_drive_dc_h_find(tiles_pal_t* hal, uint8_t instance);
  */
 typedef struct {
     uint8_t  mode;     /**< DRIVE_DC_H_MODE_VOLTAGE (0), _SPEED (1),
-                            or _RIPPLE_COUNT (2). */
+                            _RIPPLE_COUNT (2), _PAD_PHEN (3),
+                            or _PAD_IN1IN2 (4). */
     uint8_t  vm_gain;  /**< Voltage range: 0 = 0-15.7 V, 1 = 0-3.92 V.
                             Use 1 for better resolution at low voltages. */
     uint8_t  cs_gain;  /**< Current sense gain (CS_GAIN_SEL, 0-5):
@@ -328,6 +346,28 @@ void tile_drive_dc_h_brake(tile_t* tile);
  */
 void tile_drive_dc_h_coast(tile_t* tile);
 
+/* ---- Bridge control source (closes "PMODE / I2C_BC" gap) ---- */
+
+/**
+ * @brief  Switch the bridge control source between I²C and the EN/PH
+ *         or IN1/IN2 tile pads.
+ * @tessera expose category=tile name=set_control_mode
+ *
+ * In I²C mode (default after init), forward/reverse/brake/coast control
+ * the bridge. In either pad-control mode, the chip ignores I²C bridge
+ * bits and tracks pads 2/3 directly:
+ *   - PAD_PHEN     — pad 2 = EN (PWM), pad 3 = PH (direction)
+ *   - PAD_IN1IN2   — pad 2 = IN1, pad 3 = IN2 (independent half-bridges)
+ * Monitoring (voltage, current, fault, ripple count) keeps working over
+ * I²C in all modes. Switching to a pad mode disables I²C bridge calls
+ * (forward/reverse/etc) — they'll log an error and no-op.
+ *
+ * @param  tile  Pointer to tile handle
+ * @param  mode  Bridge control source (DRIVE_DC_H_CTRL_*)
+ */
+void tile_drive_dc_h_set_control_mode(tile_t* tile,
+                                      drive_dc_h_control_mode_t mode);
+
 /* ---- Regulation ---- */
 
 /**
@@ -345,6 +385,132 @@ void tile_drive_dc_h_coast(tile_t* tile);
  * @param  value  Target setpoint (0-255)
  */
 void tile_drive_dc_h_set_target(tile_t* tile, uint8_t value);
+
+/**
+ * @brief  Select the regulation loop (open-loop / current / voltage / speed).
+ * @tessera expose category=tile name=set_regulation_mode
+ *
+ * Writes REG_CTRL bits in REG_CTRL0. After switching, set_target() is
+ * interpreted in the new loop's units (voltage code, speed code, etc.).
+ * Speed mode requires ripple counting to be enabled — the driver
+ * automatically sets EN_RC=1 when SPEED is selected.
+ *
+ * @param  tile  Pointer to tile handle
+ * @param  mode  Regulation mode (DRIVE_DC_H_REG_*)
+ */
+void tile_drive_dc_h_set_regulation_mode(tile_t* tile,
+                                         drive_dc_h_reg_mode_t mode);
+
+/* ---- Current regulation (closes "IMODE / ITRIP" gap) ---- */
+
+/**
+ * @brief  Set the current-regulation mode (IMODE in CONFIG3).
+ * @tessera expose category=tile name=set_current_regulation_mode
+ *
+ * Selects when the chip's internal current loop folds back to keep
+ * motor current under the ITRIP threshold. ITRIP itself is set by
+ * the combination of CS_GAIN_SEL (set_current_sense_gain) and the
+ * internal 500 mV VREF (INT_VREF=1, fixed by this driver since the
+ * external VREF pin isn't routed on the Drive.DC.H tile).
+ *
+ * @param  tile  Pointer to tile handle
+ * @param  mode  Current regulation mode (DRIVE_DC_H_IMODE_*)
+ */
+void tile_drive_dc_h_set_current_regulation_mode(tile_t* tile,
+                                                 drive_dc_h_imode_t mode);
+
+/**
+ * @brief  Set the current-sense gain / max-current range.
+ * @tessera expose category=tile name=set_current_sense_gain
+ *
+ * Programs CS_GAIN_SEL[2:0] in RC_CTRL0. Lower max-current ranges
+ * give finer current resolution but lower R_DS(on) headroom; higher
+ * ranges support larger motors but coarser get_current_ma() steps.
+ * Codes:
+ *   0 = 4 A,    1 = 2 A,    2 = 1 A,
+ *   3 = 0.5 A,  4 = 0.25 A, 5 = 0.125 A
+ * Also affects ITRIP when current regulation is enabled.
+ *
+ * @param  tile  Pointer to tile handle
+ * @param  code  CS_GAIN_SEL code (0-5)
+ */
+void tile_drive_dc_h_set_current_sense_gain(tile_t* tile, uint8_t code);
+
+/* ---- Stall detection (closes "EN_STALL / TINRUSH / SMODE" gap) ---- */
+
+/**
+ * @brief  Enable or disable hardware stall detection.
+ * @tessera expose category=tile name=set_stall_enabled
+ *
+ * Toggles EN_STALL in CONFIG0. When disabled, the STALL bit in the
+ * fault register won't latch and is_stalled() always returns 0.
+ * Useful while tuning the inrush time for a new motor.
+ *
+ * @param  tile     Pointer to tile handle
+ * @param  enabled  1 = stall detection on, 0 = off
+ */
+void tile_drive_dc_h_set_stall_enabled(tile_t* tile, uint8_t enabled);
+
+/**
+ * @brief  Set the inrush blanking time (TINRUSH).
+ * @tessera expose category=tile name=set_inrush_time_ms
+ *
+ * Programs CONFIG1/CONFIG2 with a 16-bit count of 102.4 µs ticks,
+ * giving up to ~6.7 s. During the blanking window after a drive
+ * command, the stall detector ignores motor current — necessary
+ * because real motors draw several × steady-state during startup.
+ * Tune for the slowest motor you want to drive.
+ *
+ * @param  tile  Pointer to tile handle
+ * @param  ms    Inrush blanking time in milliseconds (0 - 6710)
+ */
+void tile_drive_dc_h_set_inrush_time_ms(tile_t* tile, uint16_t ms);
+
+/**
+ * @brief  Set the stall-detection recovery behavior (SMODE in CONFIG3).
+ * @tessera expose category=tile name=set_stall_recovery
+ *
+ * In LATCH mode, hitting a stall turns the bridge off until either
+ * clear_fault() is called or the chip is power-cycled. In REPORT mode
+ * the chip flags STALL but keeps driving — useful for haptics or
+ * actuators that legitimately stall against an end-stop.
+ *
+ * @param  tile  Pointer to tile handle
+ * @param  mode  DRIVE_DC_H_STALL_LATCH or DRIVE_DC_H_STALL_REPORT
+ */
+void tile_drive_dc_h_set_stall_recovery(tile_t* tile,
+                                        drive_dc_h_stall_recovery_t mode);
+
+/* ---- Ripple-counter tuning (closes "Ripple counter tuning" gap) ---- */
+
+/**
+ * @brief  Set the ripple-count threshold that fires CNT_DONE.
+ * @tessera expose category=tile name=set_ripple_threshold
+ *
+ * The chip raises CNT_DONE when the running ripple count reaches
+ * (count × scale). Useful for "rotate N counts then stop" patterns:
+ * watch the CNT_DONE bit in get_fault(), then call coast(). Internal
+ * threshold is 10-bit; the driver picks the smallest scale (×2, ×8,
+ * ×16, or ×64) that fits `count`.
+ *
+ * @param  tile   Pointer to tile handle
+ * @param  count  Threshold count (0 - 65472, larger = coarser scale)
+ */
+void tile_drive_dc_h_set_ripple_threshold(tile_t* tile, uint16_t count);
+
+/**
+ * @brief  Set the ripple filter input scaling factor.
+ * @tessera expose category=tile name=set_ripple_filter_gain
+ *
+ * Programs FLT_GAIN_SEL[1:0] in RC_CTRL0. Scales the magnitude of
+ * detected ripples before the counter — increase if get_ripple_count()
+ * undercounts, decrease if it spuriously counts noise. Codes:
+ *   0 = ×2,  1 = ×4 (default),  2 = ×8,  3 = ×16
+ *
+ * @param  tile  Pointer to tile handle
+ * @param  code  FLT_GAIN_SEL code (0-3)
+ */
+void tile_drive_dc_h_set_ripple_filter_gain(tile_t* tile, uint8_t code);
 
 /* ---- Monitoring ---- */
 
