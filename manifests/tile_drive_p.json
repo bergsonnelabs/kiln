@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@ad1485f",
+  "source": "cores@78763e7",
   "tile": "Drive.P",
   "palette": {
     "label": "Drive.P",
@@ -9,7 +9,7 @@
   "driver": {
     "prefix": "tile_drive_p",
     "header": "tile_drive_p.h",
-    "version": "2.0.0"
+    "version": "3.0.0"
   },
   "handle": {
     "type": "tile_t",
@@ -127,6 +127,101 @@
       ],
       "returns": "uint8_t",
       "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_output_range"
+      ],
+      "symbol": "tile_drive_p_set_output_range",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Select the output voltage range (CONFIG.GAIND).",
+      "params": [
+        {
+          "name": "range",
+          "type": "?drive_p_output_range_t",
+          "description": "DRIVE_P_OUTPUT_HIGH_V or DRIVE_P_OUTPUT_LOW_V"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_sense_gain"
+      ],
+      "symbol": "tile_drive_p_set_sense_gain",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Select the sense-channel resolution (CONFIG.GAINS).",
+      "params": [
+        {
+          "name": "gain",
+          "type": "?drive_p_sense_gain_t",
+          "description": "DRIVE_P_SENSE_FINE_GAIN or DRIVE_P_SENSE_COARSE_GAIN"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_sleep_retention"
+      ],
+      "symbol": "tile_drive_p_set_sleep_retention",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Configure register and RAM retention during SLEEP (CONFIG.RET).",
+      "params": [
+        {
+          "name": "retain",
+          "type": "int",
+          "description": "1 = retain (default), 0 = clear on sleep"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_auto_sleep"
+      ],
+      "symbol": "tile_drive_p_set_auto_sleep",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Enable or disable the auto-sleep timeout (COMM.TOUT).",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 = auto-sleep on idle, 0 = stay awake"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_upi"
+      ],
+      "symbol": "tile_drive_p_set_upi",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Enable or disable the Unidirectional Power Input (PARCAP.UPI).",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 = sink-only (UPI on), 0 = energy recovery (default)"
+        }
+      ],
+      "returns": "void",
       "receiver": "tile_t*"
     }
   ],

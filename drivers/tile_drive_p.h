@@ -31,41 +31,18 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="Output voltage range select (CONFIG.GAIND)"
- *   BOS1921 supports two output ranges: ±95 V (high gain) and
- *   ±13.25 V (low gain), selectable via CONFIG.GAIND. Driver
- *   uses one default — switching matters for low-voltage piezos
- *   where ±95 V is wasteful or destructive.
- *
- * @tessera unsupported severity=advanced category="Sense gain selection (CONFIG.GAINS)"
- *   Sense-channel gain selects between 7.6 mV and 54.5 mV ADC
- *   resolution. Driver reads sense at default gain; switching
- *   matters for finer impedance / press-detection tuning.
- *
  * @tessera unsupported severity=advanced category="Multi-device SYNC pin"
  *   SYNC pin coordinates phase between cascaded BOS1921s
- *   (< 2 µs delay). Tile doesn't expose the pin and driver has
- *   no SYNC-mode API — relevant for multi-actuator surfaces.
- *
- * @tessera unsupported severity=advanced category="Sleep state retention (RET)"
- *   In SLEEP, RET=0 preserves RAM/registers (~2.4 µA quiescent);
- *   RET=1 clears them for ~0.6 µA. Driver's sleep() doesn't expose
- *   the trade-off — relevant for ultra-low-power wearables that
- *   re-init on every wake anyway.
+ *   (< 2 µs delay). The Drive.P tile has 10 pads (I2C/I3C, OUT±,
+ *   GPIO, V+, V_DRIVE, GND); the SYNC pin on the IC is not routed
+ *   to a pad, so multi-tile cascading is hardware-gated to a
+ *   future tile rev.
  *
  * @tessera unsupported severity=advanced category="I3C alternate bus mode"
  *   Pads 4/5 are bus-shared between I²C (default) and I3C SDR
- *   (≤12.5 Mbps with in-band interrupts). Driver is I²C-only.
- *
- * @tessera unsupported severity=niche category="Auto-sleep timeout (TOUT)"
- *   COMM.TOUT auto-sleeps the device after 4 ms of bus inactivity
- *   in Direct / FIFO playback. Driver doesn't expose the bit —
- *   relevant for unattended one-shot playback.
- *
- * @tessera unsupported severity=niche category="Energy recovery / UPI"
- *   Chip can recover energy from piezo discharge into CVDD, or be
- *   forced into sink-only via UPI for battery-powered designs.
- *   Driver doesn't expose either knob.
+ *   (≤12.5 Mbps with in-band interrupts). The cores tile-driver
+ *   framework only ships an I²C PAL; I3C support is an
+ *   ecosystem-wide gap, not BOS1921-specific.
  */
 
 #ifndef INC_TILE_DRIVE_P_H_
@@ -78,7 +55,7 @@
 /* Driver version                                                  */
 /* -------------------------------------------------------------- */
 
-#define TILE_DRIVE_P_VERSION_MAJOR  2
+#define TILE_DRIVE_P_VERSION_MAJOR  3
 #define TILE_DRIVE_P_VERSION_MINOR  0
 #define TILE_DRIVE_P_VERSION_PATCH  0
 
@@ -130,6 +107,17 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 /** @brief  Fault bits in IC_STATUS (bits 7:2, excluding FULL and PLAYST). */
 #define BOS_STATUS_FAULT_MASK       0x00FC
 
+/** @brief  CONFIG register bit fields (see datasheet §6.10.6). */
+#define BOS_CONFIG_GAINS_BIT        (1u << 12)  /**< 0=54.5 mV LSB, 1=7.6 mV LSB (default 1) */
+#define BOS_CONFIG_GAIND_BIT        (1u << 11)  /**< 0=±95 V output, 1=±13.28 V output (default 0) */
+#define BOS_CONFIG_RET_BIT          (1u << 8)   /**< 1=clear RAM/regs in SLEEP, 0=retain (default 0) */
+
+/** @brief  COMM register bit fields (see datasheet §6.10.12). */
+#define BOS_COMM_TOUT_BIT           (1u << 5)   /**< 1=auto-sleep after 4 ms idle in Direct/FIFO */
+
+/** @brief  PARCAP register bit fields (see datasheet §6.10.7). */
+#define BOS_PARCAP_UPI_BIT          (1u << 9)   /**< 1=Unidirectional Power Input (sink-only) */
+
 /* -------------------------------------------------------------- */
 /* Operating modes                                                 */
 /* -------------------------------------------------------------- */
@@ -148,6 +136,28 @@ typedef enum {
     DRIVE_P_MODE_PLAY_FIFO      = 4,  /**< FIFO-buffered playback, 8 ksps */
     DRIVE_P_MODE_PLAY_RAM_SYNTH = 5,  /**< RAM Synthesis waveform playback */
 } drive_p_mode_t;
+
+/**
+ * @brief  Output voltage range (CONFIG.GAIND).
+ *
+ * @note   Switching range invalidates the PARCAP / TI_RISE values
+ *         set during init (those are computed against the configured
+ *         FBratio, which is determined by GAIND). After changing the
+ *         range, recompute and rewrite PARCAP and TI_RISE for the
+ *         new FBratio if precise output behaviour matters.
+ */
+typedef enum {
+    DRIVE_P_OUTPUT_HIGH_V = 0,  /**< ±95 V range, FBratio 31 (default) */
+    DRIVE_P_OUTPUT_LOW_V  = 1,  /**< ±13.28 V range, FBratio 4.33 */
+} drive_p_output_range_t;
+
+/**
+ * @brief  Sense-channel resolution (CONFIG.GAINS).
+ */
+typedef enum {
+    DRIVE_P_SENSE_COARSE_GAIN = 0,  /**< 54.5 mV LSB, FBratio 31 */
+    DRIVE_P_SENSE_FINE_GAIN   = 1,  /**< 7.6 mV LSB, FBratio 4.33 (default) */
+} drive_p_sense_gain_t;
 
 /* -------------------------------------------------------------- */
 /* Public API                                                      */
@@ -274,5 +284,86 @@ void tile_drive_p_sleep(tile_t* tile);
  * @return 1 if recovery was performed, 0 if device was healthy
  */
 uint8_t tile_drive_p_check_and_recover(tile_t* tile, drive_p_mode_t restore_mode);
+
+/**
+ * @brief  Select the output voltage range (CONFIG.GAIND).
+ * @tessera expose category=tile name=set_output_range
+ *
+ * High-V (±95 V) is the BOS1921 default and suits most piezo
+ * actuators. Low-V (±13.28 V) is for low-voltage piezos where the
+ * full ±95 V swing would be wasteful or destructive. Use this from
+ * IDLE before setting a play mode — the change takes effect on the
+ * next OE-enable.
+ *
+ * @note  Changing range invalidates the PARCAP / TI_RISE tuning set
+ *        at init. If accurate output behaviour matters, recompute
+ *        and rewrite those registers for the new FBratio (see
+ *        datasheet §7.5).
+ *
+ * @param  tile   Pointer to tile handle
+ * @param  range  DRIVE_P_OUTPUT_HIGH_V or DRIVE_P_OUTPUT_LOW_V
+ */
+void tile_drive_p_set_output_range(tile_t* tile, drive_p_output_range_t range);
+
+/**
+ * @brief  Select the sense-channel resolution (CONFIG.GAINS).
+ * @tessera expose category=tile name=set_sense_gain
+ *
+ * Fine gain (7.6 mV LSB) is the BOS1921 default and gives the
+ * highest sensing resolution. Coarse gain (54.5 mV LSB) widens the
+ * input range — useful when sensing high-amplitude press events
+ * that would otherwise saturate at fine gain. Use from IDLE before
+ * entering a sense mode.
+ *
+ * @param  tile  Pointer to tile handle
+ * @param  gain  DRIVE_P_SENSE_FINE_GAIN or DRIVE_P_SENSE_COARSE_GAIN
+ */
+void tile_drive_p_set_sense_gain(tile_t* tile, drive_p_sense_gain_t gain);
+
+/**
+ * @brief  Configure register and RAM retention during SLEEP (CONFIG.RET).
+ * @tessera expose category=tile name=set_sleep_retention
+ *
+ * Default is retain (~2.4 µA quiescent) so that RAM contents and
+ * register configuration survive a sleep cycle. Disabling retention
+ * (~0.6 µA) is useful for ultra-low-power applications that re-init
+ * on every wake anyway. Set this before calling sleep().
+ *
+ * @param  tile    Pointer to tile handle
+ * @param  retain  1 = retain (default), 0 = clear on sleep
+ */
+void tile_drive_p_set_sleep_retention(tile_t* tile, uint8_t retain);
+
+/**
+ * @brief  Enable or disable the auto-sleep timeout (COMM.TOUT).
+ * @tessera expose category=tile name=set_auto_sleep
+ *
+ * When enabled, the device drops into SLEEP after 4 ms of bus
+ * inactivity during Direct or FIFO playback. Useful for unattended
+ * one-shot waveforms; harmful for long streaming playback where
+ * a host gap would unexpectedly stop the output.
+ *
+ * @note  After a timeout-triggered sleep, PLAY_SRATE is reset to
+ *        0x7 (8 ksps) — re-set the sample rate before the next
+ *        playback if you were using a faster rate.
+ *
+ * @param  tile     Pointer to tile handle
+ * @param  enabled  1 = auto-sleep on idle, 0 = stay awake
+ */
+void tile_drive_p_set_auto_sleep(tile_t* tile, uint8_t enabled);
+
+/**
+ * @brief  Enable or disable the Unidirectional Power Input (PARCAP.UPI).
+ * @tessera expose category=tile name=set_upi
+ *
+ * UPI forces the BOS1921 into sink-only operation: energy
+ * recovered from piezo discharge is dumped instead of pushed back
+ * into the supply. Useful for battery-powered designs where the
+ * supply rail can't safely absorb returned energy.
+ *
+ * @param  tile     Pointer to tile handle
+ * @param  enabled  1 = sink-only (UPI on), 0 = energy recovery (default)
+ */
+void tile_drive_p_set_upi(tile_t* tile, uint8_t enabled);
 
 #endif /* INC_TILE_DRIVE_P_H_ */

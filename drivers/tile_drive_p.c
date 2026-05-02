@@ -23,6 +23,41 @@ static uint8_t resolve_id(uint8_t instance)
 }
 
 /* -------------------------------------------------------------- */
+/* Per-instance shadow state                                       */
+/* -------------------------------------------------------------- */
+
+/*
+ * The BOS1921 has a single read-back register (selected via
+ * COMM.RDADDR) and read-modify-write through that path costs
+ * two I2C transactions. Several CONFIG bits also need to persist
+ * across set_mode() calls (which writes the whole CONFIG register).
+ * Track those bits in driver-side shadow state.
+ *
+ * - cfg_persistent_bits: GAINS, GAIND, RET — OR'd into every
+ *   CONFIG write performed by set_mode() / sleep().
+ * - comm_persistent_bits: TOUT — OR'd into the COMM write done by
+ *   bos_set_return_reg() so the bit survives return-register changes.
+ * - parcap: full PARCAP value (init computes the lower 8 bits;
+ *   set_upi() flips bit 9). Tracked so we can rewrite it without
+ *   reading back through the RDADDR path.
+ */
+typedef struct {
+    uint16_t cfg_persistent_bits;
+    uint16_t comm_persistent_bits;
+    uint16_t parcap;
+} drive_p_state_t;
+
+static drive_p_state_t drv_state[ID_TABLE_LEN];
+
+static drive_p_state_t *state_for(tile_t *tile)
+{
+    for (uint8_t i = 0; i < ID_TABLE_LEN; i++) {
+        if (id_table[i] == tile->id) return &drv_state[i];
+    }
+    return &drv_state[0];
+}
+
+/* -------------------------------------------------------------- */
 /* Private helpers                                                 */
 /* -------------------------------------------------------------- */
 
@@ -43,7 +78,23 @@ static uint16_t bos_read(tile_t* tile)
 
 static void bos_set_return_reg(tile_t* tile, uint8_t reg)
 {
-    bos_write(tile, BOS1921_REG_COMM, (uint16_t)reg);
+    drive_p_state_t *st = state_for(tile);
+    bos_write(tile, BOS1921_REG_COMM,
+              (uint16_t)reg | st->comm_persistent_bits);
+}
+
+/* Apply persistent CONFIG bits (GAINS/GAIND/RET) on top of the
+ * mode-specific value. Default GAINS=1 is the chip default. */
+static uint16_t cfg_with_persistent(tile_t* tile, uint16_t base)
+{
+    drive_p_state_t *st = state_for(tile);
+    /* Mask out the persistent-bit slots first so callers can pass
+     * a base that matches the existing per-mode constants without
+     * worrying about colliding with the shadow values. */
+    uint16_t mask = (uint16_t)(BOS_CONFIG_GAINS_BIT |
+                               BOS_CONFIG_GAIND_BIT |
+                               BOS_CONFIG_RET_BIT);
+    return (uint16_t)((base & ~mask) | st->cfg_persistent_bits);
 }
 
 /* -------------------------------------------------------------- */
@@ -100,8 +151,16 @@ void tile_drive_p_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
         return;
     }
 
+    /* Initialize shadow state to chip defaults for the bits we
+     * track. GAINS=1 (fine) is the BOS1921 reset default; GAIND=0
+     * (±95 V), RET=0 (retain), TOUT=0 (no auto-sleep), UPI=0. */
+    drive_p_state_t *st = state_for(tile);
+    st->cfg_persistent_bits  = BOS_CONFIG_GAINS_BIT;
+    st->comm_persistent_bits = 0;
+    st->parcap               = 0x043A;
+
     /* Configure for 260nF piezo, L1=10µH, Rsense=0.2Ω, VDD=3.7V LiPo */
-    bos_write(tile, BOS1921_REG_PARCAP,   0x043A);
+    bos_write(tile, BOS1921_REG_PARCAP,   st->parcap);
     bos_write(tile, BOS1921_REG_SUP_RISE, 0x49E2);
 
     tile->state = TILE_STATE_READY;
@@ -109,7 +168,15 @@ void tile_drive_p_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
 
 void tile_drive_p_reset(tile_t* tile)
 {
+    /* RST bit self-clears; chip returns to its power-on defaults
+     * (CONFIG=0x1000, COMM=0x001E, PARCAP=0x003A). Mirror that in
+     * the driver shadow so subsequent set_mode()/sleep() writes
+     * are coherent until the caller re-runs init or the setters. */
     bos_write(tile, BOS1921_REG_CONFIG, 0x0040);
+    drive_p_state_t *st = state_for(tile);
+    st->cfg_persistent_bits  = BOS_CONFIG_GAINS_BIT;
+    st->comm_persistent_bits = 0;
+    st->parcap               = 0x003A;
     tile->state = TILE_STATE_NONE;
 }
 
@@ -120,43 +187,51 @@ void tile_drive_p_set_mode(tile_t* tile, drive_p_mode_t mode)
         return;
     }
 
+    drive_p_state_t *st = state_for(tile);
+
     switch (mode) {
     default:
     case DRIVE_P_MODE_IDLE:
-        bos_write(tile, BOS1921_REG_CONFIG, 0x0000);
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0000));
         bos_set_return_reg(tile, BOS1921_REG_IC_STATUS);
         break;
 
     case DRIVE_P_MODE_SENSE_FINE:
-        bos_write(tile, BOS1921_REG_CONFIG, 0x0010);
+        /* SENSE_FINE explicitly selects 7.6 mV LSB — set GAINS=1 in
+         * the shadow so subsequent set_sense_gain() calls have a
+         * coherent starting point. */
+        st->cfg_persistent_bits |= BOS_CONFIG_GAINS_BIT;
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0010));
         bos_write(tile, BOS1921_REG_REFERENCE, 0x0000);
         tile->hal->delay_ms(5);
-        bos_write(tile, BOS1921_REG_CONFIG, 0x0000);
-        bos_write(tile, BOS1921_REG_CONFIG, 0x3010);
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0000));
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x3010));
         bos_set_return_reg(tile, BOS1921_REG_SENSE_VAL);
         break;
 
     case DRIVE_P_MODE_SENSE_COARSE:
-        bos_write(tile, BOS1921_REG_CONFIG, 0x0010);
+        /* SENSE_COARSE explicitly selects 54.5 mV LSB. */
+        st->cfg_persistent_bits &= (uint16_t)~BOS_CONFIG_GAINS_BIT;
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0010));
         bos_write(tile, BOS1921_REG_REFERENCE, 0x0000);
         tile->hal->delay_ms(5);
-        bos_write(tile, BOS1921_REG_CONFIG, 0x0000);
-        bos_write(tile, BOS1921_REG_CONFIG, 0x2010);
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0000));
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x2010));
         bos_set_return_reg(tile, BOS1921_REG_SENSE_VAL);
         break;
 
     case DRIVE_P_MODE_PLAY_DIRECT:
-        bos_write(tile, BOS1921_REG_CONFIG, 0x0010);
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0010));
         bos_set_return_reg(tile, BOS1921_REG_IC_STATUS);
         break;
 
     case DRIVE_P_MODE_PLAY_FIFO:
-        bos_write(tile, BOS1921_REG_CONFIG, 0x0217);
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0217));
         bos_set_return_reg(tile, BOS1921_REG_IC_STATUS);
         break;
 
     case DRIVE_P_MODE_PLAY_RAM_SYNTH:
-        bos_write(tile, BOS1921_REG_CONFIG, 0x0610);
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0610));
         bos_set_return_reg(tile, BOS1921_REG_IC_STATUS);
         break;
     }
@@ -208,7 +283,9 @@ void tile_drive_p_wfs_write(tile_t* tile, const uint16_t* words, uint16_t count)
 
 void tile_drive_p_sleep(tile_t* tile)
 {
-    bos_write(tile, BOS1921_REG_CONFIG, 0x0008);
+    /* DS=1 selects SLEEP. RET (bit 8) is folded in via the
+     * persistent shadow so set_sleep_retention() takes effect. */
+    bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0008));
     tile->state = TILE_STATE_SLEEPING;
 }
 
@@ -234,4 +311,91 @@ uint8_t tile_drive_p_check_and_recover(tile_t* tile, drive_p_mode_t restore_mode
     }
 
     return needs_recovery;
+}
+
+/* -------------------------------------------------------------- */
+/* CONFIG bit setters                                              */
+/* -------------------------------------------------------------- */
+
+void tile_drive_p_set_output_range(tile_t* tile, drive_p_output_range_t range)
+{
+    drive_p_state_t *st = state_for(tile);
+    if (range == DRIVE_P_OUTPUT_LOW_V) {
+        st->cfg_persistent_bits |= BOS_CONFIG_GAIND_BIT;
+    } else {
+        st->cfg_persistent_bits &= (uint16_t)~BOS_CONFIG_GAIND_BIT;
+    }
+    /* Apply immediately if the device is already configured (IDLE-style
+     * write). Caller is expected to be in IDLE; if a play mode is active
+     * the existing CONFIG.OE bit will be cleared by this write — that's
+     * intentional and matches the datasheet's "set OE=0 before changing
+     * gain" guidance (§7.5). */
+    if (tile->state == TILE_STATE_READY) {
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0000));
+    }
+}
+
+void tile_drive_p_set_sense_gain(tile_t* tile, drive_p_sense_gain_t gain)
+{
+    drive_p_state_t *st = state_for(tile);
+    if (gain == DRIVE_P_SENSE_FINE_GAIN) {
+        st->cfg_persistent_bits |= BOS_CONFIG_GAINS_BIT;
+    } else {
+        st->cfg_persistent_bits &= (uint16_t)~BOS_CONFIG_GAINS_BIT;
+    }
+    if (tile->state == TILE_STATE_READY) {
+        bos_write(tile, BOS1921_REG_CONFIG, cfg_with_persistent(tile, 0x0000));
+    }
+}
+
+void tile_drive_p_set_sleep_retention(tile_t* tile, uint8_t retain)
+{
+    drive_p_state_t *st = state_for(tile);
+    /* RET=0 retains, RET=1 clears (datasheet §6.10.6). */
+    if (retain) {
+        st->cfg_persistent_bits &= (uint16_t)~BOS_CONFIG_RET_BIT;
+    } else {
+        st->cfg_persistent_bits |= BOS_CONFIG_RET_BIT;
+    }
+    /* Bit takes effect on the next CONFIG write that includes DS=1.
+     * No need to apply immediately. */
+}
+
+/* -------------------------------------------------------------- */
+/* COMM bit setters                                                */
+/* -------------------------------------------------------------- */
+
+void tile_drive_p_set_auto_sleep(tile_t* tile, uint8_t enabled)
+{
+    drive_p_state_t *st = state_for(tile);
+    if (enabled) {
+        st->comm_persistent_bits |= BOS_COMM_TOUT_BIT;
+    } else {
+        st->comm_persistent_bits &= (uint16_t)~BOS_COMM_TOUT_BIT;
+    }
+    /* Re-issue the COMM write so the new TOUT bit lands. Use the
+     * current return-register selection (CHIP_ID=0x1E is the reset
+     * default; we keep the existing RDADDR by reading what we last
+     * configured). The driver doesn't track RDADDR explicitly, but
+     * write-via-set_return_reg with IC_STATUS is the pre-play
+     * default — safe choice for live updates. */
+    if (tile->state == TILE_STATE_READY ||
+        tile->state == TILE_STATE_SLEEPING) {
+        bos_set_return_reg(tile, BOS1921_REG_IC_STATUS);
+    }
+}
+
+/* -------------------------------------------------------------- */
+/* PARCAP bit setters                                              */
+/* -------------------------------------------------------------- */
+
+void tile_drive_p_set_upi(tile_t* tile, uint8_t enabled)
+{
+    drive_p_state_t *st = state_for(tile);
+    if (enabled) {
+        st->parcap |= BOS_PARCAP_UPI_BIT;
+    } else {
+        st->parcap &= (uint16_t)~BOS_PARCAP_UPI_BIT;
+    }
+    bos_write(tile, BOS1921_REG_PARCAP, st->parcap);
 }
