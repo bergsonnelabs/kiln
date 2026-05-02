@@ -3,7 +3,7 @@
  * @brief  Dual-channel audio output driver for the Drive.A.2 tile
  *         (DAC63202W smart DAC + 2x TPA2028D1 Class-D amplifiers).
  *         Supports I2C and SPI bus access via tiles_pal_t.
- * @version 2.0.0
+ * @version 3.0.0
  *
  * The Drive.A.2 tile provides two independent audio output channels,
  * each consisting of a 12-bit DAC channel feeding a 3W Class-D amplifier.
@@ -54,33 +54,23 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="DAC NVM save / restore"
- *   DAC63202W has shadow-NVM that survives power cycles (NVM-PROG /
- *   NVM-RELOAD bits). Driver doesn't expose NVM operations — relevant
- *   for storing factory-tuned default outputs that survive reset.
- *
  * @tessera unsupported severity=advanced category="DAC PWM-output mode (FBx pins)"
- *   Comparator FBx pins can be configured as PWM outputs for driving
- *   external power-stage gates. Driver leaves pins in default
- *   comparator mode; PWM-output mode isn't exposed.
- *
- * @tessera unsupported severity=advanced category="DAC slew-rate / margin control"
- *   SLEW-RATE-X and MARGIN-HIGH/LOW registers control output
- *   ramping speed (slow ramps) and comparator window thresholds.
- *   Driver uses default fast slew; slow-ramp / window-comparator
- *   modes aren't exposed.
- *
- * @tessera unsupported severity=advanced category="DAC built-in waveform synthesizer"
- *   Chip has a built-in waveform generator (sine / cosine / triangle
- *   / sawtooth) controllable via GEN-WAVE register. Driver's
- *   set_waveform exposes user-supplied buffers but not the
- *   parametric on-chip generator.
+ *   The DAC63202W FB0 / FB1 pins (package balls B2 / C2) can be
+ *   configured as comparator / PWM outputs for driving external
+ *   power-stage gates. On the Drive.A.2 tile these pins are tied
+ *   to the on-board TPA2028D1 amplifier inputs (closed-loop voltage-
+ *   output feedback) and are NOT routed to any tile-connector pad —
+ *   so even if the driver enabled PWM mode, no Core GPIO could
+ *   observe or use the output. Closing this gap requires a tile
+ *   hardware revision that breaks FBx out to a pad.
  *
  * @tessera unsupported severity=niche category="Per-amp independent control"
- *   Tile carries 2× TPA2028D1 amps, but both share the chip's fixed
- *   I²C address (0x58) and therefore receive identical writes.
- *   Independent left / right gain or AGC isn't possible without an
- *   I²C mux — this is a tile-design constraint, not a driver gap.
+ *   The tile carries 2× TPA2028D1 amps wired to a single shared I²C
+ *   bus, and the TPA2028D1 has a fixed factory I²C address (0x58) —
+ *   any write at 0x58 is acknowledged by both amps simultaneously.
+ *   Independent left / right gain, AGC, or shutdown therefore can't
+ *   be achieved in software; closing this gap requires either an
+ *   I²C-mux on the tile or amp ICs with selectable addresses.
  */
 
 #ifndef INC_TILE_DRIVE_A_2_H_
@@ -93,7 +83,7 @@
 /* Driver version                                                  */
 /* -------------------------------------------------------------- */
 
-#define TILE_DRIVE_A_2_VERSION_MAJOR  2
+#define TILE_DRIVE_A_2_VERSION_MAJOR  3
 #define TILE_DRIVE_A_2_VERSION_MINOR  0
 #define TILE_DRIVE_A_2_VERSION_PATCH  0
 
@@ -210,6 +200,76 @@ typedef enum {
     DRIVE_A_2_WAVE_SINE     = 4,  /**< Sine wave */
     DRIVE_A_2_WAVE_OFF      = 7,  /**< Function generation disabled */
 } drive_a_2_wave_t;
+
+/**
+ * @brief  Slew-rate control (time per code step) for the DAC.
+ *
+ * Maps to SLEW-RATE-X bits[3:0] in DAC-X-FUNC-CONFIG. Combined with
+ * CODE-STEP-X this sets both the slewed-update ramp time
+ * (set_slew_rate / set_code_step) and the function-generator
+ * frequency.
+ *
+ * Time per step values from datasheet Table 6-6 (in linear-slew mode):
+ *   NONE  =    0 µs (no slew, default — output updates immediately)
+ *   4_US  =    4 µs        18_US =   18 µs        91_US  =   91.13 µs
+ *   8_US  =    8 µs        27_US =   27 µs        137_US =  136.69 µs
+ *   12_US =   12 µs        41_US =   40.5 µs      239_US =  239.20 µs
+ *                          61_US =   60.75 µs     419_US =  418.61 µs
+ *                                                 733_US =  732.56 µs
+ *                                                 1282_US = 1281.98 µs
+ *                                                 2564_US = 2563.96 µs
+ *                                                 5128_US = 5127.92 µs
+ */
+typedef enum {
+    DRIVE_A_2_SLEW_NONE     = 0x0,  /**< No slew (default) — immediate update */
+    DRIVE_A_2_SLEW_4_US     = 0x1,
+    DRIVE_A_2_SLEW_8_US     = 0x2,
+    DRIVE_A_2_SLEW_12_US    = 0x3,
+    DRIVE_A_2_SLEW_18_US    = 0x4,
+    DRIVE_A_2_SLEW_27_US    = 0x5,
+    DRIVE_A_2_SLEW_41_US    = 0x6,
+    DRIVE_A_2_SLEW_61_US    = 0x7,
+    DRIVE_A_2_SLEW_91_US    = 0x8,
+    DRIVE_A_2_SLEW_137_US   = 0x9,
+    DRIVE_A_2_SLEW_239_US   = 0xA,
+    DRIVE_A_2_SLEW_419_US   = 0xB,
+    DRIVE_A_2_SLEW_733_US   = 0xC,
+    DRIVE_A_2_SLEW_1282_US  = 0xD,
+    DRIVE_A_2_SLEW_2564_US  = 0xE,
+    DRIVE_A_2_SLEW_5128_US  = 0xF,
+} drive_a_2_slew_t;
+
+/**
+ * @brief  Code-step size (LSBs per slewed update tick) for the DAC.
+ *
+ * Maps to CODE-STEP-X bits[6:4] in DAC-X-FUNC-CONFIG. With slew
+ * enabled, the DAC moves toward DAC-X-DATA (or between MARGIN-LOW
+ * and MARGIN-HIGH for waveforms) by this many LSBs per slew tick.
+ */
+typedef enum {
+    DRIVE_A_2_STEP_1_LSB   = 0x0,  /**< 1 LSB per step (default — finest) */
+    DRIVE_A_2_STEP_2_LSB   = 0x1,
+    DRIVE_A_2_STEP_3_LSB   = 0x2,
+    DRIVE_A_2_STEP_4_LSB   = 0x3,
+    DRIVE_A_2_STEP_6_LSB   = 0x4,
+    DRIVE_A_2_STEP_8_LSB   = 0x5,
+    DRIVE_A_2_STEP_16_LSB  = 0x6,
+    DRIVE_A_2_STEP_32_LSB  = 0x7,
+} drive_a_2_step_t;
+
+/**
+ * @brief  Phase offset for the function generator (sine / triangle).
+ *
+ * Maps to PHASE-SEL-X bits[12:11] in DAC-X-FUNC-CONFIG. Useful for
+ * driving two channels in quadrature (e.g., 0° + 90°) for stereo
+ * effects or two-phase actuators.
+ */
+typedef enum {
+    DRIVE_A_2_PHASE_0    = 0,  /**< 0° (default) */
+    DRIVE_A_2_PHASE_120  = 1,  /**< 120° */
+    DRIVE_A_2_PHASE_240  = 2,  /**< 240° */
+    DRIVE_A_2_PHASE_90   = 3,  /**< 90° (quadrature) */
+} drive_a_2_phase_t;
 
 /* -------------------------------------------------------------- */
 /* Amplifier AGC / DRC                                             */
@@ -402,6 +462,97 @@ void tile_drive_a_2_start_waveform(tile_t *tile, uint8_t channel);
  */
 void tile_drive_a_2_stop_waveform(tile_t *tile, uint8_t channel);
 
+/**
+ * @brief  Set the slew rate (time per code step) for a DAC channel.
+ * @tessera expose category=tile name=set_slew_rate
+ *
+ * Programs SLEW-RATE-X bits[3:0] in DAC-X-FUNC-CONFIG. Affects both
+ * slewed direct-output updates and the on-chip function generator's
+ * frequency. The default is no-slew — outputs settle as fast as the
+ * analog stage allows. Use a slower slew to soften zero-crossings
+ * for capacitive / inductive loads, or to dial in a target waveform
+ * frequency together with set_code_step() and set_margins().
+ *
+ * @param  tile     Tile handle
+ * @param  channel  0 or 1
+ * @param  slew     Slew-rate code (drive_a_2_slew_t value 0–15)
+ */
+void tile_drive_a_2_set_slew_rate(tile_t *tile, uint8_t channel,
+                                  drive_a_2_slew_t slew);
+
+/**
+ * @brief  Set the code step (LSBs per slew tick) for a DAC channel.
+ * @tessera expose category=tile name=set_code_step
+ *
+ * Programs CODE-STEP-X bits[6:4] in DAC-X-FUNC-CONFIG. Larger steps
+ * give faster ramps / higher waveform frequencies at the cost of
+ * coarser resolution.
+ *
+ * @param  tile     Tile handle
+ * @param  channel  0 or 1
+ * @param  step     Code-step code (drive_a_2_step_t value 0–7)
+ */
+void tile_drive_a_2_set_code_step(tile_t *tile, uint8_t channel,
+                                  drive_a_2_step_t step);
+
+/**
+ * @brief  Set the upper / lower bounds for waveform & window-comparator modes.
+ * @tessera expose category=tile name=set_margins
+ *
+ * Writes DAC-X-MARGIN-HIGH and DAC-X-MARGIN-LOW. The function
+ * generator oscillates between these levels, and they also serve
+ * as the thresholds for the chip's window / hysteresis comparator
+ * modes. Values are 12-bit DAC codes; high must be > low.
+ *
+ * @param  tile     Tile handle
+ * @param  channel  0 or 1
+ * @param  low      12-bit DAC code for the lower bound (0–4095)
+ * @param  high     12-bit DAC code for the upper bound (0–4095)
+ */
+void tile_drive_a_2_set_margins(tile_t *tile, uint8_t channel,
+                                uint16_t low, uint16_t high);
+
+/**
+ * @brief  Set the phase offset for the function generator.
+ * @tessera expose category=tile name=set_phase
+ *
+ * Programs PHASE-SEL-X bits[12:11] in DAC-X-FUNC-CONFIG. Take effect
+ * the next time start_waveform() is called. Use phase = 90° on one
+ * channel and 0° on the other to drive a quadrature pair.
+ *
+ * @param  tile     Tile handle
+ * @param  channel  0 or 1
+ * @param  phase    Phase offset (drive_a_2_phase_t)
+ */
+void tile_drive_a_2_set_phase(tile_t *tile, uint8_t channel,
+                              drive_a_2_phase_t phase);
+
+/**
+ * @brief  Configure the parametric on-chip waveform generator.
+ *
+ * Convenience helper that sets up the waveform shape, full-scale
+ * margins (0 → 4095), code step, and slew rate in one call. The
+ * resulting frequency is approximately:
+ *
+ *   f_triangle = 1 / (2 × time_step × ceil((margin_high − margin_low) / code_step))
+ *   f_sawtooth = 1 / (    time_step × ceil((margin_high − margin_low) / code_step + 1))
+ *
+ * Call start_waveform() to begin output once configured. For
+ * fine-grained control, call set_margins() / set_code_step() /
+ * set_slew_rate() / set_waveform() / set_phase() individually.
+ *
+ * @tessera expose category=tile name=set_waveform_params
+ * @param  tile     Tile handle
+ * @param  channel  0 or 1
+ * @param  wave     Waveform shape (drive_a_2_wave_t)
+ * @param  step     Code-step (drive_a_2_step_t)
+ * @param  slew     Time per step (drive_a_2_slew_t)
+ */
+void tile_drive_a_2_set_waveform_params(tile_t *tile, uint8_t channel,
+                                        drive_a_2_wave_t wave,
+                                        drive_a_2_step_t step,
+                                        drive_a_2_slew_t slew);
+
 /* -------------------------------------------------------------- */
 /* Public API — Amplifier control                                  */
 /* -------------------------------------------------------------- */
@@ -481,5 +632,68 @@ uint8_t tile_drive_a_2_amp_read_status(tile_t *tile);
  * @return 16-bit GENERAL-STATUS value
  */
 uint16_t tile_drive_a_2_read_status(tile_t *tile);
+
+/* -------------------------------------------------------------- */
+/* Public API — NVM (shadow flash for power-on defaults)           */
+/* -------------------------------------------------------------- */
+
+/**
+ * @brief  Save the DAC's current register state into shadow NVM.
+ *
+ * Triggers NVM-PROG in COMMON-TRIGGER. The DAC's user-programmable
+ * registers (gain, margins, slew, waveform shape, COMMON-CONFIG,
+ * etc. — see datasheet "highlighted gray" rows) are committed to
+ * non-volatile storage and become the new power-on defaults.
+ *
+ * Blocking: holds the bus busy for the NVM write cycle. Limited
+ * write endurance — TI specs ~1000 cycles. Use only for one-time
+ * factory tuning, not for runtime configuration storage.
+ *
+ * Not Tessera-exposed — destructive, one-time-ish operation.
+ *
+ * @param  tile  Tile handle
+ */
+void tile_drive_a_2_nvm_save(tile_t *tile);
+
+/**
+ * @brief  Reload all DAC registers from shadow NVM.
+ * @tessera expose category=tile name=nvm_reload
+ *
+ * Triggers NVM-RELOAD in COMMON-TRIGGER. Restores the saved
+ * power-on configuration without a full reset — equivalent to
+ * the load that happens automatically on POR. Blocks until the
+ * reload completes. Note that this resets the cached gain /
+ * vref state in the driver: call set_gain() afterwards if you
+ * need set_mv() to work correctly.
+ *
+ * @param  tile  Tile handle
+ */
+void tile_drive_a_2_nvm_reload(tile_t *tile);
+
+/* -------------------------------------------------------------- */
+/* Public API — Raw register access (escape hatches)               */
+/* -------------------------------------------------------------- */
+
+/**
+ * @brief  Read any 16-bit DAC63202W register.
+ *
+ * Escape hatch for advanced users wanting to touch registers the
+ * driver doesn't expose. Caller is responsible for not bricking
+ * the chip — most useful registers have typed setters above.
+ *
+ * @param  tile  Tile handle
+ * @param  reg   Register address (7-bit)
+ * @return 16-bit register value
+ */
+uint16_t tile_drive_a_2_read_reg(tile_t *tile, uint8_t reg);
+
+/**
+ * @brief  Write any 16-bit DAC63202W register.
+ *
+ * @param  tile   Tile handle
+ * @param  reg    Register address (7-bit)
+ * @param  value  16-bit value to write (big-endian on the wire)
+ */
+void tile_drive_a_2_write_reg(tile_t *tile, uint8_t reg, uint16_t value);
 
 #endif /* INC_TILE_DRIVE_A_2_H_ */
