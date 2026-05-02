@@ -46,6 +46,26 @@
  * Datasheet: Maxim MAX11644/MAX11645, 19-4544; Rev 3, 9/09
  *
  * @tessera tile label=Sense.MIC icon=◉
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=advanced category="External reference voltage"
+ *   MAX11645 command byte can select an external reference on
+ *   REF/AIN1, but driver only exposes the chip's two internal
+ *   references (2.048 V / 4.096 V). External-ref support would
+ *   require dedicating a tile pad and rewriting set_reference.
+ *
+ * @tessera unsupported severity=advanced category="Bipolar / pseudo-differential input mode"
+ *   Command byte bits [4:3] select between unipolar (0–VREF),
+ *   bipolar (±VREF/2), and pseudo-differential modes. Driver
+ *   uses unipolar single-ended; bipolar / differential aren't
+ *   exposed (relevant for true differential mic wiring).
+ *
+ * @tessera unsupported severity=niche category="External-clock conversion mode"
+ *   MAX11645 can clock conversions from SCL (host-controlled
+ *   timing) instead of its internal 2.8 MHz oscillator. Driver
+ *   uses internal-clock; external-clock matters for tightly
+ *   synchronized multi-ADC sampling.
  */
 
 #ifndef INC_TILE_SENSE_MIC_H_

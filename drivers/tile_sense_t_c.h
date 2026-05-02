@@ -69,6 +69,46 @@
  * Datasheet: Azoteq IQS323, Rev v1.11, August 2025
  *
  * @tessera tile label=Sense.T.C icon=◕
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=advanced category="ATI fine-tuning"
+ *   Driver runs ATI in 'Full' mode at init. Per-channel ATI
+ *   multipliers, dividers, compensation values, and resolution
+ *   factors aren't exposed — tuning these matters when the
+ *   ambient capacitance (cover glass thickness, mounting
+ *   substrate) shifts the working point. Available via raw
+ *   write_reg as an escape hatch.
+ *
+ * @tessera unsupported severity=advanced category="Per-gesture threshold tuning"
+ *   Driver reports gestures (tap, swipe, flick, hold) but doesn't
+ *   expose individual gesture timeout / threshold registers.
+ *   Customizing tap-timeout vs hold-duration requires raw
+ *   write_reg.
+ *
+ * @tessera unsupported severity=advanced category="Reference channel compensation"
+ *   Chip supports multi-channel reference subtraction (one channel
+ *   acts as ambient reference, others measure delta-vs-reference).
+ *   Driver configures channels independently; reference-channel
+ *   mode isn't exposed.
+ *
+ * @tessera unsupported severity=advanced category="Filter beta / conversion frequency tuning"
+ *   Counts filter betas, LTA fast-filter band, conversion
+ *   frequency, and per-channel dead-time control aren't exposed.
+ *   Driver uses chip defaults — tuning matters for noisy
+ *   environments or unusual electrode geometries.
+ *
+ * @tessera unsupported severity=niche category="Per-channel timeout / OutA event-indicator"
+ *   Channel-timeout disable bits (auto-reseed on timeout) and the
+ *   OutA event-indicator output mode aren't exposed. Most
+ *   applications don't need them; raw write_reg available if
+ *   required.
+ *
+ * @tessera unsupported severity=niche category="I²C streaming mode"
+ *   Driver uses event-mode (RDY-gated communication window).
+ *   Chip also supports I²C streaming where the host polls without
+ *   waiting for RDY — slightly higher current, lower latency. Not
+ *   exposed.
  */
 
 #ifndef INC_TILE_SENSE_T_C_H_

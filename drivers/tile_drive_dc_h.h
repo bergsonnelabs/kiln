@@ -51,6 +51,53 @@
  *       tile_drive_dc_h_brake(&motor);     // slow-decay brake
  *   }
  * @endcode
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=common category="External pad control modes (PMODE / I2C_BC)"
+ *   Chip supports three control modes: I²C-only (driver default),
+ *   EN/PH (one PWM input + direction on pads 2/3), and IN1/IN2
+ *   (independent half-bridge PWMs on pads 2/3). Driver hardcodes
+ *   I²C-only — users wanting GPIO-PWM control of the bridge can't
+ *   switch modes. Tile pads 2/3 are wired but currently unused.
+ *
+ * @tessera unsupported severity=common category="Regulation mode select (REG_CTRL)"
+ *   set_target() works in the chip's currently-configured loop mode,
+ *   but driver doesn't expose REG_CTRL — users can't choose between
+ *   open-loop, voltage regulation (closed-loop on terminal voltage),
+ *   or speed regulation (closed-loop on ripple-rate feedback). Speed
+ *   mode requires ripple-counter tuning to be useful.
+ *
+ * @tessera unsupported severity=advanced category="Ripple counter tuning"
+ *   Chip's ripple-counter algorithm needs motor-specific tuning via
+ *   INV_R_SCALE / KMC_SCALE / FLT_K / FLT_GAIN_SEL / RC_THR
+ *   registers to count accurately. Driver exposes get_ripple_count
+ *   but doesn't let the user calibrate the filter for the wired
+ *   motor — counts will be inaccurate for non-default motors.
+ *
+ * @tessera unsupported severity=advanced category="Current regulation (IMODE / ITRIP)"
+ *   Chip can cycle-by-cycle or fixed-off-time regulate motor current
+ *   above ITRIP (set via VREF + CS_GAIN_SEL). Driver doesn't expose
+ *   the ITRIP threshold or the regulation-mode select — users can't
+ *   protect the motor from over-current via the chip's own loop.
+ *
+ * @tessera unsupported severity=advanced category="Stall-detection tuning (EN_STALL / TINRUSH / SMODE / STALL_REP)"
+ *   is_stalled() reports the chip's STALL flag, but driver uses
+ *   default thresholds and recovery behavior. Users can't tune
+ *   inrush blanking time (TINRUSH), stall threshold (INT_VREF), or
+ *   recovery mode (SMODE: latch-disable vs continue-driving).
+ *
+ * @tessera unsupported severity=advanced category="nSLEEP pin"
+ *   Chip's nSLEEP pin (~100 nA quiescent in sleep, ~1.3 mA active)
+ *   isn't exposed in the tile JSON — likely strapped active on the
+ *   PCB. Driver's sleep()/wake() only toggle the I²C-side EN_OUT
+ *   bit; the chip itself doesn't enter low-power sleep. Battery-
+ *   powered designs can't reach the chip's quiescent current floor.
+ *
+ * @tessera unsupported severity=niche category="Address selection (4 variants)"
+ *   Chip ships in 4 factory I²C-address variants (0x30/0x31/0x33/
+ *   0x34); driver hardcodes one address. Relevant if multiple
+ *   Drive.DC.H tiles share an I²C bus on a future Core.
  */
 
 #ifndef INC_TILE_DRIVE_DC_H_H_

@@ -16,6 +16,31 @@
  * @endcode
  *
  * @tessera tile label=Display.RGBW icon=◑
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=common category="Animation Engine Unit (AEU)"
+ *   LP5811 has 4 independent autonomous animation engines (one per
+ *   LED, 2 per LED — AEU1/AEU2). Loaded patterns play without MCU
+ *   intervention (pulse, breathe, ramp). Driver doesn't expose AEU
+ *   program loading or playback control — users wanting MCU-free
+ *   patterns need to write the AEU registers manually.
+ *
+ * @tessera unsupported severity=advanced category="LED open / short fault detection"
+ *   Chip has per-channel open-circuit (VLOD_TH ~70–220 mV) and
+ *   short-circuit (VLSD_TH ~0.32–0.58 × VOUT) detection with
+ *   configurable thresholds. Driver doesn't expose fault status or
+ *   threshold tuning — relevant for production-line health checks.
+ *
+ * @tessera unsupported severity=advanced category="Per-channel current cap (MC bit)"
+ *   Global MC bit selects between 25.5 mA and 51 mA per-channel max
+ *   current. Driver fixes one default; switching matters when wiring
+ *   higher-current LEDs or running cooler.
+ *
+ * @tessera unsupported severity=niche category="Multi-address support (0x50–0x53)"
+ *   Chip supports 4 I²C addresses via Bit4/Bit3 in the device ID
+ *   register; driver hardcodes a single address. Relevant if a
+ *   future tile variant straps to a non-default address.
  */
 
 #ifndef INC_TILE_DISP_RGBW_H_
