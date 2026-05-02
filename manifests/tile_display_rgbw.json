@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@ad1485f",
+  "source": "cores@ca74389",
   "tile": "Display.RGBW",
   "palette": {
     "label": "Display.RGBW",
@@ -9,7 +9,7 @@
   "driver": {
     "prefix": "tile_display_rgbw",
     "header": "tile_display_rgbw.h",
-    "version": "1.0.0"
+    "version": "2.1.0"
   },
   "handle": {
     "type": "tile_t",
@@ -98,7 +98,7 @@
             0,
             255
           ],
-          "description": "Red current (fraction of 51 mA max)."
+          "description": "Red current (fraction of full-scale max)."
         },
         {
           "name": "g",
@@ -126,6 +126,120 @@
             255
           ],
           "description": "White current."
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_max_current"
+      ],
+      "symbol": "tile_display_rgbw_set_max_current",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Set the global maximum-current range (MC bit).",
+      "params": [
+        {
+          "name": "mode",
+          "type": "?disp_rgbw_max_current_t",
+          "description": "25.5 mA (0) or 51 mA (1)"
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read_faults"
+      ],
+      "symbol": "tile_display_rgbw_read_faults",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Read the per-channel open / short / thermal fault state.",
+      "params": [
+        {
+          "name": "out",
+          "type": "?disp_rgbw_faults_t *",
+          "description": "Caller-allocated fault snapshot (zeroed on entry)"
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "clear_faults"
+      ],
+      "symbol": "tile_display_rgbw_clear_faults",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Clear all latched LED open / short / TSD fault flags.",
+      "params": [],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_short_threshold"
+      ],
+      "symbol": "tile_display_rgbw_set_short_threshold",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Set the short-circuit detection threshold (fraction of VOUT).",
+      "params": [
+        {
+          "name": "threshold",
+          "type": "?disp_rgbw_lsd_threshold_t",
+          "description": "One of DISP_RGBW_LSD_TH_*"
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_short_shutdown"
+      ],
+      "symbol": "tile_display_rgbw_set_short_shutdown",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Configure whether a short-circuit fault auto-disables outputs.",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 = chip auto-shuts-down on LSD, 0 = report only"
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_open_shutdown"
+      ],
+      "symbol": "tile_display_rgbw_set_open_shutdown",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Configure whether an open-circuit fault auto-disables a sink.",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 = chip auto-shuts-down a single sink, 0 = report only"
         }
       ],
       "returns": "void",
@@ -171,6 +285,156 @@
       "description": "Software reset. Must call init() again after.",
       "params": [],
       "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_color"
+      ],
+      "symbol": "tile_display_rgbw_set_color",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Set a solid RGB colour (W channel forced off).",
+      "params": [
+        {
+          "name": "r",
+          "type": "int",
+          "description": "Red PWM   [0..255]"
+        },
+        {
+          "name": "g",
+          "type": "int",
+          "description": "Green PWM [0..255]"
+        },
+        {
+          "name": "b",
+          "type": "int",
+          "description": "Blue PWM  [0..255]"
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "pulse"
+      ],
+      "symbol": "tile_display_rgbw_pulse",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Show a colour for `ms` milliseconds, then turn off.",
+      "params": [
+        {
+          "name": "r",
+          "type": "int",
+          "description": "Red PWM   [0..255]"
+        },
+        {
+          "name": "g",
+          "type": "int",
+          "description": "Green PWM [0..255]"
+        },
+        {
+          "name": "b",
+          "type": "int",
+          "description": "Blue PWM  [0..255]"
+        },
+        {
+          "name": "ms",
+          "type": "int",
+          "description": "Duration in milliseconds"
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "breathe"
+      ],
+      "symbol": "tile_display_rgbw_breathe",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Continuous fade in/out (one breath cycle).",
+      "params": [
+        {
+          "name": "r",
+          "type": "int",
+          "description": "Peak red PWM   [0..255]"
+        },
+        {
+          "name": "g",
+          "type": "int",
+          "description": "Peak green PWM [0..255]"
+        },
+        {
+          "name": "b",
+          "type": "int",
+          "description": "Peak blue PWM  [0..255]"
+        },
+        {
+          "name": "period_ms",
+          "type": "int",
+          "description": "One full breath duration in milliseconds (>= 64 recommended)"
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "flash"
+      ],
+      "symbol": "tile_display_rgbw_flash",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "N quick on/off blinks at the given colour.",
+      "params": [
+        {
+          "name": "r",
+          "type": "int",
+          "description": "Red PWM   [0..255]"
+        },
+        {
+          "name": "g",
+          "type": "int",
+          "description": "Green PWM [0..255]"
+        },
+        {
+          "name": "b",
+          "type": "int",
+          "description": "Blue PWM  [0..255]"
+        },
+        {
+          "name": "count",
+          "type": "int",
+          "description": "Number of on/off cycles (1..255)"
+        }
+      ],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "is_faulted"
+      ],
+      "symbol": "tile_display_rgbw_is_faulted",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Quick yes/no on whether any LP5811 fault is currently latched.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
       "icon": "◑",
       "receiver": "tile_t *"
     }
