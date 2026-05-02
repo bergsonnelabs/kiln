@@ -224,3 +224,72 @@ void tile_display_rgbw_reset(tile_t *tile)
     tile->hal->delay_ms(2);
     tile->state = TILE_STATE_NONE;
 }
+
+/* ---- Tier-2 idiomatic helpers ---- */
+
+void tile_display_rgbw_set_color(tile_t *tile, uint8_t r, uint8_t g, uint8_t b)
+{
+    tile_display_rgbw_set(tile, r, g, b, 0);
+}
+
+void tile_display_rgbw_pulse(tile_t *tile, uint8_t r, uint8_t g, uint8_t b,
+                             uint16_t ms)
+{
+    tile_display_rgbw_set(tile, r, g, b, 0);
+    tile->hal->delay_ms(ms);
+    tile_display_rgbw_off(tile);
+}
+
+void tile_display_rgbw_breathe(tile_t *tile, uint8_t r, uint8_t g, uint8_t b,
+                               uint16_t period_ms)
+{
+    /* Software ramp — 32 steps up, 32 steps down (64 total).
+     * On-chip AEU could do this autonomously, but its bytecode is not
+     * publicly documented (see header @tessera unsupported note). */
+    const uint8_t STEPS = 32;
+    uint16_t step_ms = period_ms / (uint16_t)(STEPS * 2u);
+    if (step_ms == 0) step_ms = 1;  /* clamp — too-short period falls back to choppy */
+
+    /* Ramp up: 0 → peak. */
+    for (uint8_t i = 1; i <= STEPS; i++) {
+        uint8_t scale_r = (uint8_t)(((uint16_t)r * i) / STEPS);
+        uint8_t scale_g = (uint8_t)(((uint16_t)g * i) / STEPS);
+        uint8_t scale_b = (uint8_t)(((uint16_t)b * i) / STEPS);
+        tile_display_rgbw_set(tile, scale_r, scale_g, scale_b, 0);
+        tile->hal->delay_ms(step_ms);
+    }
+
+    /* Ramp down: peak → 0. */
+    for (uint8_t i = STEPS; i > 0; i--) {
+        uint8_t j = (uint8_t)(i - 1u);
+        uint8_t scale_r = (uint8_t)(((uint16_t)r * j) / STEPS);
+        uint8_t scale_g = (uint8_t)(((uint16_t)g * j) / STEPS);
+        uint8_t scale_b = (uint8_t)(((uint16_t)b * j) / STEPS);
+        tile_display_rgbw_set(tile, scale_r, scale_g, scale_b, 0);
+        tile->hal->delay_ms(step_ms);
+    }
+
+    /* Guarantee fully off at end (rounding could leave a sliver). */
+    tile_display_rgbw_off(tile);
+}
+
+void tile_display_rgbw_flash(tile_t *tile, uint8_t r, uint8_t g, uint8_t b,
+                             uint8_t count)
+{
+    for (uint8_t i = 0; i < count; i++) {
+        tile_display_rgbw_set(tile, r, g, b, 0);
+        tile->hal->delay_ms(100);
+        tile_display_rgbw_off(tile);
+        tile->hal->delay_ms(100);
+    }
+}
+
+uint8_t tile_display_rgbw_is_faulted(tile_t *tile)
+{
+    disp_rgbw_faults_t f;
+    tile_display_rgbw_read_faults(tile, &f);
+    if (f.open_mask || f.short_mask || f.thermal_shutdown || f.config_error) {
+        return 1;
+    }
+    return 0;
+}
