@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@7b590aa",
+  "source": "cores@3e1d488",
   "tile": "Sense.BP",
   "palette": {
     "label": "Sense.BP",
@@ -38,6 +38,19 @@
       "header": "tile_sense_bp.h",
       "category": "tile",
       "description": "Resume from power-down using cached ODR/AVG settings.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "reset"
+      ],
+      "symbol": "tile_sense_bp_reset",
+      "header": "tile_sense_bp.h",
+      "category": "tile",
+      "description": "Software-reset the device.",
       "params": [],
       "returns": "void",
       "receiver": "tile_t *"

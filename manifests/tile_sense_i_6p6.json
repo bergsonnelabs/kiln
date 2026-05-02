@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@7b590aa",
+  "source": "cores@3e1d488",
   "tile": "Sense.I.6P6",
   "palette": {
     "label": "Sense.I.6P6",
@@ -164,6 +164,151 @@
       "header": "tile_sense_i_6p6.h",
       "category": "tile",
       "description": "Flush the FIFO (discard all data).",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "int1_data_ready"
+      ],
+      "symbol": "tile_sense_i_6p6_int1_data_ready",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Route data-ready interrupt to INT1.",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 to enable, 0 to disable"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "int1_fifo_ths"
+      ],
+      "symbol": "tile_sense_i_6p6_int1_fifo_ths",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Route FIFO watermark interrupt to INT1.",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 to enable, 0 to disable"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "int1_wom"
+      ],
+      "symbol": "tile_sense_i_6p6_int1_wom",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Route WOM (wake-on-motion) interrupt to INT1.",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 to enable, 0 to disable"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_int_status"
+      ],
+      "symbol": "tile_sense_i_6p6_get_int_status",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read and clear INT_STATUS register.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_int_status2"
+      ],
+      "symbol": "tile_sense_i_6p6_get_int_status2",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read and clear INT_STATUS2 (WOM/SMD flags).",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wom_config"
+      ],
+      "symbol": "tile_sense_i_6p6_wom_config",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Configure Wake-on-Motion thresholds.",
+      "params": [
+        {
+          "name": "x_mg",
+          "type": "int",
+          "description": "X-axis threshold in mg (0–1000, resolution ~3.9 mg)"
+        },
+        {
+          "name": "y_mg",
+          "type": "int",
+          "description": "Y-axis threshold in mg"
+        },
+        {
+          "name": "z_mg",
+          "type": "int",
+          "description": "Z-axis threshold in mg"
+        },
+        {
+          "name": "mode",
+          "type": "?sense_i_6p6_wom_mode_t",
+          "description": "Compare against initial or previous sample"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wom_enable"
+      ],
+      "symbol": "tile_sense_i_6p6_wom_enable",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Enable WOM. Must configure thresholds first.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wom_disable"
+      ],
+      "symbol": "tile_sense_i_6p6_wom_disable",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Disable WOM.",
       "params": [],
       "returns": "void",
       "receiver": "tile_t *"
