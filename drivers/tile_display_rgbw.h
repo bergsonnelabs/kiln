@@ -132,7 +132,11 @@ void tile_display_rgbw_sleep(tile_t *tile);
  */
 void tile_display_rgbw_wake(tile_t *tile);
 
-/** @brief  Software reset. Must call init() again after. */
+/**
+ * @brief  Software reset. Must call init() again after.
+ *
+ * @tessera expose category=tile icon=◑ name=reset
+ */
 void tile_display_rgbw_reset(tile_t *tile);
 
 #endif /* INC_TILE_DISP_RGBW_H_ */
