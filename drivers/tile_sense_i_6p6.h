@@ -711,26 +711,40 @@ void tile_sense_i_6p6_int1_config(tile_t *tile, uint8_t config);
 
 /**
  * @brief  Route data-ready interrupt to INT1.
+ *
+ * @tessera expose category=tile name=int1_data_ready
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int1_data_ready(tile_t *tile, uint8_t enabled);
 
 /**
  * @brief  Route FIFO watermark interrupt to INT1.
+ *
+ * @tessera expose category=tile name=int1_fifo_ths
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int1_fifo_ths(tile_t *tile, uint8_t enabled);
 
 /**
  * @brief  Route WOM (wake-on-motion) interrupt to INT1.
+ *
+ * @tessera expose category=tile name=int1_wom
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int1_wom(tile_t *tile, uint8_t enabled);
 
-/** @brief  Read and clear INT_STATUS register. */
+/**
+ * @brief  Read and clear INT_STATUS register.
+ *
+ * @tessera expose category=tile name=get_int_status returns=int
+ */
 uint8_t tile_sense_i_6p6_get_int_status(tile_t *tile);
 
-/** @brief  Read and clear INT_STATUS2 (WOM/SMD flags). */
+/**
+ * @brief  Read and clear INT_STATUS2 (WOM/SMD flags).
+ *
+ * @tessera expose category=tile name=get_int_status2 returns=int
+ */
 uint8_t tile_sense_i_6p6_get_int_status2(tile_t *tile);
 
 /** @brief  Read and clear INT_STATUS3 (APEX: step/tilt/tap flags). */
@@ -743,6 +757,7 @@ uint8_t tile_sense_i_6p6_get_int_status3(tile_t *tile);
 /**
  * @brief  Configure Wake-on-Motion thresholds.
  *
+ * @tessera expose category=tile name=wom_config
  * @param  x_mg  X-axis threshold in mg (0–1000, resolution ~3.9 mg)
  * @param  y_mg  Y-axis threshold in mg
  * @param  z_mg  Z-axis threshold in mg
@@ -754,10 +769,18 @@ void tile_sense_i_6p6_wom_config(tile_t *tile,
                                   uint16_t x_mg, uint16_t y_mg, uint16_t z_mg,
                                   sense_i_6p6_wom_mode_t mode);
 
-/** @brief  Enable WOM. Must configure thresholds first. */
+/**
+ * @brief  Enable WOM. Must configure thresholds first.
+ *
+ * @tessera expose category=tile name=wom_enable
+ */
 void tile_sense_i_6p6_wom_enable(tile_t *tile);
 
-/** @brief  Disable WOM. */
+/**
+ * @brief  Disable WOM.
+ *
+ * @tessera expose category=tile name=wom_disable
+ */
 void tile_sense_i_6p6_wom_disable(tile_t *tile);
 
 /* ================================================================

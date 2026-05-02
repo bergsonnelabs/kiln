@@ -244,6 +244,7 @@ void tile_drive_h_load_sequence(tile_t* tile, const uint8_t *effects,
  *   - DRIVE_H_TRIG_LEVEL: GO follows the IN/TRIG pin level.
  *     High = playing, low = idle. Falling edge cancels.
  *
+ * @tessera expose category=tile name=set_trigger
  * @param  tile  Pointer to tile handle
  * @param  mode  One of DRIVE_H_TRIG_INTERNAL, DRIVE_H_TRIG_EDGE,
  *               DRIVE_H_TRIG_LEVEL
@@ -301,6 +302,7 @@ void tile_drive_h_rtp_stop(tile_t* tile);
  * Contains DEVICE_ID[7:5], DIAG_RESULT[3], FB_STS[2],
  * OVER_TEMP[1], OC_DETECT[0]. Status bits clear on read.
  *
+ * @tessera expose category=tile name=get_status returns=int
  * @param  tile  Pointer to tile handle
  * @return Raw status byte
  */

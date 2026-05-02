@@ -246,6 +246,7 @@ void tile_sense_bp_wake(tile_t *tile);
  *
  * All registers return to defaults. Call init() again after reset.
  *
+ * @tessera expose category=tile name=reset
  * @param  tile  Tile handle.
  */
 void tile_sense_bp_reset(tile_t *tile);
