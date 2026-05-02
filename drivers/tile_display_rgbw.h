@@ -1,7 +1,7 @@
 /**
  * @file   tile_display_rgbw.h
  * @brief  RGBW LED driver for the Display.RGBW tile (LP5811).
- * @version 1.0.0
+ * @version 2.0.0
  *
  * 4-channel LED driver with independent PWM + current control.
  * Channels: R (LED0), G (LED2), B (LED1), W (LED3).
@@ -20,27 +20,25 @@
  * Driver gaps (chip capabilities not exposed by this driver):
  *
  * @tessera unsupported severity=common category="Animation Engine Unit (AEU)"
- *   LP5811 has 4 independent autonomous animation engines (one per
- *   LED, 2 per LED — AEU1/AEU2). Loaded patterns play without MCU
- *   intervention (pulse, breathe, ramp). Driver doesn't expose AEU
- *   program loading or playback control — users wanting MCU-free
- *   patterns need to write the AEU registers manually.
- *
- * @tessera unsupported severity=advanced category="LED open / short fault detection"
- *   Chip has per-channel open-circuit (VLOD_TH ~70–220 mV) and
- *   short-circuit (VLSD_TH ~0.32–0.58 × VOUT) detection with
- *   configurable thresholds. Driver doesn't expose fault status or
- *   threshold tuning — relevant for production-line health checks.
- *
- * @tessera unsupported severity=advanced category="Per-channel current cap (MC bit)"
- *   Global MC bit selects between 25.5 mA and 51 mA per-channel max
- *   current. Driver fixes one default; switching matters when wiring
- *   higher-current LEDs or running cooler.
+ *   The LP5811 has 4 autonomous animation engines (one per LED, with
+ *   AEU1/AEU2/AEU3 sub-engines per channel) that play breathe / pulse /
+ *   ramp patterns without MCU intervention. The bytecode-style register
+ *   layout for the engine isn't documented in detail in the LP5811
+ *   datasheet — the register-map TRM lists addresses 0x080–0x0E7 but
+ *   not the timing-and-PWM semantics needed to compose programs.
+ *   Closing this gap requires a TI specification (or careful
+ *   reverse-engineering against TI's evaluation tool); deliberately
+ *   deferred until that source is available.
  *
  * @tessera unsupported severity=niche category="Multi-address support (0x50–0x53)"
- *   Chip supports 4 I²C addresses via Bit4/Bit3 in the device ID
- *   register; driver hardcodes a single address. Relevant if a
- *   future tile variant straps to a non-default address.
+ *   Chip-gated. The four LP5811 addresses 0x50/0x51/0x52/0x53 are
+ *   selected by Bit4/Bit3 of the chip-address byte, but those bits
+ *   are fixed by the factory material variant (LP5811A/B/C/D, see
+ *   datasheet §4 Device Comparison). They are not pin-strapped or
+ *   register-configurable. The Display.RGBW (rev a) tile ships only
+ *   the A variant. Adding the other three addresses requires a tile
+ *   hardware revision that places the alternate part numbers on the
+ *   PCB — not something the driver can close on its own.
  */
 
 #ifndef INC_TILE_DISP_RGBW_H_
@@ -51,7 +49,7 @@
 
 /* ---- Driver version ---- */
 
-#define TILE_DISP_RGBW_VERSION_MAJOR  1
+#define TILE_DISP_RGBW_VERSION_MAJOR  2
 #define TILE_DISP_RGBW_VERSION_MINOR  0
 #define TILE_DISP_RGBW_VERSION_PATCH  0
 
@@ -60,13 +58,19 @@ TILES_CHECK_VERSION(1, 0);
 /* ---- Instance mapping ---- */
 
 /**
- * | Instance | ID   | Hardware config    |
- * |----------|------|--------------------|
- * | 0        | 0x50 | Default address    |
+ * | Instance | ID   | Hardware config         |
+ * |----------|------|-------------------------|
+ * | 0        | 0x50 | LP5811A (Bit4=0,Bit3=0) |
+ *
+ * @note  The LP5811 has four factory-strapped material variants
+ *        (LP5811A/B/C/D) with hard-wired I2C addresses 0x50/0x51/
+ *        0x52/0x53. The Display.RGBW tile (rev a) ships with the A
+ *        variant only — see the chip-gated note in the multi-address
+ *        unsupported annotation.
  */
 #define LP5811_I2C_ADDR_DEFAULT  0x50
 
-/* ---- LP5811 registers ---- */
+/* ---- LP5811 registers (page-0 offsets unless noted) ---- */
 
 #define LP5811_REG_CHIP_EN      0x00
 #define LP5811_REG_CONFIG_0     0x01
@@ -74,6 +78,7 @@ TILES_CHECK_VERSION(1, 0);
 #define LP5811_REG_CONFIG_12    0x0D
 #define LP5811_REG_CMD_UPDATE   0x10
 #define LP5811_REG_LED_EN       0x20
+#define LP5811_REG_FAULT_CLEAR  0x22
 #define LP5811_REG_RESET        0x23
 #define LP5811_REG_DC_0         0x30  /* Current limit channel 0 (R) */
 #define LP5811_REG_DC_1         0x31  /* Current limit channel 1 (B) */
@@ -84,7 +89,54 @@ TILES_CHECK_VERSION(1, 0);
 #define LP5811_REG_PWM_2        0x42  /* PWM channel 2 (G) */
 #define LP5811_REG_PWM_3        0x43  /* PWM channel 3 (W) */
 
+/* Page-3 status registers (0x300+ — accessed via address-bump trick) */
+#define LP5811_REG_TSD_STATUS   0x00  /* page 3, offset 0x00 (=0x300) */
+#define LP5811_REG_LOD_STATUS_0 0x01  /* page 3, offset 0x01 (=0x301) */
+#define LP5811_REG_LSD_STATUS_0 0x03  /* page 3, offset 0x03 (=0x303) */
+
 #define LP5811_CONFIG_2_DEFAULT 0xE4  /* Used to verify chip is alive */
+
+/* ---- Maximum-current selection (MC bit) ---- */
+
+/**
+ * @brief  Per-channel maximum-current selector (LP5811 MC bit).
+ *
+ * The LP5811 has one global "max current" bit that gates the upper
+ * limit for every channel's current sink. Switching the bit also
+ * rescales the 8-bit DC code (`tile_display_rgbw_set_current`) over
+ * the new range — DC=255 always means full-scale. Default at init: 51 mA.
+ */
+typedef enum {
+    DISP_RGBW_MAX_CURRENT_25_5_MA = 0,  /**< 25.5 mA full scale per channel */
+    DISP_RGBW_MAX_CURRENT_51_MA   = 1,  /**< 51 mA full scale per channel */
+} disp_rgbw_max_current_t;
+
+/* ---- LED fault status ---- */
+
+/**
+ * @brief  LED open / short fault snapshot.
+ *
+ * Bit N of each mask corresponds to LED channel N. Mapping:
+ *   bit0 = R, bit1 = B, bit2 = G, bit3 = W (matches `set()` order
+ *   inside the chip). Faults are sticky in the chip — read once,
+ *   then call `clear_faults()` to reset the latches.
+ */
+typedef struct {
+    uint8_t open_mask;       /**< Bits 3:0 — channels with open-circuit fault. */
+    uint8_t short_mask;      /**< Bits 3:0 — channels with short-circuit fault. */
+    uint8_t thermal_shutdown;/**< 1 = chip in thermal shutdown (TSD). */
+    uint8_t config_error;    /**< 1 = configuration error reported by chip. */
+} disp_rgbw_faults_t;
+
+/**
+ * @brief  Short-circuit detection threshold (fraction of VOUT).
+ */
+typedef enum {
+    DISP_RGBW_LSD_TH_0_35 = 0,  /**< 0.35 × VOUT (most sensitive) */
+    DISP_RGBW_LSD_TH_0_45 = 1,  /**< 0.45 × VOUT */
+    DISP_RGBW_LSD_TH_0_55 = 2,  /**< 0.55 × VOUT */
+    DISP_RGBW_LSD_TH_0_65 = 3,  /**< 0.65 × VOUT (least sensitive — driver default) */
+} disp_rgbw_lsd_threshold_t;
 
 /* ---- Public API ---- */
 
@@ -104,7 +156,9 @@ typedef struct {
  *
  * Enables the chip, configures boost voltage to 4.5V, sets max
  * current to 51mA, enables all 4 LED channels, and sets current
- * limits to 50%. Pass cfg=NULL for defaults.
+ * limits to 50%. LSD action is left at "no shutdown" (driver-level
+ * choice) so a transient short doesn't latch the device into OFAF
+ * state without firmware seeing it. Pass cfg=NULL for defaults.
  *
  * @param  hal       Platform abstraction handle
  * @param  instance  Device instance (0 = default address 0x50)
@@ -136,12 +190,104 @@ void tile_display_rgbw_off(tile_t *tile);
  * @brief Set per-channel current limit.
  *
  * @tessera expose category=tile icon=◑ name=set_current
- * @param r [0..255] Red current (fraction of 51 mA max).
+ * @param r [0..255] Red current (fraction of full-scale max).
  * @param g [0..255] Green current.
  * @param b [0..255] Blue current.
  * @param w [0..255] White current.
  */
 void tile_display_rgbw_set_current(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
+
+/**
+ * @brief Set the global maximum-current range (MC bit).
+ *
+ * Selects 25.5 mA or 51 mA full-scale per channel. After changing,
+ * the 8-bit per-channel DC codes (set via `set_current()`) re-scale
+ * automatically — DC=255 always means full-scale current. Useful
+ * when wiring lower-rated LEDs (drop to 25.5 mA to keep DC resolution
+ * fine) or when running cooler / saving power.
+ *
+ * The driver writes `Dev_Config_0` and re-issues the `CMD_Update`
+ * latch (0x55) the chip requires for config-register writes to
+ * actually take effect.
+ *
+ * @tessera expose category=tile icon=◑ name=set_max_current
+ * @param  tile  Initialised tile handle
+ * @param  mode  25.5 mA (0) or 51 mA (1)
+ */
+void tile_display_rgbw_set_max_current(tile_t *tile, disp_rgbw_max_current_t mode);
+
+/**
+ * @brief Read the per-channel open / short / thermal fault state.
+ *
+ * Pulls TSD_Config_Status, LOD_Status_0, and LSD_Status_0 from the
+ * chip's page-3 register space (the LP5811 multiplexes register
+ * pages onto two extra address bits — the driver handles this
+ * transparently). Faults latch in the chip until cleared via
+ * `clear_faults()`.
+ *
+ * Open-circuit threshold (VLOD_TH) is fixed by the chip at ~70 mV
+ * (25.5 mA mode) or ~180 mV (51 mA mode). Short-circuit threshold
+ * (VLSD_TH) is configurable via `set_short_threshold()`.
+ *
+ * @param  tile  Initialised tile handle
+ * @param  out   Caller-allocated fault snapshot (zeroed on entry)
+ */
+void tile_display_rgbw_read_faults(tile_t *tile, disp_rgbw_faults_t *out);
+
+/**
+ * @brief Clear all latched LED open / short / TSD fault flags.
+ *
+ * Writes 0x07 to Fault_Clear (W1C — write 1 to clear). After this
+ * call, `read_faults()` reflects only currently-active faults.
+ *
+ * @tessera expose category=tile icon=◑ name=clear_faults
+ * @param  tile  Initialised tile handle
+ */
+void tile_display_rgbw_clear_faults(tile_t *tile);
+
+/**
+ * @brief Set the short-circuit detection threshold (fraction of VOUT).
+ *
+ * Lower thresholds catch milder partial-shorts; higher thresholds
+ * tolerate more LED forward-voltage variation without false alarms.
+ * Driver default (init) is 0.65 × VOUT — most permissive, least
+ * likely to mis-fire on cold LEDs whose Vf hasn't settled.
+ *
+ * @tessera expose category=tile icon=◑ name=set_short_threshold
+ * @param  tile       Initialised tile handle
+ * @param  threshold  One of DISP_RGBW_LSD_TH_*
+ */
+void tile_display_rgbw_set_short_threshold(tile_t *tile,
+                                           disp_rgbw_lsd_threshold_t threshold);
+
+/**
+ * @brief Configure whether a short-circuit fault auto-disables outputs.
+ *
+ * When enabled, an LSD fault sends the chip into OFAF (one-fail-all-
+ * fail) state — every channel turns off until LSD_Clear is written.
+ * When disabled (driver default), the chip flags the fault but keeps
+ * driving — firmware decides what to do.
+ *
+ * @tessera expose category=tile icon=◑ name=set_short_shutdown
+ * @param  tile     Initialised tile handle
+ * @param  enabled  1 = chip auto-shuts-down on LSD, 0 = report only
+ */
+void tile_display_rgbw_set_short_shutdown(tile_t *tile, uint8_t enabled);
+
+/**
+ * @brief Configure whether an open-circuit fault auto-disables a sink.
+ *
+ * When enabled (chip default), a per-channel LOD fault turns off
+ * that single current sink. When disabled, the chip flags the fault
+ * via `read_faults()` but keeps driving the channel — useful when
+ * the open is intermittent (e.g., a flexing wire) and firmware
+ * wants to retry rather than relying on the chip to recover.
+ *
+ * @tessera expose category=tile icon=◑ name=set_open_shutdown
+ * @param  tile     Initialised tile handle
+ * @param  enabled  1 = chip auto-shuts-down a single sink, 0 = report only
+ */
+void tile_display_rgbw_set_open_shutdown(tile_t *tile, uint8_t enabled);
 
 /**
  * @brief Enter sleep (disable chip).
