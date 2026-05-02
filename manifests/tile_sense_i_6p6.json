@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@3e1d488",
+  "source": "cores@cc8f666",
   "tile": "Sense.I.6P6",
   "palette": {
     "label": "Sense.I.6P6",
@@ -52,6 +52,180 @@
       "category": "tile",
       "description": "Software reset. Blocks ~2 ms. Must call init() again after.",
       "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_accel_range"
+      ],
+      "symbol": "tile_sense_i_6p6_set_accel_range",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set accelerometer full-scale range.",
+      "params": [
+        {
+          "name": "range",
+          "type": "?sense_i_6p6_accel_range_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_gyro_range"
+      ],
+      "symbol": "tile_sense_i_6p6_set_gyro_range",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set gyroscope full-scale range.",
+      "params": [
+        {
+          "name": "range",
+          "type": "?sense_i_6p6_gyro_range_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_accel_odr"
+      ],
+      "symbol": "tile_sense_i_6p6_set_accel_odr",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set accelerometer output data rate.",
+      "params": [
+        {
+          "name": "odr",
+          "type": "?sense_i_6p6_odr_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_gyro_odr"
+      ],
+      "symbol": "tile_sense_i_6p6_set_gyro_odr",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set gyroscope output data rate.",
+      "params": [
+        {
+          "name": "odr",
+          "type": "?sense_i_6p6_odr_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_power_mode"
+      ],
+      "symbol": "tile_sense_i_6p6_set_power_mode",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set power mode independently for accel and gyro.",
+      "params": [
+        {
+          "name": "accel",
+          "type": "?sense_i_6p6_power_mode_t"
+        },
+        {
+          "name": "gyro",
+          "type": "?sense_i_6p6_power_mode_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_filter_bw"
+      ],
+      "symbol": "tile_sense_i_6p6_set_filter_bw",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set UI filter bandwidth for both accel and gyro.",
+      "params": [
+        {
+          "name": "accel_bw",
+          "type": "?sense_i_6p6_filter_bw_t"
+        },
+        {
+          "name": "gyro_bw",
+          "type": "?sense_i_6p6_filter_bw_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_filter_order"
+      ],
+      "symbol": "tile_sense_i_6p6_set_filter_order",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set UI filter order for accel and gyro (1st, 2nd, or 3rd).",
+      "params": [
+        {
+          "name": "accel_order",
+          "type": "?sense_i_6p6_filter_order_t"
+        },
+        {
+          "name": "gyro_order",
+          "type": "?sense_i_6p6_filter_order_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_temp_filter"
+      ],
+      "symbol": "tile_sense_i_6p6_set_temp_filter",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set temperature sensor filter bandwidth.",
+      "params": [
+        {
+          "name": "bw",
+          "type": "?sense_i_6p6_temp_filter_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_temp_enabled"
+      ],
+      "symbol": "tile_sense_i_6p6_set_temp_enabled",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Enable or disable the temperature sensor.",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int"
+        }
+      ],
       "returns": "void",
       "receiver": "tile_t *"
     },
@@ -158,6 +332,63 @@
     {
       "qname": [
         "$slot",
+        "fifo_config"
+      ],
+      "symbol": "tile_sense_i_6p6_fifo_config",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Configure the FIFO.",
+      "params": [
+        {
+          "name": "mode",
+          "type": "?sense_i_6p6_fifo_mode_t",
+          "description": "FIFO operating mode (bypass/stream/stop-on-full)"
+        },
+        {
+          "name": "accel",
+          "type": "int",
+          "description": "Include accel data in FIFO packets"
+        },
+        {
+          "name": "gyro",
+          "type": "int",
+          "description": "Include gyro data in FIFO packets"
+        },
+        {
+          "name": "temp",
+          "type": "int",
+          "description": "Include temperature in FIFO packets"
+        },
+        {
+          "name": "hires",
+          "type": "int",
+          "description": "Enable 20-bit high-resolution mode (forces ±32g/±4000dps)"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "fifo_set_watermark"
+      ],
+      "symbol": "tile_sense_i_6p6_fifo_set_watermark",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set the FIFO watermark threshold in records (1–4095).",
+      "params": [
+        {
+          "name": "records",
+          "type": "int"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
         "flush_fifo"
       ],
       "symbol": "tile_sense_i_6p6_fifo_flush",
@@ -165,6 +396,53 @@
       "category": "tile",
       "description": "Flush the FIFO (discard all data).",
       "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "fifo_count"
+      ],
+      "symbol": "tile_sense_i_6p6_fifo_count",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read the FIFO record count.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "fifo_lost_count"
+      ],
+      "symbol": "tile_sense_i_6p6_fifo_lost_count",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Get the number of lost FIFO packets since last check.",
+      "params": [],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "int1_config"
+      ],
+      "symbol": "tile_sense_i_6p6_int1_config",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Configure INT1 pin behavior.",
+      "params": [
+        {
+          "name": "config",
+          "type": "int",
+          "description": "OR'd flags: ACTIVE_HIGH|PUSH_PULL|LATCHED etc."
+        }
+      ],
       "returns": "void",
       "receiver": "tile_t *"
     },
@@ -256,6 +534,20 @@
     {
       "qname": [
         "$slot",
+        "get_int_status3"
+      ],
+      "symbol": "tile_sense_i_6p6_get_int_status3",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read and clear INT_STATUS3 (APEX: step/tilt/tap flags).",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
         "wom_config"
       ],
       "symbol": "tile_sense_i_6p6_wom_config",
@@ -316,6 +608,56 @@
     {
       "qname": [
         "$slot",
+        "smd_config"
+      ],
+      "symbol": "tile_sense_i_6p6_smd_config",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Configure and enable SMD. WOM thresholds must be set first.",
+      "params": [
+        {
+          "name": "mode",
+          "type": "?sense_i_6p6_smd_mode_t"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "pedometer_enable"
+      ],
+      "symbol": "tile_sense_i_6p6_pedometer_enable",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Enable the pedometer (step counter + step detector).",
+      "params": [
+        {
+          "name": "dmp_odr",
+          "type": "?sense_i_6p6_dmp_odr_t",
+          "description": "DMP processing rate (25 or 50 Hz)"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "pedometer_disable"
+      ],
+      "symbol": "tile_sense_i_6p6_pedometer_disable",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Disable the pedometer.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
         "get_step_count"
       ],
       "symbol": "tile_sense_i_6p6_get_step_count",
@@ -324,6 +666,34 @@
       "description": "Read the step count.",
       "params": [],
       "returns": "uint16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_step_cadence"
+      ],
+      "symbol": "tile_sense_i_6p6_get_step_cadence",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read the step cadence.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_activity"
+      ],
+      "symbol": "tile_sense_i_6p6_get_activity",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read the activity classification.",
+      "params": [],
+      "returns": "sense_i_6p6_activity_t",
       "dsl_returns": "int",
       "receiver": "tile_t *"
     },
