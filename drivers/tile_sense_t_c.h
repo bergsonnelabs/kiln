@@ -72,43 +72,20 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="ATI fine-tuning"
- *   Driver runs ATI in 'Full' mode at init. Per-channel ATI
- *   multipliers, dividers, compensation values, and resolution
- *   factors aren't exposed — tuning these matters when the
- *   ambient capacitance (cover glass thickness, mounting
- *   substrate) shifts the working point. Available via raw
- *   write_reg as an escape hatch.
- *
  * @tessera unsupported severity=advanced category="Per-gesture threshold tuning"
- *   Driver reports gestures (tap, swipe, flick, hold) but doesn't
- *   expose individual gesture timeout / threshold registers.
- *   Customizing tap-timeout vs hold-duration requires raw
- *   write_reg.
- *
- * @tessera unsupported severity=advanced category="Reference channel compensation"
- *   Chip supports multi-channel reference subtraction (one channel
- *   acts as ambient reference, others measure delta-vs-reference).
- *   Driver configures channels independently; reference-channel
- *   mode isn't exposed.
- *
- * @tessera unsupported severity=advanced category="Filter beta / conversion frequency tuning"
- *   Counts filter betas, LTA fast-filter band, conversion
- *   frequency, and per-channel dead-time control aren't exposed.
- *   Driver uses chip defaults — tuning matters for noisy
- *   environments or unusual electrode geometries.
+ *   IQS323 gesture timing (tap touch/release time, hold duration,
+ *   swipe distance, flick velocity) is packed across several
+ *   GESTURE_* registers with chip-specific encodings. The driver
+ *   reports gesture events but doesn't surface a typed API for
+ *   timing / threshold tuning — closing this properly needs a
+ *   dedicated pass with Azoteq's gesture-config guide. Raw
+ *   write_reg works for advanced users in the interim.
  *
  * @tessera unsupported severity=niche category="Per-channel timeout / OutA event-indicator"
  *   Channel-timeout disable bits (auto-reseed on timeout) and the
- *   OutA event-indicator output mode aren't exposed. Most
- *   applications don't need them; raw write_reg available if
- *   required.
- *
- * @tessera unsupported severity=niche category="I²C streaming mode"
- *   Driver uses event-mode (RDY-gated communication window).
- *   Chip also supports I²C streaming where the host polls without
- *   waiting for RDY — slightly higher current, lower latency. Not
- *   exposed.
+ *   OutA pin's event-indicator output mode aren't exposed. Most
+ *   applications don't need them; raw write_reg covers the niche
+ *   cases that do.
  */
 
 #ifndef INC_TILE_SENSE_T_C_H_
@@ -122,7 +99,7 @@
  * ================================================================ */
 
 #define TILE_SENSE_T_C_VERSION_MAJOR  1
-#define TILE_SENSE_T_C_VERSION_MINOR  0
+#define TILE_SENSE_T_C_VERSION_MINOR  1
 #define TILE_SENSE_T_C_VERSION_PATCH  0
 
 TILES_CHECK_VERSION(1, 0);
@@ -469,6 +446,119 @@ void tile_sense_t_c_set_thresholds(tile_t *tile, uint8_t channel,
 void tile_sense_t_c_set_power_mode(tile_t *tile, sense_t_c_power_mode_t mode);
 void tile_sense_t_c_enable_events(tile_t *tile, uint16_t mask);
 void tile_sense_t_c_ati(tile_t *tile);
+
+/* ---- ATI fine-tuning ---- */
+
+/**
+ * @brief  Set the per-channel ATI setup register (0x36 + ch*0x10).
+ *
+ * Writes the raw 16-bit ATI Setup register for the channel.
+ * Bit layout (datasheet §A.13):
+ *   - Bits 14-9: Coarse divider (0–63)
+ *   - Bits 8-5:  Fine divider (0–15)
+ *   - Bits 4-0:  Compensation divider / sensitivity factor
+ *
+ * After changing ATI parameters, call @ref tile_sense_t_c_ati to
+ * re-run the auto-tuning sequence with the new values. Useful when
+ * ambient capacitance shifts (cover-glass thickness, mounting
+ * substrate) push the working point off the chip's defaults.
+ *
+ * @tessera expose category=tile name=set_ati_setup
+ * @param  tile     Initialised tile handle
+ * @param  channel  0–2
+ * @param  value    Raw 16-bit ATI Setup register value
+ */
+void tile_sense_t_c_set_ati_setup(tile_t *tile, uint8_t channel, uint16_t value);
+
+/* ---- Filter / conversion frequency tuning ---- */
+
+/**
+ * @brief  Set the global counts-filter beta register (0xB0).
+ *
+ * Datasheet §A.26. Higher beta = more aggressive smoothing on the
+ * raw counts (lower noise, slower response). Default is tuned for
+ * typical electrode geometries; tune up for noisy environments,
+ * tune down for fast-response applications.
+ *
+ * @tessera expose category=tile name=set_counts_filter
+ * @param  tile  Initialised tile handle
+ * @param  beta  Raw 16-bit Counts Filter Betas register value
+ */
+void tile_sense_t_c_set_counts_filter(tile_t *tile, uint16_t beta);
+
+/**
+ * @brief  Set per-channel conversion frequency (0x31 + ch*0x10).
+ *
+ * Datasheet §A.4. Controls charge-transfer frequency and dead time.
+ * Tune for unusual electrode geometries, large capacitance loads,
+ * or when self-capacitance interactions push beyond the chip's
+ * default Conversion Frequency Fraction.
+ *
+ * @tessera expose category=tile name=set_conversion_freq
+ * @param  tile     Initialised tile handle
+ * @param  channel  0–2
+ * @param  value    Raw 16-bit Conversion Frequency register value
+ */
+void tile_sense_t_c_set_conversion_freq(tile_t *tile, uint8_t channel,
+                                        uint16_t value);
+
+/* ---- Reference channel compensation ---- */
+
+/** Channel Mode for the Reference UI (datasheet §A.15 bits [3:0]). */
+typedef enum {
+    SENSE_T_C_CHANNEL_INDEPENDENT = 0x00,  /**< Stand-alone sensing channel */
+    SENSE_T_C_CHANNEL_FOLLOWER    = 0x01,  /**< Subtracts a reference channel's LTA */
+    SENSE_T_C_CHANNEL_REFERENCE   = 0x02,  /**< Acts as ambient reference for followers */
+} sense_t_c_channel_mode_t;
+
+/**
+ * @brief  Configure a channel's role in the Reference UI.
+ *
+ * Reference channels measure ambient capacitance (e.g., temperature
+ * / humidity drift on the substrate). Follower channels subtract
+ * the reference's LTA delta from their own, eliminating common-mode
+ * drift. Datasheet §7.3 describes the design pattern.
+ *
+ * For follower channels, `reference_id` selects which channel to
+ * follow (encoded in Channel Setup bits [7:4]). For independent /
+ * reference channels, `reference_id` is unused — pass 0.
+ *
+ * Apply to all participating channels (set the reference channel to
+ * REFERENCE first, then set followers). Re-run @ref tile_sense_t_c_ati
+ * after changing channel modes.
+ *
+ * @tessera expose category=tile name=set_channel_mode
+ * @param  tile          Initialised tile handle
+ * @param  channel       0–2
+ * @param  mode          Channel role
+ * @param  reference_id  Which channel to follow (only used for FOLLOWER)
+ */
+void tile_sense_t_c_set_channel_mode(tile_t *tile, uint8_t channel,
+                                     sense_t_c_channel_mode_t mode,
+                                     uint8_t reference_id);
+
+/* ---- I²C communication mode ---- */
+
+/** I²C communication mode (System Control register §A.30 bit 7). */
+typedef enum {
+    SENSE_T_C_COMM_STREAM = 0,  /**< Continuous reporting at the configured power-mode rate */
+    SENSE_T_C_COMM_EVENT  = 1,  /**< RDY pulses only on enabled events (default) */
+} sense_t_c_comm_mode_t;
+
+/**
+ * @brief  Switch between event-mode and streaming-mode I²C.
+ *
+ * Event mode (default) waits for the RDY line to assert before
+ * communication; lowest power, lowest CPU overhead. Streaming mode
+ * reports samples at every report-rate tick regardless of activity;
+ * higher current, lower latency. Use streaming for continuous logging
+ * or for hosts that can't handle interrupt-driven I²C cleanly.
+ *
+ * @tessera expose category=tile name=set_comm_mode
+ * @param  tile  Initialised tile handle
+ * @param  mode  Event or streaming
+ */
+void tile_sense_t_c_set_comm_mode(tile_t *tile, sense_t_c_comm_mode_t mode);
 
 /* ---- Low-level ---- */
 

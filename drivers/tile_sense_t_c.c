@@ -432,6 +432,75 @@ void tile_sense_t_c_ati(tile_t *tile)
 }
 
 /* ================================================================
+ * ATI fine-tuning + filter / conversion-frequency tuning
+ * ================================================================ */
+
+void tile_sense_t_c_set_ati_setup(tile_t *tile, uint8_t channel, uint16_t value)
+{
+    if (channel >= SENSE_T_C_NUM_CHANNELS) return;
+    iqs_force_comms(tile);
+    iqs_write(tile, IQS323_REG_ATI_SETUP(channel), value);
+}
+
+void tile_sense_t_c_set_counts_filter(tile_t *tile, uint16_t beta)
+{
+    iqs_force_comms(tile);
+    iqs_write(tile, IQS323_REG_COUNTS_FILTER, beta);
+}
+
+void tile_sense_t_c_set_conversion_freq(tile_t *tile, uint8_t channel,
+                                        uint16_t value)
+{
+    if (channel >= SENSE_T_C_NUM_CHANNELS) return;
+    iqs_force_comms(tile);
+    iqs_write(tile, IQS323_REG_CONV_FREQ(channel), value);
+}
+
+/* ================================================================
+ * Reference UI — channel mode + reference sensor ID
+ * ================================================================ */
+
+void tile_sense_t_c_set_channel_mode(tile_t *tile, uint8_t channel,
+                                     sense_t_c_channel_mode_t mode,
+                                     uint8_t reference_id)
+{
+    if (channel >= SENSE_T_C_NUM_CHANNELS) return;
+
+    /* Channel Setup register: bits [3:0] = Channel Mode,
+     * bits [7:4] = Reference Sensor ID. Preserve the upper byte
+     * (Follower Event Mask). */
+    uint8_t reg = IQS323_REG_CH_SETUP(channel);
+    iqs_force_comms(tile);
+    uint16_t cur = iqs_read(tile, reg);
+    if (cur == IQS323_INVALID_RESPONSE) cur = 0;
+
+    uint16_t low = ((uint16_t)reference_id & 0x0F) << 4
+                 | ((uint16_t)mode & 0x0F);
+    uint16_t next = (cur & 0xFF00) | low;
+
+    iqs_force_comms(tile);
+    iqs_write(tile, reg, next);
+}
+
+/* ================================================================
+ * I²C communication mode — event vs streaming
+ * ================================================================ */
+
+void tile_sense_t_c_set_comm_mode(tile_t *tile, sense_t_c_comm_mode_t mode)
+{
+    /* System Control bit 7 = Interface Selection
+     *   0 = I²C streaming, 1 = I²C event. Preserve other bits. */
+    iqs_force_comms(tile);
+    uint16_t cur = iqs_read(tile, IQS323_REG_SYSTEM_CONTROL);
+    if (cur == IQS323_INVALID_RESPONSE) cur = 0;
+    uint16_t next = (mode == SENSE_T_C_COMM_EVENT)
+                  ? (cur | (1U << 7))
+                  : (cur & ~(1U << 7));
+    iqs_force_comms(tile);
+    iqs_write(tile, IQS323_REG_SYSTEM_CONTROL, next);
+}
+
+/* ================================================================
  * Low-level register access
  * ================================================================ */
 
