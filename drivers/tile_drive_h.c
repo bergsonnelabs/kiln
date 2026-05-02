@@ -747,3 +747,51 @@ uint8_t tile_drive_h_program_otp(tile_t* tile)
     ctrl4 = drv_read(tile, DRV2605L_REG_CONTROL4);
     return (ctrl4 & 0x04) ? 1 : 0;
 }
+
+/* ============================================================== */
+/* Runtime — tier-2 idiomatic helpers                              */
+/* ============================================================== */
+
+void tile_drive_h_play_click(tile_t* tile)
+{
+    /* ROM library effect 1: "Strong Click — 100%". */
+    tile_drive_h_play(tile, 1, 1);
+}
+
+void tile_drive_h_play_double_tap(tile_t* tile)
+{
+    /* ROM library effect 10: "Double Click — 100%". The chip plays
+     * the two clicks back-to-back from a single sequencer slot;
+     * second slot terminates the sequence. */
+    static const uint8_t seq[2] = { 10, 0 };
+    tile_drive_h_play_sequence(tile, seq, 2);
+}
+
+void tile_drive_h_play_alert(tile_t* tile)
+{
+    /* Sharp tick (14) → strong sustained buzz (56) → sharp tick (14). */
+    static const uint8_t seq[4] = { 14, 56, 14, 0 };
+    tile_drive_h_play_sequence(tile, seq, 4);
+}
+
+void tile_drive_h_play_buzz(tile_t* tile, uint16_t ms)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "play_buzz: not ready");
+        return;
+    }
+
+    tile_drive_h_rtp_start(tile);
+    tile_drive_h_rtp_write(tile, 0x7F);  /* full-scale amplitude */
+    tile->hal->delay_ms(ms);
+    tile_drive_h_rtp_write(tile, 0x00);
+    tile_drive_h_rtp_stop(tile);
+}
+
+uint8_t tile_drive_h_is_calibrated(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY) return 0;
+    /* DIAG_RESULT is set by the cal engine: 0 = converged, 1 = failed. */
+    uint8_t status = drv_read(tile, DRV2605L_REG_STATUS);
+    return (status & DRV2605L_STATUS_DIAG_RESULT) ? 0 : 1;
+}
