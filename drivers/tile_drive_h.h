@@ -30,54 +30,10 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="ROM library selection"
- *   DRV2605 ships 5 effect libraries (LRA, ERM A/B/C/D) tuned for
- *   different actuator types. Driver always uses the default library;
- *   switching would let users pick a library matched to their wired
- *   actuator.
- *
- * @tessera unsupported severity=common category="Actuator type & calibration parameters"
- *   ERM_LRA bit + RATED_VOLTAGE / OD_CLAMP / FB_BRAKE_FACTOR / LOOP_GAIN
- *   registers tune the smart-loop for the connected actuator. Driver
- *   picks a fixed config at init; users with non-default actuators
- *   can't retune.
- *
- * @tessera unsupported severity=advanced category="PWM input mode (MODE=3)"
- *   Chip can accept a 10–250 kHz PWM signal on TRIG and drive the
- *   actuator directly from the duty cycle. Driver doesn't expose this
- *   mode — useful for offloading waveform generation to a hardware
- *   timer.
- *
- * @tessera unsupported severity=advanced category="Analog input mode (MODE=3 + N_PWM_ANALOG)"
- *   Chip can drive the actuator from a 0–1.8 V analog input on TRIG
- *   (mid-scale = no drive). Driver doesn't expose this mode — useful
- *   for waveform synthesis from a DAC.
- *
- * @tessera unsupported severity=advanced category="Audio-to-vibe (MODE=4)"
- *   Chip can accept analog audio on the TRIG pin and synthesize haptic
- *   effects from the envelope. Driver doesn't expose this mode — users
- *   wanting audio-coupled haptics need to write the MODE register
- *   manually.
- *
- * @tessera unsupported severity=advanced category="Auto-resonance tracking parameters"
- *   Bemf-gain / sample-time / blanking-time / current-dissipation
- *   registers tune the closed-loop resonance tracker. Driver uses chip
- *   defaults; tuning these matters for non-standard LRAs.
- *
- * @tessera unsupported severity=advanced category="Real-time playback envelope"
- *   RTP supports more shaping options (signed/unsigned input,
- *   data-format selection, ZC-detection bypass). Driver exposes the
- *   basic amplitude write but not the RTP-config registers.
- *
- * @tessera unsupported severity=advanced category="Sequencer slot effects"
- *   The 8-slot waveform sequencer supports per-slot wait-time and
- *   effect-index combinations. Driver writes effect IDs but doesn't
- *   expose the wait-slot mode or the per-slot delay register.
- *
- * @tessera unsupported severity=niche category="OTP programming"
- *   DRV2605 has one-time-programmable registers for production
- *   calibration. Driver doesn't expose OTP burning — intentionally
- *   niche, and dangerous (irreversible).
+ * (none — this driver covers every register-controllable feature of
+ * the DRV2605L. OTP burning is implemented in firmware but
+ * intentionally not exposed to Tessera because it permanently
+ * modifies the chip; access it from C via tile_drive_h_program_otp().)
  */
 
 #ifndef INC_TILE_DRIVE_H_H_
@@ -90,7 +46,7 @@
 /* Driver version                                                  */
 /* -------------------------------------------------------------- */
 
-#define TILE_DRIVE_H_VERSION_MAJOR  3
+#define TILE_DRIVE_H_VERSION_MAJOR  4
 #define TILE_DRIVE_H_VERSION_MINOR  0
 #define TILE_DRIVE_H_VERSION_PATCH  0
 
@@ -129,14 +85,23 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 #define DRV2605L_REG_WAVE_SEQ_6     0x0A  /**< Waveform sequence slot 6 */
 #define DRV2605L_REG_WAVE_SEQ_7     0x0B  /**< Waveform sequence slot 7 */
 #define DRV2605L_REG_GO             0x0C  /**< Go register (trigger playback) */
+#define DRV2605L_REG_ODT            0x0D  /**< Overdrive time offset */
+#define DRV2605L_REG_SPT            0x0E  /**< Sustain time offset (positive) */
+#define DRV2605L_REG_SNT            0x0F  /**< Sustain time offset (negative) */
+#define DRV2605L_REG_BRT            0x10  /**< Brake time offset */
+#define DRV2605L_REG_ATV_CTRL       0x11  /**< Audio-to-vibe control */
+#define DRV2605L_REG_ATV_MIN_INPUT  0x12  /**< Audio-to-vibe min input level */
+#define DRV2605L_REG_ATV_MAX_INPUT  0x13  /**< Audio-to-vibe max input level */
+#define DRV2605L_REG_ATV_MIN_DRIVE  0x14  /**< Audio-to-vibe min output drive */
+#define DRV2605L_REG_ATV_MAX_DRIVE  0x15  /**< Audio-to-vibe max output drive */
 #define DRV2605L_REG_RATED_VOLTAGE  0x16  /**< Rated voltage for actuator */
 #define DRV2605L_REG_OD_CLAMP       0x17  /**< Overdrive clamp voltage */
 #define DRV2605L_REG_A_CAL_COMP     0x18  /**< Auto-cal compensation result */
 #define DRV2605L_REG_A_CAL_BEMF     0x19  /**< Auto-cal back-EMF result */
 #define DRV2605L_REG_FEEDBACK_CTRL  0x1A  /**< Feedback control register */
-#define DRV2605L_REG_CONTROL1       0x1B  /**< Control1 (startup boost, drive time) */
+#define DRV2605L_REG_CONTROL1       0x1B  /**< Control1 (startup boost, AC couple, drive time) */
 #define DRV2605L_REG_CONTROL2       0x1C  /**< Control2 (bidir, sample/blank/idiss time) */
-#define DRV2605L_REG_CONTROL3       0x1D  /**< Control3 (open loop, RTP format) */
+#define DRV2605L_REG_CONTROL3       0x1D  /**< Control3 (open loop, RTP format, N_PWM_ANALOG) */
 #define DRV2605L_REG_CONTROL4       0x1E  /**< Control4 (auto-cal time, OTP) */
 #define DRV2605L_REG_VBAT           0x21  /**< Battery voltage monitor */
 #define DRV2605L_REG_LRA_PERIOD     0x22  /**< LRA resonance period */
@@ -160,6 +125,8 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 #define DRV2605L_MODE_INTERNAL_TRIG 0x00  /**< Internal trigger (I2C GO) */
 #define DRV2605L_MODE_EXT_EDGE      0x01  /**< External trigger, edge mode */
 #define DRV2605L_MODE_EXT_LEVEL     0x02  /**< External trigger, level mode */
+#define DRV2605L_MODE_PWM_ANALOG    0x03  /**< PWM or analog input on TRIG */
+#define DRV2605L_MODE_AUDIO         0x04  /**< Audio-to-vibe on TRIG */
 #define DRV2605L_MODE_RTP           0x05  /**< Real-time playback */
 #define DRV2605L_MODE_DIAGNOSTICS   0x06  /**< Actuator diagnostics */
 #define DRV2605L_MODE_CALIBRATION   0x07  /**< Auto-calibration */
@@ -185,6 +152,18 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 
 /** Maximum effects in a single waveform sequence. */
 #define DRV2605L_SEQ_MAX            8
+
+/* -------------------------------------------------------------- */
+/* Library selection                                               */
+/* -------------------------------------------------------------- */
+
+#define DRIVE_H_LIB_EMPTY    0  /**< Empty library (silence). */
+#define DRIVE_H_LIB_ERM_A    1  /**< TS2200 Library A (ERM, fixed open-loop overdrive). */
+#define DRIVE_H_LIB_ERM_B    2  /**< TS2200 Library B (ERM, no overdrive). */
+#define DRIVE_H_LIB_ERM_C    3  /**< TS2200 Library C (ERM, no overdrive). */
+#define DRIVE_H_LIB_ERM_D    4  /**< TS2200 Library D (ERM, no overdrive). */
+#define DRIVE_H_LIB_ERM_E    5  /**< TS2200 Library E (ERM, no overdrive). */
+#define DRIVE_H_LIB_LRA      6  /**< LRA Library (auto-resonance). */
 
 /* -------------------------------------------------------------- */
 /* Public API                                                      */
@@ -289,6 +268,26 @@ void tile_drive_h_load_sequence(tile_t* tile, const uint8_t *effects,
                                 uint8_t count);
 
 /**
+ * @brief  Set a per-slot wait delay in the loaded sequence.
+ *
+ * The 8 sequencer slots can each be marked as either an effect
+ * (MSB=0, low 7 bits = waveform 1..123) or a wait time (MSB=1,
+ * low 7 bits × 10 ms = pause). This call rewrites slot @p slot
+ * with a wait of @p delay_steps × 10 ms (max 1270 ms). Use it
+ * after tile_drive_h_load_sequence() to insert pauses between
+ * effects, e.g. play 1, wait 200 ms, play 47.
+ *
+ * Slot is silently ignored if >= 8; delay_steps is clipped to 0x7F.
+ *
+ * @tessera expose category=tile name=set_sequence_wait
+ * @param  tile         Pointer to tile handle
+ * @param  slot         Slot index 0..7
+ * @param  delay_steps  Wait length in 10 ms steps (0 = no wait, 0x7F = 1.27 s)
+ */
+void tile_drive_h_set_sequence_wait(tile_t* tile, uint8_t slot,
+                                    uint8_t delay_steps);
+
+/**
  * @brief  Set the trigger mode.
  *
  * Selects how the waveform sequencer is triggered:
@@ -326,6 +325,98 @@ uint8_t tile_drive_h_is_playing(tile_t* tile);
  */
 void tile_drive_h_stop(tile_t* tile);
 
+/* ---- ROM library / actuator tuning -------------------------------- */
+
+/**
+ * @brief  Switch the active waveform library at runtime.
+ *
+ * The DRV2605L ships with 6 ROM libraries: 1–5 are TS2200 ERM
+ * libraries (A–E), 6 is the LRA library. Library 0 is empty
+ * (silence). This call also updates the FEEDBACK_CTRL N_ERM_LRA
+ * bit so the chip drives the correct actuator type.
+ *
+ * @tessera expose category=tile name=set_library
+ * @param  tile     Pointer to tile handle
+ * @param  library  Library index 0..6 (use DRIVE_H_LIB_* constants)
+ */
+void tile_drive_h_set_library(tile_t* tile, uint8_t library);
+
+/**
+ * @brief  Tune the actuator drive parameters.
+ *
+ * Writes the four registers that the auto-calibration engine and
+ * smart-loop architecture consume:
+ *   - rated_voltage (0x16): full-scale RMS drive level (closed-loop ref).
+ *   - od_clamp      (0x17): peak overdrive ceiling (also open-loop ref).
+ *   - fb_brake      (0x1A bits 6:4): feedback brake factor (0=1× .. 6=16×, 7=off).
+ *   - loop_gain     (0x1A bits 3:2): closed-loop gain (0=Low .. 3=Very high).
+ *
+ * Pass 0 for rated_voltage / od_clamp to leave that register untouched.
+ * Pass 0xFF for fb_brake / loop_gain to leave them untouched. Run
+ * tile_drive_h_calibrate() afterwards to update A_CAL_COMP / A_CAL_BEMF.
+ *
+ * @tessera expose category=tile name=set_actuator_params
+ * @param  tile           Pointer to tile handle
+ * @param  rated_voltage  RATED_VOLTAGE byte (0 = no change)
+ * @param  od_clamp       OD_CLAMP byte (0 = no change)
+ * @param  fb_brake       Feedback brake factor 0..7 (0xFF = no change)
+ * @param  loop_gain      Loop gain 0..3 (0xFF = no change)
+ */
+void tile_drive_h_set_actuator_params(tile_t* tile,
+                                      uint8_t rated_voltage,
+                                      uint8_t od_clamp,
+                                      uint8_t fb_brake,
+                                      uint8_t loop_gain);
+
+/**
+ * @brief  Tune the LRA auto-resonance tracker.
+ *
+ * Writes Control2 (0x1C) bits for sample / blanking / current-
+ * dissipation timing. Default values (3 / 1 / 1) work for most
+ * coin-type LRAs at 175–235 Hz. Tune only if calibration fails to
+ * converge or the actuator runs at the edges of the 125–300 Hz
+ * window.
+ *
+ * Pass 0xFF for any field to leave that register slice untouched.
+ *
+ * @tessera expose category=tile name=set_resonance_params
+ * @param  tile           Pointer to tile handle
+ * @param  sample_time    Sample time 0..3 (0=150µs, 3=300µs; 0xFF = no change)
+ * @param  blanking_time  Blanking time 0..3 (0xFF = no change)
+ * @param  idiss_time     Current-dissipation time 0..3 (0xFF = no change)
+ */
+void tile_drive_h_set_resonance_params(tile_t* tile,
+                                       uint8_t sample_time,
+                                       uint8_t blanking_time,
+                                       uint8_t idiss_time);
+
+/* ---- Library waveform timing offsets ------------------------------ */
+
+/**
+ * @brief  Tune the open-loop library waveform timing.
+ *
+ * Adds signed offsets (in 5 ms steps) to the overdrive, sustain,
+ * and brake portions of every library effect. Offsets are 8-bit
+ * two's complement, so range is -640..+635 ms per knob.
+ *
+ * These offsets are only honoured in open-loop mode — closed-loop
+ * mode generates them automatically from back-EMF feedback.
+ *
+ * @tessera expose category=tile name=set_waveform_timing
+ * @param  tile          Pointer to tile handle
+ * @param  overdrive     Overdrive Time Offset (0x0D, signed × 5 ms)
+ * @param  sustain_pos   Sustain-Time Positive Offset (0x0E, signed × 5 ms)
+ * @param  sustain_neg   Sustain-Time Negative Offset (0x0F, signed × 5 ms)
+ * @param  brake         Brake Time Offset (0x10, signed × 5 ms)
+ */
+void tile_drive_h_set_waveform_timing(tile_t* tile,
+                                      int8_t overdrive,
+                                      int8_t sustain_pos,
+                                      int8_t sustain_neg,
+                                      int8_t brake);
+
+/* ---- RTP (real-time playback) ------------------------------------- */
+
 /**
  * @brief  Enter RTP (Real-Time Playback) mode.
  *
@@ -347,11 +438,140 @@ void tile_drive_h_rtp_start(tile_t* tile);
 void tile_drive_h_rtp_write(tile_t* tile, uint8_t amplitude);
 
 /**
+ * @brief  Set the RTP data format.
+ *
+ * Selects how RTP_INPUT bytes are interpreted:
+ *   - signed (default for closed-loop bidirectional): 0x80 = full
+ *     reverse, 0x00 = mid-scale (no drive), 0x7F = full forward.
+ *   - unsigned (recommended for closed-loop unidirectional and
+ *     open-loop): 0x00 = no drive, 0xFF = full drive.
+ *
+ * Also exposes the BIDIR_INPUT bit (CONTROL2[7]) which selects
+ * unidirectional vs bidirectional input interpretation; tie this
+ * to the same convention as the format flag.
+ *
+ * @tessera expose category=tile name=set_rtp_format
+ * @param  tile        Pointer to tile handle
+ * @param  unsigned_   1 = unsigned data format, 0 = signed (default)
+ * @param  bidir       1 = bidirectional input (default), 0 = unidirectional
+ */
+void tile_drive_h_set_rtp_format(tile_t* tile, uint8_t unsigned_, uint8_t bidir);
+
+/**
  * @brief  Exit RTP mode and return to internal trigger mode.
  *
  * @tessera expose category=tile name=rtp_stop
  */
 void tile_drive_h_rtp_stop(tile_t* tile);
+
+/* ---- PWM / analog input modes ------------------------------------- */
+
+/**
+ * @brief  Drive the actuator from a PWM signal on pad 2 (TRIG).
+ *
+ * Sets MODE=3 with N_PWM_ANALOG=0. The chip accepts a 10–250 kHz
+ * PWM signal: duty cycle directly modulates output amplitude
+ * (50 % = no drive in bidirectional mode; 0 % = no drive in
+ * unidirectional mode). Useful for offloading waveform generation
+ * to a hardware timer or audio rendering pipeline.
+ *
+ * Call tile_drive_h_set_rtp_format() first if you need to change
+ * the unidirectional / bidirectional interpretation.
+ *
+ * @tessera expose category=tile name=pwm_input_start
+ */
+void tile_drive_h_pwm_input_start(tile_t* tile);
+
+/**
+ * @brief  Drive the actuator from an analog voltage on pad 2 (TRIG).
+ *
+ * Sets MODE=3 with N_PWM_ANALOG=1. Reference voltage is 1.8 V:
+ * 0 V → 0 % drive, 0.9 V → 50 %, 1.8 V → 100 %. Useful for waveform
+ * synthesis from a DAC or analog signal source.
+ *
+ * @note Pad 2 (TRIG) is a digital pad on the tile. The chip pin
+ *       itself accepts 0–1.8 V analog, but the driving Core must
+ *       output a clean analog level — Drive.H has no input filter
+ *       or AC-coupling cap on TRIG.
+ *
+ * @tessera expose category=tile name=analog_input_start
+ */
+void tile_drive_h_analog_input_start(tile_t* tile);
+
+/**
+ * @brief  Exit PWM / analog input mode.
+ *
+ * Returns to internal-trigger mode (MODE=0). Same effect as
+ * tile_drive_h_audio_stop(); both modes share the IN/TRIG pin.
+ *
+ * @tessera expose category=tile name=pwm_input_stop
+ */
+void tile_drive_h_pwm_input_stop(tile_t* tile);
+
+/* ---- Audio-to-vibe ------------------------------------------------ */
+
+/**
+ * @brief  Drive the actuator from an AC-coupled audio signal.
+ *
+ * Sets MODE=4 (audio-to-vibe), N_PWM_ANALOG=1 (analog), and
+ * AC_COUPLE=1 (0.9 V common-mode bias on IN/TRIG). The chip
+ * envelope-detects the audio and drives haptic vibration at
+ * matching intensity.
+ *
+ * @note The DRV2605L expects an AC-coupled line-level audio
+ *       source (1.8 Vpp full-scale). Drive.H rev a does not
+ *       include a series capacitor on pad 2 — users wanting
+ *       audio-to-vibe must add their own external 1 µF AC-coupling
+ *       cap between the audio source and pad 2.
+ *
+ * @tessera expose category=tile name=audio_start
+ */
+void tile_drive_h_audio_start(tile_t* tile);
+
+/**
+ * @brief  Tune the audio-to-vibe envelope detector.
+ *
+ * Configures the four ATV control registers:
+ *   - ATV_CTRL  (0x11): peak-detect time (0=10ms..3=40ms) and
+ *     low-pass filter cutoff (0=100Hz..3=200Hz).
+ *   - ATV_MIN_INPUT (0x12): minimum input level below which the
+ *     envelope is gated (output silent). raw × 1.8/255 V.
+ *   - ATV_MAX_INPUT (0x13): full-scale input level. raw × 1.8/255 V.
+ *   - ATV_MIN_DRIVE (0x14): minimum output drive once unmuted.
+ *     raw / 255 × 100 %.
+ *   - ATV_MAX_DRIVE (0x15): maximum output drive at full input.
+ *     raw / 255 × 100 %.
+ *
+ * Pass 0xFF for any field to leave it untouched.
+ *
+ * @tessera expose category=tile name=set_audio_params
+ * @param  tile         Pointer to tile handle
+ * @param  peak_time    ATH_PEAK_TIME 0..3 (10/20/30/40 ms; 0xFF = no change)
+ * @param  filter       ATH_FILTER 0..3 (100/125/150/200 Hz; 0xFF = no change)
+ * @param  min_input    Minimum input gate (0xFF = no change)
+ * @param  max_input    Full-scale input level (0xFF = no change)
+ * @param  min_drive    Minimum output drive once active (0xFF = no change)
+ * @param  max_drive    Full-scale output drive (0xFF = no change)
+ */
+void tile_drive_h_set_audio_params(tile_t* tile,
+                                   uint8_t peak_time,
+                                   uint8_t filter,
+                                   uint8_t min_input,
+                                   uint8_t max_input,
+                                   uint8_t min_drive,
+                                   uint8_t max_drive);
+
+/**
+ * @brief  Exit audio-to-vibe mode.
+ *
+ * Returns to internal-trigger mode (MODE=0) and clears the
+ * AC_COUPLE bit. Same physical effect as tile_drive_h_pwm_input_stop().
+ *
+ * @tessera expose category=tile name=audio_stop
+ */
+void tile_drive_h_audio_stop(tile_t* tile);
+
+/* ---- Status / diagnostics / calibration --------------------------- */
 
 /**
  * @brief  Read the raw STATUS register (0x00).
@@ -414,6 +634,8 @@ uint16_t tile_drive_h_get_vbat_mv(tile_t* tile);
  */
 uint16_t tile_drive_h_get_resonance_hz(tile_t* tile);
 
+/* ---- Power management --------------------------------------------- */
+
 /**
  * @brief  Enter low-power standby.
  *
@@ -434,5 +656,44 @@ void tile_drive_h_standby(tile_t* tile);
  * @tessera expose category=tile name=wake
  */
 void tile_drive_h_wake(tile_t* tile);
+
+/* ---- One-time programmable memory (DESTRUCTIVE) ------------------- */
+
+/**
+ * @brief  Burn the current calibration into on-chip OTP.
+ *
+ * Writes the current contents of registers 0x16–0x1A
+ * (RATED_VOLTAGE, OD_CLAMP, A_CAL_COMP, A_CAL_BEMF, FEEDBACK_CTRL)
+ * to the DRV2605L's nonvolatile OTP cells. After this, those values
+ * become the power-on defaults — the chip skips run-time calibration
+ * on subsequent boots.
+ *
+ * @warning IRREVERSIBLE. The DRV2605L OTP can be programmed exactly
+ *          once per device. A bad programming run permanently
+ *          mistunes the chip. NOT exposed to Tessera by design.
+ *
+ * Pre-conditions:
+ *   - Run tile_drive_h_calibrate() first and confirm pass.
+ *   - VDD must be 4.0–4.4 V at the moment of programming
+ *     (datasheet section 7.5.7). Lower VDD silently corrupts the cells.
+ *
+ * Returns 1 if the OTP_STATUS bit reads 1 after programming, 0 if
+ * the burn failed or OTP was already programmed.
+ *
+ * @param  tile  Pointer to tile handle
+ * @return 1 on success, 0 on failure / already-programmed
+ */
+uint8_t tile_drive_h_program_otp(tile_t* tile);
+
+/**
+ * @brief  Read the OTP_STATUS bit.
+ *
+ * Returns 1 if the chip's OTP cells have already been programmed
+ * (registers 0x16–0x1A boot from OTP rather than chip defaults).
+ *
+ * @tessera expose category=tile name=get_otp_status returns=bool
+ * @return 1 if OTP is programmed, 0 if unprogrammed
+ */
+uint8_t tile_drive_h_get_otp_status(tile_t* tile);
 
 #endif /* INC_TILE_DRIVE_H_H_ */
