@@ -399,3 +399,175 @@ void tile_drive_p_set_upi(tile_t* tile, uint8_t enabled)
     }
     bos_write(tile, BOS1921_REG_PARCAP, st->parcap);
 }
+
+/* ============================================================== */
+/* Runtime — tier-2 idiomatic helpers                              */
+/* ============================================================== */
+
+#define DRIVE_P_SAMPLE_RATE_HZ  8000  /* FIFO mode default per chip */
+
+/** Quarter-wave Q12 sine LUT — sin(π/2 × i/64) × 2047 for i=0..63.
+ *  Used by sine_q12() to synthesise samples without pulling in libm. */
+static const int16_t DRIVE_P_QSINE[64] = {
+        0,    50,   100,   151,   201,   251,   300,   350,
+      399,   449,   497,   546,   594,   642,   690,   737,
+      783,   830,   875,   920,   965,  1009,  1052,  1095,
+     1137,  1179,  1219,  1259,  1299,  1337,  1375,  1411,
+     1447,  1483,  1517,  1550,  1582,  1614,  1644,  1674,
+     1702,  1729,  1756,  1781,  1805,  1828,  1850,  1871,
+     1891,  1910,  1927,  1944,  1959,  1973,  1986,  1997,
+     2008,  2017,  2025,  2032,  2037,  2041,  2045,  2046,
+};
+
+/** Q12 sine via 64-entry quarter LUT + symmetry. Phase is 16-bit
+ *  (0..65535 = 0..2π). Output range −2046..+2046. */
+static int16_t sine_q12(uint16_t phase)
+{
+    uint8_t  q   = (uint8_t)((phase >> 14) & 0x03);
+    uint8_t  idx = (uint8_t)((phase >> 8) & 0x3F);
+    int16_t  v;
+    switch (q) {
+        case 0: v = DRIVE_P_QSINE[idx];        break;
+        case 1: v = DRIVE_P_QSINE[63 - idx];   break;
+        case 2: v = (int16_t)-DRIVE_P_QSINE[idx];      break;
+        default: v = (int16_t)-DRIVE_P_QSINE[63 - idx]; break;
+    }
+    return v;
+}
+
+/** Scale a Q12 sample (-2046..+2046) by intensity_pct (0..100).
+ *  Output stays in 12-bit signed range. */
+static int16_t scale_intensity(int16_t sample, uint8_t intensity_pct)
+{
+    if (intensity_pct > 100) intensity_pct = 100;
+    return (int16_t)(((int32_t)sample * intensity_pct) / 100);
+}
+
+/** Clamp an int16 sample to the 12-bit signed range the chip uses
+ *  (−2048..+2047). Caller buffers from `play_samples` may overshoot. */
+static int16_t clamp12(int16_t s)
+{
+    if (s >  2047) return  2047;
+    if (s < -2048) return -2048;
+    return s;
+}
+
+void tile_drive_p_play_click(tile_t* tile, uint8_t intensity_pct)
+{
+    /* Half-sine over 16 samples ≈ 2 ms at 8 ksps — sharp tactile
+     * click, well above the piezo's mechanical resonance. */
+    tile_drive_p_set_mode(tile, DRIVE_P_MODE_PLAY_FIFO);
+    for (uint8_t i = 0; i < 16; i++) {
+        int16_t s = sine_q12((uint16_t)(i * 2048));  /* 0..π over 16 samples */
+        s = scale_intensity(s, intensity_pct);
+        tile_drive_p_write_fifo(tile, s);
+    }
+}
+
+void tile_drive_p_play_sine(tile_t* tile, uint16_t freq_hz,
+                            uint8_t intensity_pct, uint16_t ms)
+{
+    if (freq_hz == 0 || ms == 0) return;
+
+    tile_drive_p_set_mode(tile, DRIVE_P_MODE_PLAY_FIFO);
+
+    /* Phase delta per sample = freq × 65536 / sample_rate, Q16. */
+    uint32_t phase = 0;
+    uint32_t step  = ((uint32_t)freq_hz * 65536u) / DRIVE_P_SAMPLE_RATE_HZ;
+    /* Total samples = ms × 8 (samples per ms at 8 ksps). */
+    uint32_t total = (uint32_t)ms * (DRIVE_P_SAMPLE_RATE_HZ / 1000);
+
+    /* 1024-deep FIFO — refill every 64 samples (8 ms) so the chip
+     * never starves. The chip drains at the sample rate; we wait
+     * 8 ms between refill chunks to let the FIFO drain by the same
+     * amount we're about to push. */
+    const uint32_t CHUNK = 64;
+    while (total > 0) {
+        uint32_t n = (total < CHUNK) ? total : CHUNK;
+        for (uint32_t i = 0; i < n; i++) {
+            int16_t s = sine_q12((uint16_t)(phase >> 0));
+            s = scale_intensity(s, intensity_pct);
+            tile_drive_p_write_fifo(tile, s);
+            phase = (phase + step) & 0xFFFF;
+        }
+        total -= n;
+        if (total > 0) tile->hal->delay_ms(8);
+    }
+}
+
+void tile_drive_p_play_buzz(tile_t* tile, uint8_t intensity_pct, uint16_t ms)
+{
+    /* 150 Hz — typical small-form-factor piezo resonance band. */
+    tile_drive_p_play_sine(tile, 150, intensity_pct, ms);
+}
+
+void tile_drive_p_play_pulse_train(tile_t* tile, uint8_t intensity_pct,
+                                   uint8_t count, uint16_t gap_ms)
+{
+    for (uint8_t i = 0; i < count; i++) {
+        tile_drive_p_play_click(tile, intensity_pct);
+        if (i + 1 < count && gap_ms > 0) {
+            tile->hal->delay_ms(gap_ms);
+        }
+    }
+}
+
+uint8_t tile_drive_p_is_touched(tile_t* tile, uint16_t threshold_mv)
+{
+    /* Switch into fine sense mode and read one sample. The chip's
+     * sense channel returns a signed 12-bit value at 7.6 mV/LSB
+     * (fine mode); convert to mV and compare against the absolute
+     * threshold. */
+    tile_drive_p_set_mode(tile, DRIVE_P_MODE_SENSE_FINE);
+    int16_t raw = tile_drive_p_read_sense(tile);
+    int32_t mv  = ((int32_t)raw * 76) / 10;  /* 7.6 mV/LSB → integer scaling */
+    if (mv < 0) mv = -mv;
+    return (mv >= (int32_t)threshold_mv) ? 1 : 0;
+}
+
+uint8_t tile_drive_p_play_on_touch(tile_t* tile, uint8_t intensity_pct,
+                                   uint16_t threshold_mv,
+                                   uint32_t timeout_ms)
+{
+    /* Poll sense at 1 ms cadence. is_touched() leaves the chip in
+     * sense mode; play_click() switches to FIFO mode. */
+    for (uint32_t elapsed = 0; elapsed < timeout_ms; elapsed++) {
+        if (tile_drive_p_is_touched(tile, threshold_mv)) {
+            tile_drive_p_play_click(tile, intensity_pct);
+            return 1;
+        }
+        tile->hal->delay_ms(1);
+    }
+    return 0;
+}
+
+void tile_drive_p_play_samples(tile_t* tile, const int16_t* samples,
+                               uint16_t count)
+{
+    if (!samples || count == 0) return;
+
+    tile_drive_p_set_mode(tile, DRIVE_P_MODE_PLAY_FIFO);
+
+    /* Refill in chunks to avoid overrunning the 1024-deep FIFO. */
+    const uint16_t CHUNK = 64;
+    uint16_t i = 0;
+    while (i < count) {
+        uint16_t n = ((count - i) < CHUNK) ? (uint16_t)(count - i) : CHUNK;
+        for (uint16_t j = 0; j < n; j++) {
+            tile_drive_p_write_fifo(tile, clamp12(samples[i + j]));
+        }
+        i += n;
+        if (i < count) tile->hal->delay_ms(8);
+    }
+}
+
+void tile_drive_p_read_sense_samples(tile_t* tile, int16_t* buf,
+                                     uint16_t count)
+{
+    if (!buf || count == 0) return;
+
+    tile_drive_p_set_mode(tile, DRIVE_P_MODE_SENSE_FINE);
+    for (uint16_t i = 0; i < count; i++) {
+        buf[i] = tile_drive_p_read_sense(tile);
+    }
+}
