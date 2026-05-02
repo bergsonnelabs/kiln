@@ -428,3 +428,322 @@ void tile_drive_h_wake(tile_t* tile)
     tile->hal->delay_ms(5);
     tile->state = TILE_STATE_READY;
 }
+
+/* -------------------------------------------------------------- */
+/* Sequencer slot wait                                             */
+/* -------------------------------------------------------------- */
+
+void tile_drive_h_set_sequence_wait(tile_t* tile, uint8_t slot,
+                                    uint8_t delay_steps)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_sequence_wait: not ready");
+        return;
+    }
+    if (slot >= DRV2605L_SEQ_MAX) return;
+
+    /* Slot byte: bit 7 = WAIT flag, bits 6:0 = wait time × 10 ms.
+     * Clip to 0x7F to keep the WAIT bit asserted. */
+    uint8_t value = 0x80 | (delay_steps & 0x7F);
+    drv_write(tile, DRV2605L_REG_WAVE_SEQ_0 + slot, value);
+}
+
+/* -------------------------------------------------------------- */
+/* Library + actuator-tuning runtime setters                       */
+/* -------------------------------------------------------------- */
+
+void tile_drive_h_set_library(tile_t* tile, uint8_t library)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_library: not ready");
+        return;
+    }
+    if (library > DRIVE_H_LIB_LRA) return;
+
+    /* Update LIBRARY_SEL (low 3 bits, preserve HI_Z and reserved). */
+    uint8_t lib_reg = drv_read(tile, DRV2605L_REG_LIBRARY_SEL);
+    lib_reg = (lib_reg & ~0x07) | (library & 0x07);
+    drv_write(tile, DRV2605L_REG_LIBRARY_SEL, lib_reg);
+
+    /* Update N_ERM_LRA bit in FEEDBACK_CTRL: 1 = LRA, 0 = ERM.
+     * Library 6 = LRA; libraries 1..5 = ERM (library 0 leaves it
+     * at whatever the user previously selected). */
+    if (library != DRIVE_H_LIB_EMPTY) {
+        uint8_t fb = drv_read(tile, DRV2605L_REG_FEEDBACK_CTRL);
+        if (library == DRIVE_H_LIB_LRA) {
+            fb |= 0x80;
+        } else {
+            fb &= ~0x80;
+        }
+        drv_write(tile, DRV2605L_REG_FEEDBACK_CTRL, fb);
+    }
+}
+
+void tile_drive_h_set_actuator_params(tile_t* tile,
+                                      uint8_t rated_voltage,
+                                      uint8_t od_clamp,
+                                      uint8_t fb_brake,
+                                      uint8_t loop_gain)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_actuator_params: not ready");
+        return;
+    }
+
+    if (rated_voltage != 0) {
+        drv_write(tile, DRV2605L_REG_RATED_VOLTAGE, rated_voltage);
+    }
+    if (od_clamp != 0) {
+        drv_write(tile, DRV2605L_REG_OD_CLAMP, od_clamp);
+    }
+
+    /* FEEDBACK_CTRL: bit 7 N_ERM_LRA (preserve), bits 6:4 FB_BRAKE_FACTOR,
+     * bits 3:2 LOOP_GAIN, bits 1:0 BEMF_GAIN (preserve). */
+    if (fb_brake != 0xFF || loop_gain != 0xFF) {
+        uint8_t fb = drv_read(tile, DRV2605L_REG_FEEDBACK_CTRL);
+        if (fb_brake != 0xFF) {
+            fb = (fb & ~0x70) | ((fb_brake & 0x07) << 4);
+        }
+        if (loop_gain != 0xFF) {
+            fb = (fb & ~0x0C) | ((loop_gain & 0x03) << 2);
+        }
+        drv_write(tile, DRV2605L_REG_FEEDBACK_CTRL, fb);
+    }
+}
+
+void tile_drive_h_set_resonance_params(tile_t* tile,
+                                       uint8_t sample_time,
+                                       uint8_t blanking_time,
+                                       uint8_t idiss_time)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_resonance_params: not ready");
+        return;
+    }
+
+    if (sample_time == 0xFF && blanking_time == 0xFF && idiss_time == 0xFF) {
+        return;
+    }
+
+    /* CONTROL2: bit 7 BIDIR_INPUT (preserve), bit 6 BRAKE_STABILIZER
+     * (preserve), bits 5:4 SAMPLE_TIME, bits 3:2 BLANKING_TIME,
+     * bits 1:0 IDISS_TIME. */
+    uint8_t ctrl2 = drv_read(tile, DRV2605L_REG_CONTROL2);
+    if (sample_time != 0xFF) {
+        ctrl2 = (ctrl2 & ~0x30) | ((sample_time & 0x03) << 4);
+    }
+    if (blanking_time != 0xFF) {
+        ctrl2 = (ctrl2 & ~0x0C) | ((blanking_time & 0x03) << 2);
+    }
+    if (idiss_time != 0xFF) {
+        ctrl2 = (ctrl2 & ~0x03) | (idiss_time & 0x03);
+    }
+    drv_write(tile, DRV2605L_REG_CONTROL2, ctrl2);
+}
+
+/* -------------------------------------------------------------- */
+/* Library waveform timing offsets (open-loop only)                */
+/* -------------------------------------------------------------- */
+
+void tile_drive_h_set_waveform_timing(tile_t* tile,
+                                      int8_t overdrive,
+                                      int8_t sustain_pos,
+                                      int8_t sustain_neg,
+                                      int8_t brake)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_waveform_timing: not ready");
+        return;
+    }
+    drv_write(tile, DRV2605L_REG_ODT, (uint8_t)overdrive);
+    drv_write(tile, DRV2605L_REG_SPT, (uint8_t)sustain_pos);
+    drv_write(tile, DRV2605L_REG_SNT, (uint8_t)sustain_neg);
+    drv_write(tile, DRV2605L_REG_BRT, (uint8_t)brake);
+}
+
+/* -------------------------------------------------------------- */
+/* RTP format                                                      */
+/* -------------------------------------------------------------- */
+
+void tile_drive_h_set_rtp_format(tile_t* tile, uint8_t unsigned_, uint8_t bidir)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_rtp_format: not ready");
+        return;
+    }
+
+    /* CONTROL3 bit 3 = DATA_FORMAT_RTP (1 = unsigned, 0 = signed). */
+    uint8_t ctrl3 = drv_read(tile, DRV2605L_REG_CONTROL3);
+    if (unsigned_) ctrl3 |=  0x08;
+    else           ctrl3 &= ~0x08;
+    drv_write(tile, DRV2605L_REG_CONTROL3, ctrl3);
+
+    /* CONTROL2 bit 7 = BIDIR_INPUT (1 = bidirectional, 0 = unidirectional). */
+    uint8_t ctrl2 = drv_read(tile, DRV2605L_REG_CONTROL2);
+    if (bidir) ctrl2 |=  0x80;
+    else       ctrl2 &= ~0x80;
+    drv_write(tile, DRV2605L_REG_CONTROL2, ctrl2);
+}
+
+/* -------------------------------------------------------------- */
+/* PWM / analog input modes                                        */
+/* -------------------------------------------------------------- */
+
+void tile_drive_h_pwm_input_start(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "pwm_input_start: not ready");
+        return;
+    }
+
+    /* Clear N_PWM_ANALOG (bit 1) — 0 = PWM input.
+     * Also clear AC_COUPLE in CONTROL1 (bit 5) — disables analog bias. */
+    uint8_t ctrl3 = drv_read(tile, DRV2605L_REG_CONTROL3);
+    ctrl3 &= ~0x02;
+    drv_write(tile, DRV2605L_REG_CONTROL3, ctrl3);
+
+    uint8_t ctrl1 = drv_read(tile, DRV2605L_REG_CONTROL1);
+    ctrl1 &= ~0x20;
+    drv_write(tile, DRV2605L_REG_CONTROL1, ctrl1);
+
+    drv_write(tile, DRV2605L_REG_MODE, DRV2605L_MODE_PWM_ANALOG);
+}
+
+void tile_drive_h_analog_input_start(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "analog_input_start: not ready");
+        return;
+    }
+
+    /* Set N_PWM_ANALOG (bit 1) — 1 = analog input. */
+    uint8_t ctrl3 = drv_read(tile, DRV2605L_REG_CONTROL3);
+    ctrl3 |= 0x02;
+    drv_write(tile, DRV2605L_REG_CONTROL3, ctrl3);
+
+    /* AC_COUPLE stays cleared for DC-coupled analog (the user can set
+     * audio mode separately if AC coupling is needed). */
+    uint8_t ctrl1 = drv_read(tile, DRV2605L_REG_CONTROL1);
+    ctrl1 &= ~0x20;
+    drv_write(tile, DRV2605L_REG_CONTROL1, ctrl1);
+
+    drv_write(tile, DRV2605L_REG_MODE, DRV2605L_MODE_PWM_ANALOG);
+}
+
+void tile_drive_h_pwm_input_stop(tile_t* tile)
+{
+    /* Return to internal trigger. AC_COUPLE left wherever audio_start
+     * put it; pwm_input_start clears it on next entry. */
+    drv_write(tile, DRV2605L_REG_MODE, DRV2605L_MODE_INTERNAL_TRIG);
+}
+
+/* -------------------------------------------------------------- */
+/* Audio-to-vibe                                                   */
+/* -------------------------------------------------------------- */
+
+void tile_drive_h_audio_start(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "audio_start: not ready");
+        return;
+    }
+
+    /* Audio-to-vibe needs N_PWM_ANALOG=1 (analog) AND AC_COUPLE=1. */
+    uint8_t ctrl3 = drv_read(tile, DRV2605L_REG_CONTROL3);
+    ctrl3 |= 0x02;
+    drv_write(tile, DRV2605L_REG_CONTROL3, ctrl3);
+
+    uint8_t ctrl1 = drv_read(tile, DRV2605L_REG_CONTROL1);
+    ctrl1 |= 0x20;
+    drv_write(tile, DRV2605L_REG_CONTROL1, ctrl1);
+
+    drv_write(tile, DRV2605L_REG_MODE, DRV2605L_MODE_AUDIO);
+}
+
+void tile_drive_h_set_audio_params(tile_t* tile,
+                                   uint8_t peak_time,
+                                   uint8_t filter,
+                                   uint8_t min_input,
+                                   uint8_t max_input,
+                                   uint8_t min_drive,
+                                   uint8_t max_drive)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_audio_params: not ready");
+        return;
+    }
+
+    if (peak_time != 0xFF || filter != 0xFF) {
+        uint8_t atv = drv_read(tile, DRV2605L_REG_ATV_CTRL);
+        if (peak_time != 0xFF) {
+            atv = (atv & ~0x0C) | ((peak_time & 0x03) << 2);
+        }
+        if (filter != 0xFF) {
+            atv = (atv & ~0x03) | (filter & 0x03);
+        }
+        drv_write(tile, DRV2605L_REG_ATV_CTRL, atv);
+    }
+    if (min_input != 0xFF) {
+        drv_write(tile, DRV2605L_REG_ATV_MIN_INPUT, min_input);
+    }
+    if (max_input != 0xFF) {
+        drv_write(tile, DRV2605L_REG_ATV_MAX_INPUT, max_input);
+    }
+    if (min_drive != 0xFF) {
+        drv_write(tile, DRV2605L_REG_ATV_MIN_DRIVE, min_drive);
+    }
+    if (max_drive != 0xFF) {
+        drv_write(tile, DRV2605L_REG_ATV_MAX_DRIVE, max_drive);
+    }
+}
+
+void tile_drive_h_audio_stop(tile_t* tile)
+{
+    /* Clear AC_COUPLE so subsequent PWM/analog modes start clean. */
+    uint8_t ctrl1 = drv_read(tile, DRV2605L_REG_CONTROL1);
+    ctrl1 &= ~0x20;
+    drv_write(tile, DRV2605L_REG_CONTROL1, ctrl1);
+
+    drv_write(tile, DRV2605L_REG_MODE, DRV2605L_MODE_INTERNAL_TRIG);
+}
+
+/* -------------------------------------------------------------- */
+/* OTP programming (DESTRUCTIVE — no @tessera expose)              */
+/* -------------------------------------------------------------- */
+
+uint8_t tile_drive_h_get_otp_status(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY && tile->state != TILE_STATE_SLEEPING) {
+        return 0;
+    }
+    /* CONTROL4 bit 2 = OTP_STATUS (read-only). */
+    return (drv_read(tile, DRV2605L_REG_CONTROL4) & 0x04) ? 1 : 0;
+}
+
+uint8_t tile_drive_h_program_otp(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "program_otp: not ready");
+        return 0;
+    }
+
+    /* Refuse if already programmed — a second burn does nothing useful
+     * and would confuse the caller. */
+    uint8_t ctrl4 = drv_read(tile, DRV2605L_REG_CONTROL4);
+    if (ctrl4 & 0x04) {
+        TILE_ON_ERROR(tile, "program_otp: OTP already programmed");
+        return 0;
+    }
+
+    /* Set OTP_PROGRAM bit (CONTROL4 bit 0). The chip latches values
+     * 0x16..0x1A into OTP cells. Datasheet 7.5.7: VDD must be 4.0–4.4 V
+     * during this call — we cannot enforce that from firmware. */
+    drv_write(tile, DRV2605L_REG_CONTROL4, ctrl4 | 0x01);
+
+    /* Programming completes within a few ms; wait generously. */
+    tile->hal->delay_ms(50);
+
+    /* Verify by reading OTP_STATUS. */
+    ctrl4 = drv_read(tile, DRV2605L_REG_CONTROL4);
+    return (ctrl4 & 0x04) ? 1 : 0;
+}
