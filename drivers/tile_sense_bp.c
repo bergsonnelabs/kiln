@@ -389,6 +389,16 @@ uint8_t tile_sense_bp_get_int_source(tile_t *tile)
     return bp_read_reg(tile, ILPS22QS_REG_INT_SOURCE);
 }
 
+uint8_t tile_sense_bp_is_boot_complete(tile_t *tile)
+{
+    /* BOOT_ON (bit 7 of INT_SOURCE) reads 1 while the NVM-trim
+     * reload is in flight, 0 once the chip is ready. The BOOT_ON
+     * bit isn't cleared on read (only IA / PH / PL are), so this
+     * call is safe to spin on. */
+    uint8_t src = bp_read_reg(tile, ILPS22QS_REG_INT_SOURCE);
+    return (src & ILPS22QS_INT_SRC_BOOT_ON) ? 0 : 1;
+}
+
 /* ---- Reference / offset calibration ---- */
 
 void tile_sense_bp_set_autozero(tile_t *tile)
