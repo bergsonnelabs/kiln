@@ -539,6 +539,68 @@ void tile_sense_i_6p6_int1_wom(tile_t *tile, uint8_t enabled)
     icm_modify(tile, ICM42686P_REG_INT_SOURCE1, 0x07, val);
 }
 
+/** @brief Configure INT2 pin behavior.
+ *
+ * INT_CONFIG bits [5:3] hold INT2's polarity / drive / mode (mirroring
+ * INT1's [2:0]). Caller passes the same flag layout as `int1_config`;
+ * we shift up by 3 internally. */
+void tile_sense_i_6p6_int2_config(tile_t *tile, uint8_t config)
+{
+    icm_modify(tile, ICM42686P_REG_INT_CONFIG, 0x38,
+               (uint8_t)((config & 0x07) << 3));
+}
+
+/** @brief Route data-ready interrupt to INT2.
+ *
+ * INT_SOURCE3 bit 3 = UI_DRDY_INT2_EN. */
+void tile_sense_i_6p6_int2_data_ready(tile_t *tile, uint8_t enabled)
+{
+    icm_modify(tile, ICM42686P_REG_INT_SOURCE3, 0x08, enabled ? 0x08 : 0x00);
+}
+
+/** @brief Route FIFO watermark interrupt to INT2.
+ *
+ * INT_SOURCE3 bit 2 = FIFO_THS_INT2_EN. */
+void tile_sense_i_6p6_int2_fifo_ths(tile_t *tile, uint8_t enabled)
+{
+    icm_modify(tile, ICM42686P_REG_INT_SOURCE3, 0x04, enabled ? 0x04 : 0x00);
+}
+
+/** @brief Route WOM (wake-on-motion) interrupt to INT2.
+ *
+ * INT_SOURCE4 bits [2:0] = WOM_X/Y/Z_INT2_EN. */
+void tile_sense_i_6p6_int2_wom(tile_t *tile, uint8_t enabled)
+{
+    uint8_t val = enabled ? 0x07 : 0x00;
+    icm_modify(tile, ICM42686P_REG_INT_SOURCE4, 0x07, val);
+}
+
+/** @brief Set INT pin pulse-width (chip-wide; INT_CONFIG1 bit 6). */
+void tile_sense_i_6p6_set_int_pulse_duration(tile_t *tile,
+                                             sense_i_6p6_int_pulse_t pulse)
+{
+    icm_modify(tile, ICM42686P_REG_INT_CONFIG1, 0x40,
+               (pulse == SENSE_I_6P6_INT_PULSE_8US) ? 0x40 : 0x00);
+}
+
+/** @brief Reset a single chip subsystem (APEX or TEMP). */
+void tile_sense_i_6p6_subsystem_reset(tile_t *tile,
+                                      sense_i_6p6_subsystem_t which)
+{
+    /* SIGNAL_PATH_RESET bits:
+     *   bit 5 DMP_INIT_EN     — re-init APEX (DMP) algorithms
+     *   bit 4 DMP_MEM_RESET_EN — clear APEX (DMP) state RAM
+     *   bit 0 TEMP_RST         — reset temperature signal path
+     * Each bit auto-clears after the chip processes it. */
+    uint8_t mask;
+    switch (which) {
+        case SENSE_I_6P6_RESET_APEX: mask = 0x30; break;  /* DMP_INIT + DMP_MEM_RESET */
+        case SENSE_I_6P6_RESET_TEMP: mask = 0x01; break;
+        default: return;
+    }
+    icm_write(tile, ICM42686P_REG_SIGNAL_PATH_RESET, mask);
+}
+
 /** @brief Read and clear INT_STATUS register. */
 uint8_t tile_sense_i_6p6_get_int_status(tile_t *tile)
 {

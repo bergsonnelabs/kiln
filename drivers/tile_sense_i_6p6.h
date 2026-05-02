@@ -56,49 +56,26 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="Self-test sweep"
- *   Chip has factory self-test capability (SELF_TEST_CONFIG) that
- *   compares accel/gyro responses against stored factory limits.
- *   Driver has no self-test API — relevant for production-line
- *   validation.
- *
- * @tessera unsupported severity=common category="INT2 pin entirely unconfigured"
- *   Tile JSON wires INT2 (pad 8) but the driver only configures INT1.
- *   Pad 8 is currently dead — users can't route data-ready / motion /
- *   FIFO interrupts to it for two-line interrupt schemes.
- *
- * @tessera unsupported severity=advanced category="Accel offset registers"
- *   Bank 1 OFFSET_USER0–2 registers let firmware apply a hardware-side
- *   accel zero offset. Driver exposes set_gyro_offset but the matching
- *   accel offset path is missing — relevant for runtime zero-G
- *   calibration.
- *
  * @tessera unsupported severity=advanced category="FSYNC external-clock / timestamping"
- *   Chip can take a 31–50 kHz FSYNC input and stamp samples against
- *   external timing (TIMESTAMP_FSYNC_EN in FIFO_CONFIG). Driver
- *   doesn't expose FSYNC — relevant for multi-IMU sync or
- *   external-clock PPS alignment.
- *
- * @tessera unsupported severity=advanced category="Advanced INT pin config"
- *   INT_CONFIG has bits for drive strength, push-pull vs open-drain,
- *   latched vs pulse, polarity. Driver writes a default-good config;
- *   exposing the knobs matters when wiring INT into level-shifters or
- *   cross-domain receivers.
- *
- * @tessera unsupported severity=advanced category="I3C support"
- *   Driver is I²C-only. ICM-42686-P supports I3C SDR (up to 12.5 MHz
- *   with in-band interrupts and dynamic addressing); would unlock
- *   lower-latency reads once Tessera adds I3C bus support.
+ *   Hardware-gated. ICM-42686-P can take a 31–50 kHz FSYNC input and
+ *   stamp samples against external timing (TIMESTAMP_FSYNC_EN in
+ *   FIFO_CONFIG). The FSYNC pin isn't routed to a tile pad on
+ *   Sense-I-6P6-a — closing this gap requires a tile hardware revision.
  *
  * @tessera unsupported severity=niche category="FIFO 20-bit hi-res mode"
- *   FIFO_HIRES_EN switches FIFO packets to 20-bit accel + 20-bit gyro
- *   (Packet 4 with 3-byte extensions) at higher sensitivity scale
- *   factors. Driver supports the 16-bit packet formats only.
+ *   Design-gated. FIFO_HIRES_EN switches FIFO packets to 20-bit accel
+ *   + 20-bit gyro (Packet 4 with 3-byte extensions) at higher
+ *   sensitivity scale factors. Closing properly requires extending
+ *   sense_i_6p6_fifo_packet_t to represent 20-bit fields and reworking
+ *   the read_packet parser; toggling the bit alone breaks the existing
+ *   16-bit parsing path. Deferred to a future driver pass.
  *
- * @tessera unsupported severity=niche category="Subsystem-scoped resets"
- *   Chip has dedicated reset registers for individual subsystems
- *   (FIFO, signal path, APEX). Driver exposes one global reset but
- *   not the subsystem-scoped variants.
+ * @tessera unsupported severity=advanced category="I3C support"
+ *   Ecosystem-gated. ICM-42686-P supports I3C SDR (up to 12.5 MHz
+ *   with in-band interrupts and dynamic addressing) and the tile
+ *   straps I3C on pads 3/4/5. The driver framework currently uses
+ *   tiles_pal I²C calls only; closing requires a new bus abstraction
+ *   in Tessera. Defer to a multi-bus driver framework pass.
  */
 
 #ifndef INC_TILE_SENSE_I_6P6_H_
@@ -112,7 +89,7 @@
  * ================================================================ */
 
 #define TILE_SENSE_I_6P6_VERSION_MAJOR  1
-#define TILE_SENSE_I_6P6_VERSION_MINOR  0
+#define TILE_SENSE_I_6P6_VERSION_MINOR  1
 #define TILE_SENSE_I_6P6_VERSION_PATCH  0
 
 TILES_CHECK_VERSION(1, 0);
@@ -827,6 +804,91 @@ void tile_sense_i_6p6_int1_fifo_ths(tile_t *tile, uint8_t enabled);
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int1_wom(tile_t *tile, uint8_t enabled);
+
+/**
+ * @brief  Configure INT2 pin behavior.
+ *
+ * Mirrors int1_config for the chip's second interrupt pin (tile pad 8).
+ * INT_CONFIG bits [5:3] hold INT2's polarity / drive / mode bits.
+ *
+ * @tessera expose category=tile name=int2_config
+ * @param  config  OR'd flags: ACTIVE_HIGH|PUSH_PULL|LATCHED etc. (same
+ *                 layout as int1_config; the driver shifts the bits
+ *                 into the INT2 positions internally).
+ */
+void tile_sense_i_6p6_int2_config(tile_t *tile, uint8_t config);
+
+/**
+ * @brief  Route data-ready interrupt to INT2.
+ *
+ * @tessera expose category=tile name=int2_data_ready
+ * @param  enabled  1 to enable, 0 to disable
+ */
+void tile_sense_i_6p6_int2_data_ready(tile_t *tile, uint8_t enabled);
+
+/**
+ * @brief  Route FIFO watermark interrupt to INT2.
+ *
+ * @tessera expose category=tile name=int2_fifo_ths
+ * @param  enabled  1 to enable, 0 to disable
+ */
+void tile_sense_i_6p6_int2_fifo_ths(tile_t *tile, uint8_t enabled);
+
+/**
+ * @brief  Route WOM (wake-on-motion) interrupt to INT2.
+ *
+ * @tessera expose category=tile name=int2_wom
+ * @param  enabled  1 to enable, 0 to disable
+ */
+void tile_sense_i_6p6_int2_wom(tile_t *tile, uint8_t enabled);
+
+/** Pulse-width selector for INT pin pulse mode. */
+typedef enum {
+    SENSE_I_6P6_INT_PULSE_100US = 0,  /**< 100 µs pulse (default) */
+    SENSE_I_6P6_INT_PULSE_8US   = 1,  /**< 8 µs pulse — for fast hosts */
+} sense_i_6p6_int_pulse_t;
+
+/**
+ * @brief  Set the INT pin pulse-width when configured for pulse mode.
+ *
+ * @tessera expose category=tile name=set_int_pulse_duration
+ *
+ * Applies to both INT1 and INT2 (it's a chip-wide setting in
+ * INT_CONFIG1 bit 6). Only affects pulse-mode interrupts; in latched
+ * mode the line stays asserted until the status register is read.
+ *
+ * @param  tile   Initialised tile handle
+ * @param  pulse  Pulse-width selector
+ */
+void tile_sense_i_6p6_set_int_pulse_duration(tile_t *tile,
+                                             sense_i_6p6_int_pulse_t pulse);
+
+/** Subsystem selector for scoped resets. */
+typedef enum {
+    SENSE_I_6P6_RESET_APEX = 0,  /**< APEX (DMP) memory + state */
+    SENSE_I_6P6_RESET_TEMP = 1,  /**< Temperature signal path */
+} sense_i_6p6_subsystem_t;
+
+/**
+ * @brief  Reset a single chip subsystem without touching the others.
+ *
+ * @tessera expose category=tile name=subsystem_reset
+ *
+ * Issues the relevant SIGNAL_PATH_RESET bit. Distinct from the
+ * driver's full `reset()` (which re-initialises the whole chip) and
+ * from `fifo_flush()` (which targets just the FIFO, also a
+ * subsystem reset but already exposed).
+ *
+ *   - APEX: clears DMP memory and re-runs the DMP init sequence.
+ *           Use after reconfiguring pedometer / tilt / tap features.
+ *   - TEMP: resets the temperature signal path. Useful if temp
+ *           readings appear stuck after a power glitch.
+ *
+ * @param  tile   Initialised tile handle
+ * @param  which  Subsystem to reset
+ */
+void tile_sense_i_6p6_subsystem_reset(tile_t *tile,
+                                      sense_i_6p6_subsystem_t which);
 
 /**
  * @brief  Read and clear INT_STATUS register.
