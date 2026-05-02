@@ -40,7 +40,7 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="10 m extended-range mode"
+ * @tessera unsupported severity=common category="10 m extended-range mode" section=advanced
  *   Deferred to a dedicated session. TMF8806 App0 firmware supports
  *   up to 5 m range out of ROM; 10 m mode requires downloading a
  *   binary RAM patch from AMS via the bootloader's W_RAM +
@@ -65,7 +65,7 @@
 /* ---- Driver version ---- */
 
 #define TILE_SENSE_TOF_VERSION_MAJOR  1
-#define TILE_SENSE_TOF_VERSION_MINOR  1
+#define TILE_SENSE_TOF_VERSION_MINOR  2
 #define TILE_SENSE_TOF_VERSION_PATCH  0
 
 TILES_CHECK_VERSION(1, 0);
@@ -265,7 +265,7 @@ void tile_sense_tof_init(tiles_pal_t *hal, uint8_t instance,
 
 /**
  * @brief  Enter standby mode (ENABLE = 0x00).
- * @tessera expose category=tile name=sleep
+ * @tessera expose category=tile name=sleep section=lifecycle
  *
  * Stops any active measurement and powers down the sensor. Use
  * tile_sense_tof_wake() to resume without full re-initialisation.
@@ -276,7 +276,7 @@ void tile_sense_tof_sleep(tile_t *tile);
 
 /**
  * @brief  Resume from standby mode.
- * @tessera expose category=tile name=wake
+ * @tessera expose category=tile name=wake section=lifecycle
  *
  * Re-executes the bootloader wake and App0 request sequence. Does not
  * restart measurements — call tile_sense_tof_start() after waking.
@@ -287,6 +287,7 @@ void tile_sense_tof_wake(tile_t *tile);
 
 /**
  * @brief  Reset the device via the CPU reset bit in ENABLE.
+ * @tessera expose category=tile name=reset section=lifecycle
  *
  * Performs a full CPU reset and re-runs the boot sequence. All runtime
  * state including calibration is lost. Call init() again after reset.
@@ -299,7 +300,7 @@ void tile_sense_tof_reset(tile_t *tile);
 
 /**
  * @brief  Start continuous or single-shot measurement.
- * @tessera expose category=tile name=start
+ * @tessera expose category=tile name=start section=runtime
  *
  * Writes the factory calibration data (if loaded), configures the
  * measurement command payload from the current cfg, and issues the
@@ -314,7 +315,7 @@ void tile_sense_tof_start(tile_t *tile);
 
 /**
  * @brief  Stop an active measurement.
- * @tessera expose category=tile name=stop
+ * @tessera expose category=tile name=stop section=runtime
  *
  * Sends the stop command and waits for the sensor to acknowledge.
  * No-op if no measurement is active.
@@ -342,7 +343,7 @@ uint8_t tile_sense_tof_measure_single(tile_t *tile, sense_tof_result_t *result,
 
 /**
  * @brief  Read the distance from the most recent result.
- * @tessera expose category=tile name=get_distance_mm returns=int
+ * @tessera expose category=tile name=get_distance_mm returns=int section=runtime
  *
  * Returns the peak distance in millimeters. Does not check whether
  * new data is available — call tile_sense_tof_result_ready() first
@@ -367,7 +368,7 @@ void tile_sense_tof_get_result(tile_t *tile, sense_tof_result_t *result);
 
 /**
  * @brief  Check if a new measurement result is available.
- * @tessera expose category=tile name=result_ready returns=bool
+ * @tessera expose category=tile name=result_ready returns=bool section=runtime
  *
  * Reads the INT_STATUS register and checks the result interrupt bit.
  * Does not clear the interrupt — that is done by get_result() or
@@ -382,7 +383,7 @@ uint8_t tile_sense_tof_result_ready(tile_t *tile);
 
 /**
  * @brief  Run the factory calibration procedure.
- * @tessera expose category=tile name=factory_calibrate returns=bool
+ * @tessera expose category=tile name=factory_calibrate returns=bool section=advanced
  *
  * Performs a calibration measurement using the current mode settings.
  * The sensor must be positioned with a known target or open field per
@@ -450,7 +451,7 @@ uint8_t tile_sense_tof_get_serial_number(tile_t *tile, uint8_t *serial);
 
 /**
  * @brief  Change the distance mode on the fly.
- * @tessera expose category=tile name=set_distance_mode
+ * @tessera expose category=tile name=set_distance_mode section=runtime
  *
  * Stops any active measurement, updates the cached mode, and restarts.
  * If no measurement was running, only updates the config for the next start().
@@ -462,7 +463,7 @@ void tile_sense_tof_set_distance_mode(tile_t *tile, sense_tof_distance_mode_t mo
 
 /**
  * @brief  Change the measurement repetition period on the fly.
- * @tessera expose category=tile name=set_period
+ * @tessera expose category=tile name=set_period section=runtime
  *
  * Stops any active measurement, updates the cached period, and restarts.
  * If no measurement was running, only updates the config for the next start().
@@ -516,7 +517,7 @@ void tile_sense_tof_restore_state(tile_t *tile, const uint8_t *data);
  * measurements. Lets a sleeping host stay asleep until something
  * gets close.
  *
- * @tessera expose category=tile name=set_threshold_interrupt
+ * @tessera expose category=tile name=set_threshold_interrupt section=config
  *
  * Per HostDriverCommunication §8.12 (cmd 0x08 = WR_ADD_CONFIG):
  *   - persistence = 0  → interrupt every measurement (default)
@@ -564,7 +565,7 @@ uint8_t tile_sense_tof_get_threshold_interrupt(tile_t *tile,
  *
  * Reads SYS_CLOCK_0..3 (0x24–0x27) as a single 4-byte burst.
  *
- * @tessera expose category=tile name=get_sys_clock_ticks returns=int
+ * @tessera expose category=tile name=get_sys_clock_ticks returns=int section=runtime
  *
  * @param  tile  Initialised tile handle.
  * @return 32-bit system-clock tick count (0 if not in App0 / no
@@ -601,5 +602,102 @@ uint32_t tile_sense_tof_get_sys_clock_ticks(tile_t *tile);
  */
 uint8_t tile_sense_tof_read_histogram(tile_t *tile, uint8_t hist_type,
                                       uint8_t *buf128, uint32_t timeout_ms);
+
+/* ============================================================== */
+/* Runtime — tier-2 idiomatic helpers                              */
+/*                                                                  */
+/* These compose the tier-1 surface above into "do the thing the   */
+/* user wants to do" calls. They take care of single-shot          */
+/* measurement and reliability gating internally so callers don't  */
+/* need to read the TMF8806 datasheet to do presence detection.   */
+/* ============================================================== */
+
+/**
+ * @brief  Reliability cutoff used by the presence helpers.
+ *
+ * Hits below this confidence threshold (out of 0–63) are treated
+ * as "no object" by `is_object_within` and `wait_for_object`.
+ * 32 is roughly the midpoint and rejects most noise/sun-glare
+ * artefacts while still firing on a clean target.
+ */
+#define SENSE_TOF_PRESENCE_RELIABILITY_MIN  32
+
+/**
+ * @brief  Reliability cutoff used by `wait_for_object` polling, in ms.
+ *
+ * Polls every 10 ms by default. At a 30 ms measurement period the
+ * loop sees a fresh result roughly every other poll; tighter polls
+ * waste bus traffic, looser polls add latency.
+ */
+#define SENSE_TOF_WAIT_POLL_INTERVAL_MS     10
+
+/**
+ * @brief  Single-shot measurement; true if an object is within `mm`.
+ *
+ * @tessera expose category=tile name=is_object_within returns=bool section=runtime
+ *
+ * Performs one blocking single-shot measurement (up to 200 ms) and
+ * returns 1 iff the reported distance is non-zero, less than or
+ * equal to `mm`, and the reliability is at least
+ * @ref SENSE_TOF_PRESENCE_RELIABILITY_MIN. A zero distance or
+ * low-confidence hit is treated as "no object".
+ *
+ * Restores the prior measurement period on the way out, so this
+ * mixes safely with continuous-mode use.
+ *
+ * @param  tile  Initialised tile handle.
+ * @param  mm    Distance threshold in millimetres (inclusive).
+ * @return 1 if an object is within range with adequate confidence,
+ *         0 otherwise (no target, low reliability, or bus timeout).
+ */
+uint8_t tile_sense_tof_is_object_within(tile_t *tile, uint16_t mm);
+
+/**
+ * @brief  Block until an object is detected within `mm`, or timeout.
+ *
+ * @tessera expose category=tile name=wait_for_object returns=bool section=runtime
+ *
+ * Polls single-shot measurements until one matches the
+ * `is_object_within` predicate or `timeout_ms` elapses. Polls every
+ * @ref SENSE_TOF_WAIT_POLL_INTERVAL_MS milliseconds; each
+ * single-shot measurement adds ~30 ms of its own.
+ *
+ * @note v1 implementation polls — keeps the helper self-contained
+ *       and avoids the need to wire the chip's INT pin into the
+ *       tile pad map. A future revision could swap to the chip's
+ *       threshold-INT (see @ref tile_sense_tof_set_threshold_interrupt)
+ *       to let a sleeping host stay asleep until proximity wakes it.
+ *
+ * @param  tile        Initialised tile handle.
+ * @param  mm          Distance threshold in millimetres (inclusive).
+ * @param  timeout_ms  Maximum wait time in milliseconds.
+ * @return 1 if an object entered range before timeout, 0 otherwise.
+ */
+uint8_t tile_sense_tof_wait_for_object(tile_t *tile, uint16_t mm,
+                                       uint32_t timeout_ms);
+
+/**
+ * @brief  Read distance and confidence in one call.
+ *
+ * Performs a single-shot measurement and writes the distance (mm)
+ * and the confidence remapped from the chip's 0–63 reliability
+ * scale to a 0–100 percent value. Confidence is computed as
+ * `(reliability * 100) / 63` — integer math, no floats.
+ *
+ * @note Not @tessera-exposed — the dual-pointer output doesn't map
+ *       cleanly to the DSL's scalar return / array out_buffer
+ *       conventions. DSL callers should use
+ *       @ref tile_sense_tof_get_distance_mm plus
+ *       @ref tile_sense_tof_is_object_within (or a future
+ *       confidence-only getter) instead.
+ *
+ * @param  tile           Initialised tile handle.
+ * @param  mm             Output: distance in millimetres (NULL allowed).
+ * @param  confidence_pct Output: 0–100 confidence (NULL allowed).
+ * @return 1 on a successful measurement, 0 on timeout / bus error.
+ */
+uint8_t tile_sense_tof_read_distance_with_confidence(tile_t *tile,
+                                                     uint16_t *mm,
+                                                     uint8_t *confidence_pct);
 
 #endif /* TILE_SENSE_TOF_H */
