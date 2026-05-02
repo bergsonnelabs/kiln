@@ -1,19 +1,27 @@
 /**
  * @file   tile_sense_i_9.h
  * @brief  9-DOF IMU driver for the Sense.I.9 tile (rev c).
+ * @version 3.0.0
  *
  * Embeds the TDK InvenSense ICM-20948: 6-DOF IMU (accel + gyro)
- * with co-packaged AK09916 3-DOF magnetometer.
+ * with co-packaged AK09916 3-DOF magnetometer (accessed via the
+ * ICM's I2C bypass).
  *
  * Sensor specifications:
  *   - Accelerometer:  16-bit, ±2/4/8/16 G, up to 4.5 kHz ODR
  *   - Gyroscope:      16-bit, ±250/500/1000/2000 DPS, up to 9 kHz ODR
- *   - Magnetometer:   16-bit, ±4900 µT, up to 100 Hz ODR
+ *   - Magnetometer:   16-bit, ±4900 µT, up to 100 Hz ODR (0.15 µT/LSB)
  *   - Temperature:    on-chip sensor
+ *   - FIFO:           512-byte buffer, accel + gyro + temp packets
+ *   - Wake-on-Motion: 4 mg/LSB threshold, INT routable
  *
  * Datasheet: https://www.bergsonne.io/tiles/sense/i9
  *
  * @tessera tile label=Sense.I.9 icon=⊙
+ * @tessera event name=data_ready mask=ICM20948_INT_RAW_DATA_RDY
+ * @tessera event name=fifo_watermark mask=ICM20948_INT_FIFO_WM
+ * @tessera event name=fifo_overflow mask=ICM20948_INT_FIFO_OVF
+ * @tessera event name=wake_on_motion mask=ICM20948_INT_WOM
  *
  * Quick start:
  * @code
@@ -42,61 +50,43 @@
  * @tessera unsupported severity=common category="DMP3 (Digital Motion Processor)"
  *   ICM-20948 ships with a full DMP3 firmware blob in ROM
  *   (quaternion fusion, gesture detection, pedometer, BAC
- *   classifier, tap / double-tap, significant motion). Driver
- *   doesn't initialize or read DMP — significant chunk of chip
- *   capability missing. Headline feature for fusion-heavy use cases.
+ *   classifier, tap / double-tap, significant motion). DMP3 firmware
+ *   loading and output parsing is a substantial lift — deferred to
+ *   a dedicated future session. Tracked separately from this
+ *   coverage pass.
  *
- * @tessera unsupported severity=common category="AK09916 FUSE ROM sensitivity adjustment"
- *   Magnetometer ships with per-axis sensitivity-adjustment ASA
- *   codes in FUSE ROM. Calibrated readings = raw × (ASA + 128) / 256.
- *   Driver returns raw counts without applying FUSE ROM correction —
- *   any user trying to do compass-grade work will see per-axis bias.
- *
- * @tessera unsupported severity=advanced category="AK09916 magnetic overflow flag (HOFL)"
- *   Mag readings can saturate near strong fields; the AK09916 raises
- *   HOFL in its status register to flag invalid samples. Driver
- *   doesn't surface the flag — readings during overflow look valid
- *   but aren't.
- *
- * @tessera unsupported severity=common category="Self-test sweep"
- *   Chip has factory self-test capability for accel and gyro
- *   (mechanical self-excitation against stored factory limits).
- *   Driver has no self-test API — relevant for production-line
- *   validation.
- *
- * @tessera unsupported severity=common category="Wake-on-Motion"
- *   Accel can run in low-power mode and wake the chip on motion
- *   above a programmable threshold (WOM_THRESHOLD: 0–255 mg in
- *   4 mg steps). Driver doesn't expose WoM — relevant for
- *   battery-powered always-on motion-detection use cases.
- *
- * @tessera unsupported severity=common category="FIFO"
- *   Chip has a 512+ byte FIFO with watermark / overflow interrupts
- *   and DMP / raw packet formats. Driver only reads sensor registers
- *   directly (no batched / buffered acquisition).
- *
- * @tessera unsupported severity=common category="Interrupt source configuration"
- *   INT pad is wired but the driver doesn't configure INT_PIN_CFG
- *   (edge / level / latch / open-drain) or route specific sources
- *   (data-ready, WoM, FIFO watermark, DMP) to the pin. Pad is
- *   currently dead.
+ * @tessera unsupported severity=niche category="AK09916 FUSE ROM sensitivity adjustment"
+ *   Not applicable to this chip. Earlier AKM parts (e.g. AK8963) shipped
+ *   per-axis ASA codes in FUSE ROM that required `raw × (ASA + 128) / 256`
+ *   correction. The AK09916 in the ICM-20948 has no FUSE ROM and no ASA
+ *   registers (datasheet rev 015007392-E-02 §11) — sensitivity is
+ *   factory-trimmed to a fixed 0.15 µT/LSB across all axes. Driver
+ *   correctly returns raw counts at that scale; no per-axis correction
+ *   is needed or possible. Annotation kept to document the verification.
  *
  * @tessera unsupported severity=advanced category="Sensor hub for external aux sensors"
- *   ICM acts as I²C master with 4 slave slots. Driver uses slot 0
- *   for the internal AK09916; slots 1–3 are unused. Hooking external
- *   aux sensors (additional mag, baro, etc.) into the ICM's FIFO
- *   isn't exposed.
+ *   Architecturally gated. Driver currently uses INT_PIN_CFG.BYPASS_EN
+ *   to expose the AK09916 directly on the host I2C bus, which is
+ *   simpler and faster than routing reads through the ICM's I2C master.
+ *   Closing this gap means moving AK09916 access into the master (slot 0)
+ *   and exposing slots 1–3 for user-attached aux sensors — a structural
+ *   rework that touches `get_raw_mags()`, init sequencing, and FIFO
+ *   integration. Defer to a followup pass.
  *
  * @tessera unsupported severity=advanced category="FSYNC external-clock / timestamping"
- *   Chip can take an external 31–50 kHz FSYNC input and stamp
- *   samples against it. Tile doesn't expose the FSYNC pad and the
- *   driver has no FSYNC API — relevant for multi-IMU sync.
+ *   Hardware-gated. Chip can take a 31–50 kHz FSYNC input and stamp
+ *   samples against external timing. The Sense.I.9-c tile does not
+ *   expose the FSYNC pin on any pad (verified in tile JSON: pads 6, 7,
+ *   and 8 carry no function). Closing this gap requires a tile
+ *   hardware revision.
  *
  * @tessera unsupported severity=advanced category="Alternate bus modes (SPI / I3C)"
- *   Tile JSON straps support I²C (default) or SPI 4-wire on the same
- *   pads (AD0 = MISO, EN = CS). Driver is I²C-only. ICM-20948 also
- *   has I3C electrical compliance but TDK doesn't fully document it;
- *   would need additional bring-up work.
+ *   Ecosystem-gated. Tile JSON straps support I²C (default) or SPI 4-wire
+ *   on the same pads (AD0 = MISO, EN = CS), and the ICM-20948 is also
+ *   I3C electrically compliant. The driver framework currently uses
+ *   tiles_pal I²C calls only; closing requires extending the bus
+ *   abstraction (see Sense.I.6P6 v1.0+ for the SPI pattern). Defer to
+ *   a multi-bus driver framework pass.
  */
 
 #ifndef INC_TILE_SENSE_I_9_H_
@@ -109,7 +99,7 @@
 /* Driver version                                                  */
 /* -------------------------------------------------------------- */
 
-#define TILE_SENSE_I_9_VERSION_MAJOR  2
+#define TILE_SENSE_I_9_VERSION_MAJOR  3
 #define TILE_SENSE_I_9_VERSION_MINOR  0
 #define TILE_SENSE_I_9_VERSION_PATCH  0
 
@@ -153,17 +143,63 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 #define ICM20948_REG_PWR_MGMT_1     0x06
 #define ICM20948_REG_PWR_MGMT_2     0x07
 #define ICM20948_REG_INT_PIN_CFG    0x0F
+#define ICM20948_REG_INT_ENABLE     0x10  /**< WoM / DMP / I2C master */
+#define ICM20948_REG_INT_ENABLE_1   0x11  /**< RAW_DATA_0_RDY_EN */
+#define ICM20948_REG_INT_ENABLE_2   0x12  /**< FIFO_OVERFLOW_EN[4:0] */
+#define ICM20948_REG_INT_ENABLE_3   0x13  /**< FIFO_WM_EN[4:0] */
+#define ICM20948_REG_INT_STATUS     0x19
 #define ICM20948_REG_INT_STATUS_1   0x1A
+#define ICM20948_REG_INT_STATUS_2   0x1B  /**< FIFO_OVERFLOW_INT[4:0] */
+#define ICM20948_REG_INT_STATUS_3   0x1C  /**< FIFO_WM_INT[4:0] */
 #define ICM20948_REG_ACCEL_X_H      0x2D
 #define ICM20948_REG_GYRO_X_H       0x33
 #define ICM20948_REG_TEMP_H         0x39
+#define ICM20948_REG_FIFO_EN_1      0x66
+#define ICM20948_REG_FIFO_EN_2      0x67
+#define ICM20948_REG_FIFO_RST       0x68
+#define ICM20948_REG_FIFO_MODE      0x69
+#define ICM20948_REG_FIFO_COUNTH    0x70
+#define ICM20948_REG_FIFO_COUNTL    0x71
+#define ICM20948_REG_FIFO_R_W       0x72
+
+/* Bank 1 registers (self-test reference values) */
+#define ICM20948_B1_SELF_TEST_X_GYRO  0x02
+#define ICM20948_B1_SELF_TEST_Y_GYRO  0x03
+#define ICM20948_B1_SELF_TEST_Z_GYRO  0x04
+#define ICM20948_B1_SELF_TEST_X_ACCEL 0x0E
+#define ICM20948_B1_SELF_TEST_Y_ACCEL 0x0F
+#define ICM20948_B1_SELF_TEST_Z_ACCEL 0x10
 
 /* Bank 2 registers */
-#define ICM20948_REG_GYRO_SMPLRT    0x00
-#define ICM20948_REG_GYRO_CONFIG    0x01
-#define ICM20948_REG_ACCEL_SMPLRT_H 0x10
-#define ICM20948_REG_ACCEL_SMPLRT_L 0x11
-#define ICM20948_REG_ACCEL_CONFIG   0x14
+#define ICM20948_REG_GYRO_SMPLRT      0x00
+#define ICM20948_REG_GYRO_CONFIG      0x01
+#define ICM20948_REG_ACCEL_SMPLRT_H   0x10
+#define ICM20948_REG_ACCEL_SMPLRT_L   0x11
+#define ICM20948_REG_ACCEL_INTEL_CTRL 0x12  /**< WoM enable + mode */
+#define ICM20948_REG_ACCEL_WOM_THR    0x13  /**< WoM threshold (4 mg/LSB) */
+#define ICM20948_REG_ACCEL_CONFIG     0x14
+#define ICM20948_REG_ACCEL_CONFIG_2   0x15  /**< Self-test enables + averaging */
+
+/* USER_CTRL bits (bank 0, 0x03) */
+#define ICM20948_UC_FIFO_EN           (1 << 6)
+#define ICM20948_UC_I2C_MST_EN        (1 << 5)
+#define ICM20948_UC_I2C_IF_DIS        (1 << 4)
+#define ICM20948_UC_DMP_RST           (1 << 3)
+#define ICM20948_UC_SRAM_RST          (1 << 2)
+#define ICM20948_UC_I2C_MST_RST       (1 << 1)
+
+/* INT_ENABLE bits */
+#define ICM20948_INTE_REG_WOF_EN      (1 << 7)
+#define ICM20948_INTE_WOM_INT_EN      (1 << 3)
+#define ICM20948_INTE_PLL_RDY_EN      (1 << 2)
+#define ICM20948_INTE_DMP_INT1_EN     (1 << 1)
+#define ICM20948_INTE_I2C_MST_INT_EN  (1 << 0)
+
+/* INT_STATUS event masks (mapped to single byte for tessera events) */
+#define ICM20948_INT_RAW_DATA_RDY     (1 << 0)  /**< INT_STATUS_1 bit 0 */
+#define ICM20948_INT_FIFO_OVF         (1 << 1)  /**< INT_STATUS_2 any bit (collapsed) */
+#define ICM20948_INT_FIFO_WM          (1 << 2)  /**< INT_STATUS_3 any bit (collapsed) */
+#define ICM20948_INT_WOM              (1 << 3)  /**< INT_STATUS bit 3 */
 
 /* Chip ID */
 #define ICM20948_WHOAMI_DEFAULT     0xEA
@@ -180,6 +216,12 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 #define AK09916_REG_CNTL3           0x32
 
 #define AK09916_WHOAMI_DEFAULT      0x09
+
+/* AK09916 ST2 bits */
+#define AK09916_ST2_HOFL            (1 << 3)  /**< Magnetic overflow flag */
+
+/* AK09916 self-test mode (CNTL2 = 0x10) */
+#define AK09916_MODE_SELF_TEST      0x10
 
 /* -------------------------------------------------------------- */
 /* Configuration enums                                             */
@@ -227,6 +269,48 @@ typedef enum {
     SENSE_I_9_MAG_CONTINUOUS_50HZ  = 0x06,  /**< Continuous at 50 Hz */
     SENSE_I_9_MAG_CONTINUOUS_100HZ = 0x08,  /**< Continuous at 100 Hz */
 } sense_i_9_mag_mode_t;
+
+/**
+ * @brief  INT pin configuration flags. OR together for `int_config`.
+ *
+ * Active-low + open-drain + latched is typical for shared INT lines.
+ */
+typedef enum {
+    SENSE_I_9_INT_ACTIVE_HIGH  = 0x00,  /**< INT pin active high (default) */
+    SENSE_I_9_INT_ACTIVE_LOW   = 0x80,  /**< INT pin active low */
+    SENSE_I_9_INT_PUSH_PULL    = 0x00,  /**< Push-pull driver */
+    SENSE_I_9_INT_OPEN_DRAIN   = 0x40,  /**< Open-drain driver */
+    SENSE_I_9_INT_PULSED       = 0x00,  /**< 50 µs pulse (default) */
+    SENSE_I_9_INT_LATCHED      = 0x20,  /**< Held until status read */
+    SENSE_I_9_INT_ANYRD_CLEAR  = 0x10,  /**< Clear status on any read */
+} sense_i_9_int_flags_t;
+
+/**
+ * @brief  Wake-on-Motion compare mode (ACCEL_INTEL_MODE_INT).
+ */
+typedef enum {
+    SENSE_I_9_WOM_VS_INITIAL  = 0x00,  /**< Compare against first sample */
+    SENSE_I_9_WOM_VS_PREVIOUS = 0x01,  /**< Compare against previous sample */
+} sense_i_9_wom_mode_t;
+
+/**
+ * @brief  FIFO operating mode.
+ */
+typedef enum {
+    SENSE_I_9_FIFO_STREAM   = 0x00,  /**< Overwrite oldest data when full */
+    SENSE_I_9_FIFO_SNAPSHOT = 0x1F,  /**< Stop accepting writes when full */
+} sense_i_9_fifo_mode_t;
+
+/**
+ * @brief  Standard FIFO packet (12 bytes: accel + gyro).
+ *
+ * Populated by tile_sense_i_9_fifo_read_packet() when the FIFO was
+ * configured for accel + gyro (the default packet layout).
+ */
+typedef struct {
+    int16_t accel[3];   /**< X, Y, Z accel in raw ADC counts */
+    int16_t gyro[3];    /**< X, Y, Z gyro in raw ADC counts */
+} sense_i_9_fifo_packet_t;
 
 /* -------------------------------------------------------------- */
 /* Public API                                                      */
@@ -378,7 +462,8 @@ void tile_sense_i_9_get_raw_6dof(tile_t* tile, int16_t* buffer);
  * @brief  Read raw magnetometer data (3-axis).
  *
  * Returns signed 16-bit ADC counts from the AK09916.
- * Sensitivity: 0.15 µT/LSB (all axes).
+ * Sensitivity: 0.15 µT/LSB on all axes (factory-trimmed; the AK09916
+ * has no per-axis ASA / FUSE ROM correction — see datasheet §11).
  *
  * @tessera expose category=tile name=get_raw_mags returns=int[3]
  * @tessera out_buffer buffer type=int16_t length=3
@@ -389,6 +474,24 @@ void tile_sense_i_9_get_raw_6dof(tile_t* tile, int16_t* buffer);
  *         magnetometer data lock, enabling the next measurement.
  */
 void tile_sense_i_9_get_raw_mags(tile_t* tile, int16_t* buffer);
+
+/**
+ * @brief  Check whether the most recent magnetometer reading overflowed.
+ * @tessera expose category=tile name=mag_overflowed returns=bool
+ *
+ * The AK09916 raises HOFL in ST2 when the sum |HX|+|HY|+|HZ| exceeds
+ * 4912 µT (the chip's measurement range). Readings during overflow
+ * appear valid in the data registers but are not — for compass-grade
+ * work, discard samples where this returns 1.
+ *
+ * Reading this releases the AK09916 data-lock the same way
+ * tile_sense_i_9_get_raw_mags() does, so it can be used standalone
+ * after a non-locking peek.
+ *
+ * @param  tile  Pointer to tile handle
+ * @return 1 if HOFL was set after the most recent measurement, 0 otherwise
+ */
+uint8_t tile_sense_i_9_mag_overflowed(tile_t* tile);
 
 /**
  * @brief  Read the on-chip temperature sensor.
@@ -433,5 +536,228 @@ void tile_sense_i_9_wake(tile_t* tile);
  * @param  tile  Pointer to tile handle
  */
 void tile_sense_i_9_reset(tile_t* tile);
+
+/* ================================================================
+ * Interrupt source configuration (INT_PIN_CFG + INT_ENABLE_x)
+ * ================================================================ */
+
+/**
+ * @brief  Configure the INT pin electrical behaviour.
+ *
+ * @tessera expose category=tile name=int_config
+ *
+ * Sets polarity (active low/high), drive (push-pull/open-drain),
+ * mode (pulsed/latched), and the auto-clear-on-any-read bit.
+ * OR together flags from sense_i_9_int_flags_t.
+ *
+ * @note  INT_PIN_CFG bit 1 (BYPASS_EN) is preserved by this call —
+ *        the driver needs bypass mode to talk to the AK09916.
+ *
+ * @param  tile   Initialized tile handle
+ * @param  flags  OR of SENSE_I_9_INT_* flags
+ */
+void tile_sense_i_9_int_config(tile_t* tile, uint8_t flags);
+
+/**
+ * @brief  Route the data-ready interrupt to the INT pin.
+ *
+ * @tessera expose category=tile name=int_data_ready
+ * @param  tile     Initialized tile handle
+ * @param  enabled  1 to enable, 0 to disable
+ */
+void tile_sense_i_9_int_data_ready(tile_t* tile, uint8_t enabled);
+
+/**
+ * @brief  Route the wake-on-motion interrupt to the INT pin.
+ *
+ * @tessera expose category=tile name=int_wom
+ * @param  tile     Initialized tile handle
+ * @param  enabled  1 to enable, 0 to disable
+ */
+void tile_sense_i_9_int_wom(tile_t* tile, uint8_t enabled);
+
+/**
+ * @brief  Route the FIFO overflow interrupt to the INT pin.
+ *
+ * @tessera expose category=tile name=int_fifo_overflow
+ * @param  tile     Initialized tile handle
+ * @param  enabled  1 to enable for any sensor, 0 to disable all
+ */
+void tile_sense_i_9_int_fifo_overflow(tile_t* tile, uint8_t enabled);
+
+/**
+ * @brief  Route the FIFO watermark interrupt to the INT pin.
+ *
+ * @tessera expose category=tile name=int_fifo_watermark
+ * @param  tile     Initialized tile handle
+ * @param  enabled  1 to enable for any sensor, 0 to disable all
+ */
+void tile_sense_i_9_int_fifo_watermark(tile_t* tile, uint8_t enabled);
+
+/**
+ * @brief  Read INT_STATUS (WoM / DMP / I2C-master / PLL-ready) and clear it.
+ *
+ * @tessera expose category=tile name=get_int_status returns=int
+ * @return 8-bit raw register value (use ICM20948_INT_WOM etc. masks)
+ */
+uint8_t tile_sense_i_9_get_int_status(tile_t* tile);
+
+/**
+ * @brief  Read INT_STATUS_2 (FIFO overflow per sensor) and clear it.
+ *
+ * @tessera expose category=tile name=get_int_status_fifo_ovf returns=int
+ * @return 5-bit FIFO_OVERFLOW_INT[4:0]; non-zero means overflow occurred
+ */
+uint8_t tile_sense_i_9_get_int_status_fifo_overflow(tile_t* tile);
+
+/**
+ * @brief  Read INT_STATUS_3 (FIFO watermark per sensor) and clear it.
+ *
+ * @tessera expose category=tile name=get_int_status_fifo_wm returns=int
+ * @return 5-bit FIFO_WM_INT[4:0]; non-zero means watermark crossed
+ */
+uint8_t tile_sense_i_9_get_int_status_fifo_watermark(tile_t* tile);
+
+/* ================================================================
+ * Wake-on-Motion
+ * ================================================================ */
+
+/**
+ * @brief  Configure Wake-on-Motion threshold and compare mode.
+ *
+ * @tessera expose category=tile name=wom_config
+ *
+ * The chip-wide threshold is one 8-bit value at 4 mg/LSB (range
+ * 0–1020 mg). Compared independently against |X|, |Y|, |Z|; any
+ * axis crossing the threshold raises WOM_INT.
+ *
+ * @note  Requires accel running. Mag and gyro can be off.
+ *
+ * @param  tile     Initialized tile handle
+ * @param  thr_mg   Threshold in mg (clamped to 1020 mg / 0xFF LSB)
+ * @param  mode     Compare against initial sample or previous sample
+ */
+void tile_sense_i_9_wom_config(tile_t* tile, uint16_t thr_mg,
+                               sense_i_9_wom_mode_t mode);
+
+/**
+ * @brief  Enable Wake-on-Motion logic.
+ *
+ * @tessera expose category=tile name=wom_enable
+ *
+ * Call after wom_config(). Routes to the INT pin only if int_wom()
+ * was also enabled.
+ *
+ * @param  tile  Initialized tile handle
+ */
+void tile_sense_i_9_wom_enable(tile_t* tile);
+
+/**
+ * @brief  Disable Wake-on-Motion logic.
+ *
+ * @tessera expose category=tile name=wom_disable
+ * @param  tile  Initialized tile handle
+ */
+void tile_sense_i_9_wom_disable(tile_t* tile);
+
+/* ================================================================
+ * FIFO
+ * ================================================================ */
+
+/**
+ * @brief  Configure which sensor streams write into the FIFO.
+ *
+ * @tessera expose category=tile name=fifo_config
+ *
+ * Enables FIFO operation in USER_CTRL and selects the data sources.
+ * Always sets FIFO_MODE = stream when enabling. Disables FIFO entirely
+ * if accel, gyro and temp are all 0.
+ *
+ * @param  tile   Initialized tile handle
+ * @param  mode   FIFO operating mode (stream or snapshot)
+ * @param  accel  1 to write all 3 accel axes
+ * @param  gyro   1 to write all 3 gyro axes
+ * @param  temp   1 to write the temperature sample
+ */
+void tile_sense_i_9_fifo_config(tile_t* tile, sense_i_9_fifo_mode_t mode,
+                                uint8_t accel, uint8_t gyro, uint8_t temp);
+
+/**
+ * @brief  Reset the FIFO contents (clears all queued samples).
+ *
+ * @tessera expose category=tile name=fifo_flush
+ * @param  tile  Initialized tile handle
+ */
+void tile_sense_i_9_fifo_flush(tile_t* tile);
+
+/**
+ * @brief  Read the current FIFO byte count.
+ *
+ * @tessera expose category=tile name=fifo_count returns=int
+ *
+ * Note this is bytes, not packets. A standard accel+gyro packet is
+ * 12 bytes. Read FIFO_COUNTL first to latch both bytes (handled
+ * internally).
+ *
+ * @param  tile  Initialized tile handle
+ * @return Bytes available in the FIFO (0–512)
+ */
+uint16_t tile_sense_i_9_fifo_count(tile_t* tile);
+
+/**
+ * @brief  Read one accel + gyro packet from the FIFO.
+ *
+ * @param  tile  Initialized tile handle
+ * @param  pkt   Output packet (populated only if return is 1)
+ * @return 1 if a 12-byte packet was read, 0 if FIFO has fewer bytes
+ */
+uint8_t tile_sense_i_9_fifo_read_packet(tile_t* tile,
+                                        sense_i_9_fifo_packet_t* pkt);
+
+/* ================================================================
+ * Self-test
+ * ================================================================ */
+
+/**
+ * @brief  Run the built-in mechanical self-test for accel and gyro.
+ *
+ * @tessera expose category=tile name=self_test returns=bool
+ *
+ * Drives the accel and gyro through their factory-stored
+ * self-excitation routine and compares the response to the
+ * stored reference values in SELF_TEST_*_GYRO/ACCEL (Bank 1).
+ * Per TDK app-note AN-000150 the pass criterion is that each
+ * axis's self-test response is within 50%–150% of the factory
+ * reference.
+ *
+ * Blocks for ~250 ms. The chip is left in a fresh-init state on
+ * exit; ranges/ODRs you set before this call may need to be
+ * reapplied.
+ *
+ * @param  tile        Initialized tile handle
+ * @param  accel_pass  Output: bit 0/1/2 = X/Y/Z accel pass (1 = pass)
+ * @param  gyro_pass   Output: bit 0/1/2 = X/Y/Z gyro pass (1 = pass)
+ * @return 1 if every accel axis and every gyro axis passed, 0 otherwise
+ */
+uint8_t tile_sense_i_9_self_test(tile_t* tile,
+                                 uint8_t* accel_pass, uint8_t* gyro_pass);
+
+/**
+ * @brief  Run the AK09916 self-test (mag).
+ *
+ * @tessera expose category=tile name=mag_self_test returns=bool
+ *
+ * Triggers the AK09916's internal magnetic-source self-excitation.
+ * The pass criterion is the per-axis range table from the AK09916
+ * datasheet rev 015007392-E-02 §9.4.4.2:
+ *   −200 ≤ HX ≤ 200,  −200 ≤ HY ≤ 200,  −1000 ≤ HZ ≤ −200
+ *
+ * Blocks for ~10 ms. Leaves the AK09916 in power-down — call
+ * tile_sense_i_9_set_mag_mode() afterwards to resume measurements.
+ *
+ * @param  tile  Initialized tile handle
+ * @return 1 if all three axes were within spec, 0 otherwise
+ */
+uint8_t tile_sense_i_9_mag_self_test(tile_t* tile);
 
 #endif /* INC_TILE_SENSE_I_9_H_ */
