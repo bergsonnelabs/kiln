@@ -38,9 +38,11 @@ static uint8_t resolve_id(uint8_t instance)
  * ================================================================ */
 
 typedef struct {
-    uint8_t  amp_addr;     /* TPA2028D1 address (0x58), or 0 if unavailable */
-    uint8_t  gain[2];      /* Cached VOUT-GAIN-X per DAC channel */
-    uint16_t vref_mv;      /* Effective full-scale voltage in mV */
+    uint8_t  amp_addr;        /* TPA2028D1 address (0x58), or 0 if unavailable */
+    uint8_t  gain[2];         /* Cached VOUT-GAIN-X per DAC channel */
+    uint16_t vref_mv;         /* Effective full-scale voltage in mV */
+    int8_t   muted_gain_db;   /* Gain saved at mute() so unmute() can restore */
+    uint8_t  is_muted;        /* 1 if mute() has been called and not yet undone */
 } drive_a_2_state_t;
 
 static drive_a_2_state_t drv_state[NUM_INSTANCES];
@@ -608,4 +610,268 @@ uint16_t tile_drive_a_2_read_reg(tile_t *tile, uint8_t reg)
 void tile_drive_a_2_write_reg(tile_t *tile, uint8_t reg, uint16_t value)
 {
     dac_write(tile, reg, value);
+}
+
+/* ================================================================
+ * Tier-2 — runtime helpers
+ *
+ * All blocking calls use tile->hal->delay_ms. Sine synthesis uses a
+ * 64-entry quarter-wave LUT + symmetry to stay integer-only on
+ * Cortex-M0+ (no libm, no float).
+ * ================================================================ */
+
+/* Update rate for the software sine-LUT path (chirp). 8 kHz gives
+ * a Nyquist of 4 kHz which covers most "indicator beep" tones; the
+ * DAC's own function generator handles steady tones. */
+#define DRIVE_A_2_SW_SAMPLE_RATE_HZ   8000
+#define DRIVE_A_2_SW_SAMPLE_PERIOD_MS 1   /* used for chunked delay accounting */
+
+/* Quarter-wave Q11 sine LUT — sin(π/2 × i/64) × 2047 for i=0..63.
+ * Combined with the quadrant-symmetry switch in sine_unipolar()
+ * this synthesises a full sine over phase 0..65535 → 0..2π. */
+static const int16_t DRIVE_A_2_QSINE[64] = {
+        0,    50,   100,   151,   201,   251,   300,   350,
+      399,   449,   497,   546,   594,   642,   690,   737,
+      783,   830,   875,   920,   965,  1009,  1052,  1095,
+     1137,  1179,  1219,  1259,  1299,  1337,  1375,  1411,
+     1447,  1483,  1517,  1550,  1582,  1614,  1644,  1674,
+     1702,  1729,  1756,  1781,  1805,  1828,  1850,  1871,
+     1891,  1910,  1927,  1944,  1959,  1973,  1986,  1997,
+     2008,  2017,  2025,  2032,  2037,  2041,  2045,  2046,
+};
+
+/* Return a 12-bit unipolar DAC code (0..4095) for the given Q16
+ * phase. Centre = 2048; full ± swing covers 1..4095. */
+static uint16_t sine_unipolar(uint16_t phase)
+{
+    uint8_t q   = (uint8_t)((phase >> 14) & 0x03);
+    uint8_t idx = (uint8_t)((phase >> 8) & 0x3F);
+    int16_t v;
+    switch (q) {
+        case 0: v =  DRIVE_A_2_QSINE[idx];      break;
+        case 1: v =  DRIVE_A_2_QSINE[63 - idx]; break;
+        case 2: v = -DRIVE_A_2_QSINE[idx];      break;
+        default:v = -DRIVE_A_2_QSINE[63 - idx]; break;
+    }
+    /* Map -2046..+2046 to ~1..4094 around mid-scale 2048. */
+    int32_t code = (int32_t)2048 + v;
+    if (code < 0) code = 0;
+    if (code > DAC63202W_DAC_MAX) code = DAC63202W_DAC_MAX;
+    return (uint16_t)code;
+}
+
+/* Iterate the body once for a single channel, or twice for BOTH. */
+static void for_each_channel(drive_a_2_channel_t ch,
+                             void (*body)(tile_t *, uint8_t, void *),
+                             tile_t *tile, void *arg)
+{
+    if (ch == DRIVE_A_2_CH_BOTH) {
+        body(tile, 0, arg);
+        body(tile, 1, arg);
+    } else if (ch == DRIVE_A_2_CH_LEFT || ch == DRIVE_A_2_CH_RIGHT) {
+        body(tile, (uint8_t)ch, arg);
+    }
+}
+
+/* --- play_silence ----------------------------------------------- */
+
+static void silence_one(tile_t *tile, uint8_t ch, void *arg)
+{
+    (void)arg;
+    /* Stop any running waveform so set() takes effect immediately. */
+    tile_drive_a_2_stop_waveform(tile, ch);
+    tile_drive_a_2_set(tile, ch, 2048);  /* mid-scale = 0 V differential */
+}
+
+void tile_drive_a_2_play_silence(tile_t *tile, drive_a_2_channel_t channel,
+                                 uint16_t ms)
+{
+    for_each_channel(channel, silence_one, tile, NULL);
+    if (ms) tile->hal->delay_ms(ms);
+}
+
+/* --- play_tone --------------------------------------------------- */
+
+/* Pick a (slew, step) pair that approximates the requested
+ * frequency on the DAC's parametric generator.
+ *
+ * For a triangle/sine traversing margin_low..margin_high in a
+ * single cycle:
+ *
+ *   f ≈ 1 / (2 × t_step × ceil((4096 / step_lsb)))
+ *
+ * We pick the smallest slew that gets us into the right ballpark
+ * for `freq_hz`, then increase step_lsb to climb. Anything beyond
+ * a few kHz this way is approximate — that's documented as a
+ * limitation of the on-chip generator. */
+static void pick_wave_params(uint16_t freq_hz,
+                             drive_a_2_slew_t *out_slew,
+                             drive_a_2_step_t *out_step)
+{
+    /* Defaults: longest slew for low-frequency hum (~4 Hz min). */
+    drive_a_2_slew_t slew = DRIVE_A_2_SLEW_5128_US;
+    drive_a_2_step_t step = DRIVE_A_2_STEP_1_LSB;
+
+    if (freq_hz >= 5000)      { slew = DRIVE_A_2_SLEW_4_US;    step = DRIVE_A_2_STEP_32_LSB; }
+    else if (freq_hz >= 2000) { slew = DRIVE_A_2_SLEW_4_US;    step = DRIVE_A_2_STEP_8_LSB;  }
+    else if (freq_hz >= 1000) { slew = DRIVE_A_2_SLEW_8_US;    step = DRIVE_A_2_STEP_8_LSB;  }
+    else if (freq_hz >= 500)  { slew = DRIVE_A_2_SLEW_18_US;   step = DRIVE_A_2_STEP_8_LSB;  }
+    else if (freq_hz >= 200)  { slew = DRIVE_A_2_SLEW_41_US;   step = DRIVE_A_2_STEP_8_LSB;  }
+    else if (freq_hz >= 100)  { slew = DRIVE_A_2_SLEW_91_US;   step = DRIVE_A_2_STEP_8_LSB;  }
+    else if (freq_hz >= 50)   { slew = DRIVE_A_2_SLEW_239_US;  step = DRIVE_A_2_STEP_8_LSB;  }
+    else if (freq_hz >= 10)   { slew = DRIVE_A_2_SLEW_1282_US; step = DRIVE_A_2_STEP_8_LSB;  }
+
+    *out_slew = slew;
+    *out_step = step;
+}
+
+typedef struct {
+    drive_a_2_wave_t wave;
+    drive_a_2_step_t step;
+    drive_a_2_slew_t slew;
+} tone_args_t;
+
+static void tone_start_one(tile_t *tile, uint8_t ch, void *arg)
+{
+    tone_args_t *t = (tone_args_t *)arg;
+    tile_drive_a_2_set_waveform_params(tile, ch, t->wave, t->step, t->slew);
+    tile_drive_a_2_start_waveform(tile, ch);
+}
+
+static void tone_stop_one(tile_t *tile, uint8_t ch, void *arg)
+{
+    (void)arg;
+    tile_drive_a_2_stop_waveform(tile, ch);
+    /* Park at mid-scale so we don't leave the amp pinned at a rail. */
+    tile_drive_a_2_set(tile, ch, 2048);
+}
+
+void tile_drive_a_2_play_tone(tile_t *tile, drive_a_2_channel_t channel,
+                              uint16_t freq_hz, uint16_t ms)
+{
+    if (freq_hz == 0 || ms == 0) return;
+
+    drive_a_2_state_t *s = state_for(tile);
+    uint8_t was_muted = s->is_muted;
+    if (was_muted) tile_drive_a_2_unmute(tile, channel);
+
+    tone_args_t args;
+    args.wave = DRIVE_A_2_WAVE_SINE;
+    pick_wave_params(freq_hz, &args.slew, &args.step);
+
+    for_each_channel(channel, tone_start_one, tile, &args);
+    tile->hal->delay_ms(ms);
+    for_each_channel(channel, tone_stop_one, tile, NULL);
+
+    if (was_muted) tile_drive_a_2_mute(tile, channel);
+}
+
+/* --- play_chirp -------------------------------------------------- */
+
+void tile_drive_a_2_play_chirp(tile_t *tile, drive_a_2_channel_t channel,
+                               uint16_t start_hz, uint16_t end_hz,
+                               uint16_t ms)
+{
+    if (ms == 0) return;
+    if (start_hz == 0 && end_hz == 0) return;
+
+    drive_a_2_state_t *s = state_for(tile);
+    uint8_t was_muted = s->is_muted;
+    if (was_muted) tile_drive_a_2_unmute(tile, channel);
+
+    /* Stop any chip-side waveform so direct DAC writes are visible. */
+    if (channel == DRIVE_A_2_CH_BOTH) {
+        tile_drive_a_2_stop_waveform(tile, 0);
+        tile_drive_a_2_stop_waveform(tile, 1);
+    } else {
+        tile_drive_a_2_stop_waveform(tile, (uint8_t)channel);
+    }
+
+    /* Sample rate is fixed at DRIVE_A_2_SW_SAMPLE_RATE_HZ. We update
+     * the DAC each ~125 µs; on a 4 MHz I²C bus a 4-byte write is
+     * <40 µs so this fits with margin. The hal->delay_ms granularity
+     * limits us to 1 ms slots — we batch SAMPLES_PER_MS writes per
+     * tick. */
+    const uint32_t SAMPLES_PER_MS = DRIVE_A_2_SW_SAMPLE_RATE_HZ / 1000u;
+    uint32_t total_samples = (uint32_t)ms * SAMPLES_PER_MS;
+    if (total_samples == 0) return;
+
+    /* Phase is Q16; phase step = freq × 65536 / fs. Linear sweep:
+     *   freq(t) = start + (end - start) × t / total. */
+    int32_t f0 = (int32_t)start_hz;
+    int32_t f1 = (int32_t)end_hz;
+    uint32_t phase = 0;
+
+    for (uint32_t i = 0; i < total_samples; i++) {
+        int32_t f_now = f0 + ((f1 - f0) * (int32_t)i) / (int32_t)total_samples;
+        if (f_now < 0) f_now = 0;
+        uint32_t step = ((uint32_t)f_now * 65536u) / DRIVE_A_2_SW_SAMPLE_RATE_HZ;
+        uint16_t code = sine_unipolar((uint16_t)phase);
+        if (channel == DRIVE_A_2_CH_BOTH) {
+            tile_drive_a_2_set(tile, 0, code);
+            tile_drive_a_2_set(tile, 1, code);
+        } else {
+            tile_drive_a_2_set(tile, (uint8_t)channel, code);
+        }
+        phase = (phase + step) & 0xFFFF;
+
+        /* Pace ~1 ms of samples per delay_ms(1) — the bus + delay
+         * together approximate the 8 kHz update cadence. */
+        if ((i + 1) % SAMPLES_PER_MS == 0) {
+            tile->hal->delay_ms(DRIVE_A_2_SW_SAMPLE_PERIOD_MS);
+        }
+    }
+
+    /* Park at mid-scale. */
+    if (channel == DRIVE_A_2_CH_BOTH) {
+        tile_drive_a_2_set(tile, 0, 2048);
+        tile_drive_a_2_set(tile, 1, 2048);
+    } else {
+        tile_drive_a_2_set(tile, (uint8_t)channel, 2048);
+    }
+
+    if (was_muted) tile_drive_a_2_mute(tile, channel);
+}
+
+/* --- set_volume_pct --------------------------------------------- */
+
+void tile_drive_a_2_set_volume_pct(tile_t *tile, drive_a_2_channel_t channel,
+                                   uint8_t pct)
+{
+    (void)channel;  /* shared amp address — no per-channel split possible */
+    if (pct > 100) pct = 100;
+    /* Linear-in-dB across the full -28..+30 dB programmable range
+     * (58 dB span). Documented in the header. */
+    int32_t gain_db = -28 + ((int32_t)pct * 58) / 100;
+    tile_drive_a_2_amp_set_gain(tile, (int8_t)gain_db);
+
+    /* Keep the muted_gain shadow in sync if the user adjusts volume
+     * while muted — unmute() should restore the most-recently-set
+     * volume, not the volume at the time of mute(). */
+    drive_a_2_state_t *s = state_for(tile);
+    if (s->is_muted) s->muted_gain_db = (int8_t)gain_db;
+}
+
+/* --- mute / unmute ---------------------------------------------- */
+
+void tile_drive_a_2_mute(tile_t *tile, drive_a_2_channel_t channel)
+{
+    (void)channel;  /* shared amp address — both physical amps mute */
+    drive_a_2_state_t *s = state_for(tile);
+    if (!s->is_muted) {
+        s->muted_gain_db = tile_drive_a_2_amp_get_gain(tile);
+        s->is_muted = 1;
+    }
+    tile_drive_a_2_amp_disable(tile);
+}
+
+void tile_drive_a_2_unmute(tile_t *tile, drive_a_2_channel_t channel)
+{
+    (void)channel;
+    drive_a_2_state_t *s = state_for(tile);
+    if (s->is_muted) {
+        tile_drive_a_2_amp_set_gain(tile, s->muted_gain_db);
+        s->is_muted = 0;
+    }
+    tile_drive_a_2_amp_enable(tile);
 }
