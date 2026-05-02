@@ -1,5 +1,5 @@
 /**
- * @file   tile_disp_rgbw.h
+ * @file   tile_display_rgbw.h
  * @brief  RGBW LED driver for the Display.RGBW tile (LP5811).
  * @version 1.0.0
  *
@@ -9,10 +9,10 @@
  * Quick start:
  * @code
  *   tile_t led;
- *   tile_disp_rgbw_init(&hal, 0, &led, NULL);
- *   tile_disp_rgbw_set(&led, 255, 0, 0, 0);   // red
- *   tile_disp_rgbw_set(&led, 0, 0, 0, 128);   // dim white
- *   tile_disp_rgbw_off(&led);                  // all off
+ *   tile_display_rgbw_init(&hal, 0, &led, NULL);
+ *   tile_display_rgbw_set(&led, 255, 0, 0, 0);   // red
+ *   tile_display_rgbw_set(&led, 0, 0, 0, 128);   // dim white
+ *   tile_display_rgbw_off(&led);                  // all off
  * @endcode
  *
  * @tessera tile label=Display.RGBW icon=◑
@@ -64,7 +64,7 @@ TILES_CHECK_VERSION(1, 0);
 /* ---- Public API ---- */
 
 /** @brief  Check if a Disp.RGBW is present on the bus. */
-uint8_t tile_disp_rgbw_find(tiles_pal_t *hal, uint8_t instance);
+uint8_t tile_display_rgbw_find(tiles_pal_t *hal, uint8_t instance);
 
 /**
  * Optional init config. Pass NULL for defaults.
@@ -86,7 +86,7 @@ typedef struct {
  * @param  tile      Tile handle to populate
  * @param  cfg       Optional config, or NULL for defaults
  */
-void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
+void tile_display_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
                          const disp_rgbw_cfg_t *cfg);
 
 /**
@@ -98,14 +98,14 @@ void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
  * @param b [0..255] Blue PWM.
  * @param w [0..255] White PWM.
  */
-void tile_disp_rgbw_set(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
+void tile_display_rgbw_set(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
 
 /**
  * @brief Turn all LEDs off (PWM = 0).
  *
  * @tessera expose category=tile icon=◑ name=off
  */
-void tile_disp_rgbw_off(tile_t *tile);
+void tile_display_rgbw_off(tile_t *tile);
 
 /**
  * @brief Set per-channel current limit.
@@ -116,23 +116,23 @@ void tile_disp_rgbw_off(tile_t *tile);
  * @param b [0..255] Blue current.
  * @param w [0..255] White current.
  */
-void tile_disp_rgbw_set_current(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
+void tile_display_rgbw_set_current(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w);
 
 /**
  * @brief Enter sleep (disable chip).
  *
  * @tessera expose category=tile icon=◑ name=sleep
  */
-void tile_disp_rgbw_sleep(tile_t *tile);
+void tile_display_rgbw_sleep(tile_t *tile);
 
 /**
  * @brief Wake (re-enable chip, LEDs retain previous state).
  *
  * @tessera expose category=tile icon=◑ name=wake
  */
-void tile_disp_rgbw_wake(tile_t *tile);
+void tile_display_rgbw_wake(tile_t *tile);
 
 /** @brief  Software reset. Must call init() again after. */
-void tile_disp_rgbw_reset(tile_t *tile);
+void tile_display_rgbw_reset(tile_t *tile);
 
 #endif /* INC_TILE_DISP_RGBW_H_ */

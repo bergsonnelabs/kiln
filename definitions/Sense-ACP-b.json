@@ -50,9 +50,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -67,9 +68,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -156,6 +158,61 @@
       ]
     }
   ],
+  "config": {
+    "interrupt": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use INT line",
+      "binding": {
+        "pad": "9",
+        "kind": "output"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "disabled",
+              "register": "INT_CONFIG"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "EXTI"
+                  ]
+                },
+                "tag": "interrupt.attached",
+                "from": {
+                  "pad": "9",
+                  "kind": "tile"
+                },
+                "role": "interrupt"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "enabled",
+              "register": "INT_CONFIG"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "family": "Sense",
   "package": {
     "pads": 10,
@@ -195,19 +252,21 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT",
           "is_required": true
         }
       ]
     }
   ],
-  "updated_at": "2026-02-17T13:56:17.857Z",
-  "description": "Built around the ams-OSRAM TMD3725, the Sense.ACP provides digital ambient light sensing (ALS), RGBC+IR color measurement with 16-bit data converters, and IR-based proximity detection with an integrated LED and factory-calibrated driver. Color photodiodes include UV and IR blocking filters while ALS gain is adjustable from 1\u00d7 to 128\u00d7 for operation across a wide range of lighting conditions. Proximity detection is interrupt-driven with configurable thresholds, offset compensation, and automatic ambient light subtraction.  An on-board 3.3V buck converter supplies the IR LED driver from the V+ input.",
-  "json_version": "0.2",
+  "updated_at": "2026-05-01T12:41:02.586Z",
+  "description": "Built around the ams-OSRAM TMD3725, the Sense.ACP provides digital ambient light sensing (ALS), RGBC+IR color measurement with 16-bit data converters, and IR-based proximity detection with an integrated LED and factory-calibrated driver. Color photodiodes include UV and IR blocking filters while ALS gain is adjustable from 1× to 128× for operation across a wide range of lighting conditions. Proximity detection is interrupt-driven with configurable thresholds, offset compensation, and automatic ambient light subtraction.  An on-board 3.3V buck converter supplies the IR LED driver from the V+ input.",
+  "json_version": "0.4",
   "application_notes": []
 }

@@ -13,7 +13,8 @@
       "functions": [
         {
           "type": "power",
-          "function": "GND"
+          "function": "GND",
+          "direction": ""
         }
       ]
     },
@@ -44,15 +45,17 @@
       "functions": [
         {
           "note": "when using a non-Core processor, ensure adequate external pull-up resistance.",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         },
         {
-          "type": "interface",
+          "type": "digital",
           "function": "I3C.CLK",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I3C"
         }
       ]
     },
@@ -67,15 +70,17 @@
       "functions": [
         {
           "note": "when using a non-Core processor, ensure adequate external pull-up resistance.",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         },
         {
-          "type": "interface",
+          "type": "digital",
           "function": "I3C.DAT",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I3C"
         }
       ]
     },
@@ -205,6 +210,31 @@
       ]
     }
   ],
+  "config": {
+    "interfaceMode": {
+      "kind": "select",
+      "group": "Interfaces",
+      "label": "Interface mode",
+      "default": "i2c",
+      "options": [
+        {
+          "label": "I2C",
+          "value": "i2c",
+          "activates": {
+            "interface": "I2C"
+          }
+        },
+        {
+          "label": "I3C",
+          "value": "i3c",
+          "activates": {
+            "interface": "I3C"
+          }
+        }
+      ],
+      "description": "Selects which bus this tile sits on. The chip's mode is set by firmware via register write at init (no boot-strap pad on this tile), so the catalog choice expresses *wiring intent* and which interface's pad_assignments are active."
+    }
+  },
   "family": "Drive",
   "package": {
     "pads": 10,
@@ -220,7 +250,7 @@
       "url": "https://www.boreas.ca/products/bos1921-piezo-driver",
       "part": "BOS1921",
       "datasheet": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/5/Bor_as_Technologies-BOS1921.pdf",
-      "manufacturer": "Bor\u00e9as Technologies"
+      "manufacturer": "Boréas Technologies"
     }
   ],
   "interfaces": [
@@ -248,14 +278,19 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT",
           "is_required": true
         }
+      ],
+      "mutually_exclusive": [
+        "I3C"
       ]
     },
     {
@@ -269,28 +304,33 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I3C.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I3C.DAT",
           "is_required": true
         }
+      ],
+      "mutually_exclusive": [
+        "I2C"
       ]
     }
   ],
-  "updated_at": "2026-03-07T11:49:18.342Z",
-  "description": "Built around the Bor\u00e9as Technologies BOS1921 driver, the advanced DRIVE.P tile provides an ultra-compact, fully-integrated solution for interfacing with piezoelectric sensors and actuators. With a maximum peak-to-peak differential output amplitude of 190V, the ability to drive one or two capacitive loads up to a total of 820nF, a built-in waveform synthesizer and high-speed 1024-sample continuous-playback FIFO, as well as a sensing resolution of just 7.6mV, this tile provides an unparalleled level of integration for next-generation haptics and other piezoactuator solutions.",
-  "json_version": "0.2",
+  "updated_at": "2026-05-01T12:42:45.189Z",
+  "description": "Built around the Boréas Technologies BOS1921 driver, the advanced DRIVE.P tile provides an ultra-compact, fully-integrated solution for interfacing with piezoelectric sensors and actuators. With a maximum peak-to-peak differential output amplitude of 190V, the ability to drive one or two capacitive loads up to a total of 820nF, a built-in waveform synthesizer and high-speed 1024-sample continuous-playback FIFO, as well as a sensing resolution of just 7.6mV, this tile provides an unparalleled level of integration for next-generation haptics and other piezoactuator solutions.",
+  "json_version": "0.6",
   "application_notes": [
     {
-      "header": "Single Piezo",
-      "details": "A single piezo connected across the OUT terminals can be used for both sensing and output, including bipolar output"
+      "details": "A single piezo connected across the OUT terminals can be used for both sensing and output, including bipolar output",
+      "heading": "Single Piezo"
     },
     {
-      "header": "Dual Piezo",
-      "details": "Two piezos can be driven by in a unipolar configuration by connecting the positive lead of each piezo to each of the OUT pads, and the negative terminals to GND.  Sensing is not possible in this configuration."
+      "details": "Two piezos can be driven by in a unipolar configuration by connecting the positive lead of each piezo to each of the OUT pads, and the negative terminals to GND.  Sensing is not possible in this configuration.",
+      "heading": "Dual Piezo"
     }
   ]
 }

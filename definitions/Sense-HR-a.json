@@ -32,13 +32,15 @@
           "note": "internal pull-up sets the default I2C address to 0xD6; connect to GND to switch to 0xD5.",
           "type": "digital",
           "function": "I2C.AD0",
-          "direction": "input"
+          "direction": "input",
+          "interface": "I2C"
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.MISO",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -55,13 +57,15 @@
           "note": "internal pull-up enables I2C by default; connect to GND to switch to SPI",
           "type": "digital",
           "function": "I2C.EN",
-          "direction": "input"
+          "direction": "input",
+          "interface": "I2C"
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.CS",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -76,15 +80,17 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.CLK",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -99,16 +105,18 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.MOSI",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -218,6 +226,166 @@
       ]
     }
   ],
+  "config": {
+    "intb": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use INTB line",
+      "binding": {
+        "pad": "8",
+        "kind": "output"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "disabled",
+              "register": "INT_CONFIG.INTB"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "EXTI"
+                  ]
+                },
+                "tag": "intb.attached",
+                "from": {
+                  "pad": "8",
+                  "kind": "tile"
+                },
+                "role": "interrupt"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "enabled",
+              "register": "INT_CONFIG.INTB"
+            }
+          ]
+        }
+      ]
+    },
+    "i2cAddress": {
+      "kind": "select",
+      "when": {
+        "interfaceMode": "i2c"
+      },
+      "group": "Interfaces",
+      "label": "I2C address",
+      "binding": {
+        "pad": "2",
+        "kind": "strap",
+        "states": {
+          "low": "0xD6",
+          "high": "0xD5 (forced)",
+          "open": "0xD5 (default, via internal PU)"
+        }
+      },
+      "default": "default",
+      "options": [
+        {
+          "label": "0xD5 (default)",
+          "value": "default",
+          "states": {
+            "2": "open"
+          },
+          "derived": {
+            "i2c_address": "0xD5"
+          },
+          "contributes": {
+            "busAddress": {
+              "bus": "i2c",
+              "value": "0xD5"
+            }
+          }
+        },
+        {
+          "label": "0xD6 (alternate)",
+          "value": "alternate",
+          "states": {
+            "2": "low"
+          },
+          "derived": {
+            "i2c_address": "0xD6"
+          },
+          "netlist": {
+            "requires": [
+              {
+                "to": {
+                  "kind": "rail",
+                  "rail": "GND"
+                },
+                "tag": "i2cAddress.alternate.connection",
+                "from": {
+                  "pad": "2",
+                  "kind": "tile"
+                },
+                "role": "power"
+              }
+            ]
+          },
+          "contributes": {
+            "busAddress": {
+              "bus": "i2c",
+              "value": "0xD6"
+            }
+          }
+        }
+      ]
+    },
+    "interfaceMode": {
+      "kind": "select",
+      "group": "Interfaces",
+      "label": "Interface mode",
+      "binding": {
+        "pad": "3",
+        "kind": "strap",
+        "states": {
+          "low": "SPI/SPI3",
+          "high": "I2C/I3C (forced)",
+          "open": "I2C/I3C (default, via internal PU)"
+        }
+      },
+      "default": "i2c",
+      "options": [
+        {
+          "label": "I2C",
+          "value": "i2c",
+          "states": {
+            "3": "open"
+          },
+          "activates": {
+            "interface": "I2C"
+          }
+        },
+        {
+          "label": "SPI (4-wire)",
+          "value": "spi",
+          "states": {
+            "3": "low"
+          },
+          "activates": {
+            "interface": "SPI"
+          }
+        }
+      ]
+    }
+  },
   "family": "Sense",
   "package": {
     "pads": 10,
@@ -244,7 +412,7 @@
   ],
   "interfaces": [
     {
-      "name": "I@C",
+      "name": "I2C",
       "type": "I2C",
       "parameters": {
         "modes": [
@@ -267,14 +435,19 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT",
           "is_required": true
         }
+      ],
+      "mutually_exclusive": [
+        "SPI"
       ]
     },
     {
@@ -289,25 +462,32 @@
       "pad_assignments": [
         {
           "pad": "2",
+          "role": "bus",
           "function": "SPI.MISO"
         },
         {
           "pad": "3",
+          "role": "other",
           "function": "SPI.CS"
         },
         {
           "pad": "4",
+          "role": "bus",
           "function": "SPI.CLK"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "SPI.MOSI"
         }
+      ],
+      "mutually_exclusive": [
+        "I2C"
       ]
     }
   ],
-  "updated_at": "2026-02-19T09:51:07.336Z",
-  "description": "The fully-integrated Sense.HR optical heart-rate and SpO\u2082 sensor combines the advanced Analog Devices MAX86174A photoplethysmography (PPG) front end with dual Vishay VEMD1060X01 silicon PIN photodiodes and four LEDs (two green, one red, one IR) for multi-wavelength reflective optical sensing.  The 20-bit ADC with a 256-word FIFO provides data at configurable rates from 1 to 2048 frames per second for external processing.",
-  "json_version": "0.5",
+  "updated_at": "2026-05-01T12:38:58.131Z",
+  "description": "The fully-integrated Sense.HR optical heart-rate and SpO₂ sensor combines the advanced Analog Devices MAX86174A photoplethysmography (PPG) front end with dual Vishay VEMD1060X01 silicon PIN photodiodes and four LEDs (two green, one red, one IR) for multi-wavelength reflective optical sensing.  The 20-bit ADC with a 256-word FIFO provides data at configurable rates from 1 to 2048 frames per second for external processing.",
+  "json_version": "0.9",
   "application_notes": []
 }

@@ -70,9 +70,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -87,9 +88,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -222,6 +224,164 @@
       ]
     }
   ],
+  "config": {
+    "gpio1": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use GPIO1 sideband",
+      "binding": {
+        "pad": "3",
+        "kind": "intent"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "input-floating",
+              "register": "GPIO1.MODE"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "input",
+                    "output"
+                  ]
+                },
+                "tag": "gpio1.attached",
+                "from": {
+                  "pad": "3",
+                  "kind": "tile"
+                },
+                "role": "data"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "text": "Configure GPIO1 direction/mode via I2C as needed",
+              "type": "note"
+            }
+          ]
+        }
+      ],
+      "description": "Pad 3 is a general-purpose GPIO on the PMIC. When true, wire to a Core pad and configure direction via I2C. When false, leave unused."
+    },
+    "shipHold": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use SHPHLD (ship-hold) input",
+      "binding": {
+        "pad": "6",
+        "kind": "intent"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "text": "SHPHLD floats; firmware can still command ship mode via I2C",
+              "type": "note"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "output"
+                  ]
+                },
+                "tag": "shipHold.attached",
+                "from": {
+                  "pad": "6",
+                  "kind": "tile"
+                },
+                "role": "control"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "text": "SHPHLD wired to Core GPIO; firmware drives low to force ship mode",
+              "type": "note"
+            }
+          ]
+        }
+      ],
+      "description": "When true, pad 6 (SHPHLD) is wired to a Core GPIO output so firmware can drive low to enter ship mode (extreme low-power). When false, ship mode entry is via I2C only."
+    },
+    "powerGood": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use PG (power-good) output",
+      "binding": {
+        "pad": "2",
+        "kind": "output"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "disabled",
+              "register": "PG_CONFIG"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "input"
+                  ]
+                },
+                "tag": "powerGood.attached",
+                "from": {
+                  "pad": "2",
+                  "kind": "tile"
+                },
+                "role": "data"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "enabled",
+              "register": "PG_CONFIG"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "family": "Power",
   "package": {
     "pads": 10,
@@ -264,18 +424,20 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT"
         }
       ]
     }
   ],
-  "updated_at": "2026-03-07T12:09:53.029Z",
+  "updated_at": "2026-05-01T12:44:26.408Z",
   "description": "The Power.P.N tile is a primary-cell power-management subsystem based on the Nordic nPM2100 PMIC. Drawing power  from one or two alkaline cells or a single coin cell battery with a total voltage of between 0.7 and 3.4V, the boost regulator delivers 1.8 V to 3.3 V at up to 150 mA, with a secondary LDO/load-switch output providing 0.8 V to 3.0 V at up to 50 mA.  In addition to I2C configuration, monitoring, and advanced fuel gauging, pads are exposed for power-good indication, reset, ship-mode control, and one GPIO.",
-  "json_version": "0.7",
+  "json_version": "0.9",
   "application_notes": [
     {
       "sort": 0,

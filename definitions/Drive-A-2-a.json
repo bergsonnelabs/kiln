@@ -37,9 +37,10 @@
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.MISO",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -61,9 +62,10 @@
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.MOSI",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -78,16 +80,18 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.CS",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -102,16 +106,18 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.CLK",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -219,6 +225,31 @@
       ]
     }
   ],
+  "config": {
+    "interfaceMode": {
+      "kind": "select",
+      "group": "Interfaces",
+      "label": "Interface mode",
+      "default": "i2c",
+      "options": [
+        {
+          "label": "I2C",
+          "value": "i2c",
+          "activates": {
+            "interface": "I2C"
+          }
+        },
+        {
+          "label": "SPI",
+          "value": "spi",
+          "activates": {
+            "interface": "SPI"
+          }
+        }
+      ],
+      "description": "Selects which bus this tile sits on. The chip's mode is set by firmware via register write at init (no boot-strap pad on this tile), so the catalog choice expresses *wiring intent* and which interface's pad_assignments are active."
+    }
+  },
   "family": "Drive",
   "package": {
     "pads": 10,
@@ -271,14 +302,19 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT",
           "is_required": true
         }
+      ],
+      "mutually_exclusive": [
+        "SPI"
       ]
     },
     {
@@ -293,30 +329,37 @@
       "pad_assignments": [
         {
           "pad": "2",
+          "role": "bus",
           "function": "SPI.MISO",
           "is_required": true
         },
         {
           "pad": "3",
+          "role": "bus",
           "function": "SPI.MOSI",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "SPI.CLK",
           "is_required": true
         },
         {
           "pad": "4",
+          "role": "other",
           "function": "SPI.CS",
           "is_required": true
         }
+      ],
+      "mutually_exclusive": [
+        "I2C"
       ]
     }
   ],
-  "updated_at": "2026-02-16T06:14:48.558Z",
-  "description": "The Drive.A.2 is a dual-channel audio output tile combining a DAC63202W 12-bit smart DAC with two TPA2028D1 Class-D audio power amplifiers. It provides two independent audio channels, each capable of delivering up to 3 W into 4 \u03a9 or 880 mW into 8 \u03a9 speakers.\n\nThe DAC63202W generates analog waveforms from digital data with 12-bit resolution and supports built-in waveform generation (sine, cosine, triangular, sawtooth) for processor-less tone generation. The DAC connects to a host processor via either I2C (up to 1 Mbps) or SPI (up to 50 MHz), auto-detected at power-on.\n\nEach TPA2028D1 amplifier features I2C-programmable gain control (\u221228 dB to +30 dB in 1 dB steps), automatic gain control (AGC), and dynamic range compression (DRC) to prevent speaker overdrive and enhance perceived loudness. The amplifiers operate filter-free in Class-D mode for high efficiency and include thermal and short-circuit protection.\n\nThe tile operates from a 2.5 V to 5.5 V supply. All three ICs are controlled via a shared I2C bus, while the DAC can alternatively be driven over SPI for higher-bandwidth waveform updates.",
-  "json_version": "0.8",
+  "updated_at": "2026-05-01T12:42:45.081Z",
+  "description": "The Drive.A.2 is a dual-channel audio output tile combining a DAC63202W 12-bit smart DAC with two TPA2028D1 Class-D audio power amplifiers. It provides two independent audio channels, each capable of delivering up to 3 W into 4 Ω or 880 mW into 8 Ω speakers.\n\nThe DAC63202W generates analog waveforms from digital data with 12-bit resolution and supports built-in waveform generation (sine, cosine, triangular, sawtooth) for processor-less tone generation. The DAC connects to a host processor via either I2C (up to 1 Mbps) or SPI (up to 50 MHz), auto-detected at power-on.\n\nEach TPA2028D1 amplifier features I2C-programmable gain control (−28 dB to +30 dB in 1 dB steps), automatic gain control (AGC), and dynamic range compression (DRC) to prevent speaker overdrive and enhance perceived loudness. The amplifiers operate filter-free in Class-D mode for high efficiency and include thermal and short-circuit protection.\n\nThe tile operates from a 2.5 V to 5.5 V supply. All three ICs are controlled via a shared I2C bus, while the DAC can alternatively be driven over SPI for higher-bandwidth waveform updates.",
+  "json_version": "0.11",
   "application_notes": [
     {
       "sort": 0,

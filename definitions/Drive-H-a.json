@@ -13,7 +13,8 @@
       "functions": [
         {
           "type": "power",
-          "function": "GND"
+          "function": "GND",
+          "direction": ""
         }
       ]
     },
@@ -70,9 +71,10 @@
       "functions": [
         {
           "note": "if using a non-Core processor, ensure adequate external pull-up resistance",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         }
       ]
@@ -88,9 +90,10 @@
       "functions": [
         {
           "note": "if using a non-Core processor, ensure adequate external pull-up resistance",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         }
       ]
@@ -211,6 +214,107 @@
       ]
     }
   ],
+  "config": {
+    "enable": {
+      "kind": "boolean",
+      "group": "Drive",
+      "label": "Enable haptic output",
+      "binding": {
+        "pad": "3",
+        "kind": "strap",
+        "states": {
+          "low": "disabled",
+          "high": "enabled (forced)",
+          "open": "enabled (default, via internal PU)"
+        }
+      },
+      "default": true,
+      "options": [
+        {
+          "value": true,
+          "states": {
+            "3": "open"
+          }
+        },
+        {
+          "value": false,
+          "states": {
+            "3": "low"
+          },
+          "netlist": {
+            "requires": [
+              {
+                "to": {
+                  "kind": "rail",
+                  "rail": "GND"
+                },
+                "tag": "enable.disabled.connection",
+                "from": {
+                  "pad": "3",
+                  "kind": "tile"
+                },
+                "role": "power"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "trigger": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use external trigger input",
+      "binding": {
+        "pad": "2",
+        "kind": "intent"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "internal",
+              "register": "MODE.TRIG_SRC"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "output"
+                  ]
+                },
+                "tag": "trigger.attached",
+                "from": {
+                  "pad": "2",
+                  "kind": "tile"
+                },
+                "role": "data"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "external",
+              "register": "MODE.TRIG_SRC"
+            }
+          ]
+        }
+      ],
+      "description": "When enabled, pad 2 (TRIG) becomes an external pulse input that the chip uses as a haptic-effect trigger; firmware switches the DRV2605 into external-trigger mode."
+    }
+  },
   "family": "Drive",
   "package": {
     "pads": 10,
@@ -254,19 +358,21 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT",
           "is_required": true
         }
       ]
     }
   ],
-  "updated_at": "2026-03-07T11:48:58.860Z",
-  "description": "The Drive.H tile is designed for driving linear-resonant actuators (LRAs) or eccentric rotating-mass motors (ERMs) using the Texas Instruments DRV2605 IC.\u00a0 Haptic signals can be generated either from an internal effects library, streamed in real time over I2C, or input as a high-speed pulse-width modulation (PWM) signal.\u00a0 Additionally, an optional hardware trigger can be used to play back pre-configured effects.\u00a0 Separate logic and motor supply connections allows for digital interfacing with logic down to 1.8V.",
-  "json_version": "0.2",
+  "updated_at": "2026-05-01T12:19:55.691Z",
+  "description": "The Drive.H tile is designed for driving linear-resonant actuators (LRAs) or eccentric rotating-mass motors (ERMs) using the Texas Instruments DRV2605 IC.  Haptic signals can be generated either from an internal effects library, streamed in real time over I2C, or input as a high-speed pulse-width modulation (PWM) signal.  Additionally, an optional hardware trigger can be used to play back pre-configured effects.  Separate logic and motor supply connections allows for digital interfacing with logic down to 1.8V.",
+  "json_version": "0.5",
   "application_notes": []
 }

@@ -30,7 +30,7 @@
       "functions": [
         {
           "note": "",
-          "type": "",
+          "type": "other",
           "function": "CC1",
           "direction": ""
         }
@@ -47,7 +47,7 @@
       "functions": [
         {
           "note": "",
-          "type": "",
+          "type": "other",
           "function": "CC2",
           "direction": ""
         }
@@ -64,9 +64,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -81,9 +82,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -255,6 +257,69 @@
       ]
     }
   ],
+  "config": {
+    "usbCSource": {
+      "kind": "boolean",
+      "group": "USB",
+      "label": "USB-C source-power detection",
+      "binding": {
+        "pad": "2",
+        "kind": "intent"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "text": "USB-C CC detection unused; pads 2/3 left unconnected",
+              "type": "note"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "external",
+                  "connector": "USB-C.cc1"
+                },
+                "tag": "usbCSource.cc1.attached",
+                "from": {
+                  "pad": "2",
+                  "kind": "tile"
+                },
+                "role": "data"
+              },
+              {
+                "to": {
+                  "kind": "external",
+                  "connector": "USB-C.cc2"
+                },
+                "tag": "usbCSource.cc2.attached",
+                "from": {
+                  "pad": "3",
+                  "kind": "tile"
+                },
+                "role": "data"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "monitor",
+              "register": "USBCDETECTSTATUS"
+            }
+          ]
+        }
+      ],
+      "description": "When true, the CC pins (pads 2/3) are wired to a USB-C connector's CC1/CC2 lines so the PMIC can detect source power capability. When false, the pins are left unused."
+    }
+  },
   "family": "Power",
   "package": {
     "pads": 10,
@@ -264,6 +329,41 @@
     "size_z": 0
   },
   "tile_id": 10,
+  "features": {
+    "led_red": {
+      "kind": "led",
+      "color": "red",
+      "label": "Red LED",
+      "control": {
+        "via": "pmic_register",
+        "signal": "LED0",
+        "controller": "nPM1300"
+      },
+      "default_use": "charge error / fault indication"
+    },
+    "led_green": {
+      "kind": "led",
+      "color": "green",
+      "label": "Green LED",
+      "control": {
+        "via": "pmic_register",
+        "signal": "LED2",
+        "controller": "nPM1300"
+      },
+      "default_use": "host control"
+    },
+    "led_yellow": {
+      "kind": "led",
+      "color": "yellow",
+      "label": "Yellow LED",
+      "control": {
+        "via": "pmic_register",
+        "signal": "LED1",
+        "controller": "nPM1300"
+      },
+      "default_use": "charge indication"
+    }
+  },
   "headline": "1C Li-Ion charge manager w/ 1.8 & 3.3V out",
   "image_url": "https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/10/tile-image.jpg",
   "components": [
@@ -294,18 +394,20 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT"
         }
       ]
     }
   ],
-  "updated_at": "2026-03-11T06:49:53.212Z",
-  "description": "Single-cell Li-ion/Li-poly/LiFePO\u2084 battery charging and power management tile built around the Nordic nPM1300 PMIC. Provides both 1.8V and 3.3V regulated outputs via high-efficiency buck converters rated to 200mA each. An unregulated VSYS rail is also available for loads that require direct battery voltage or higher current. USB-C power input with CC pins exposed for connection detection. Supports charging currents from 32 to 800 mA for batteries up to 1000 mAh, and has three on-board LEDs for state observation.",
-  "json_version": "0.9",
+  "updated_at": "2026-05-01T12:44:26.314Z",
+  "description": "Single-cell Li-ion/Li-poly/LiFePO₄ battery charging and power management tile built around the Nordic nPM1300 PMIC. Provides both 1.8V and 3.3V regulated outputs via high-efficiency buck converters rated to 200mA each. An unregulated VSYS rail is also available for loads that require direct battery voltage or higher current. USB-C power input with CC pins exposed for connection detection. Supports charging currents from 32 to 800 mA for batteries up to 1000 mAh, and has three on-board LEDs for state observation.",
+  "json_version": "0.12",
   "application_notes": [
     {
       "sort": 0,

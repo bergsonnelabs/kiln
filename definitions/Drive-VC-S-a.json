@@ -50,9 +50,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -67,9 +68,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -202,10 +204,12 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT"
         }
       ]
@@ -213,6 +217,6 @@
   ],
   "updated_at": "2026-02-16T18:11:47.235Z",
   "description": "The Drive.VC.S is a voice-coil-motor driver based on the TI DRV201, providing I2C-controlled current drive up to 100 mA. The tile features an integrated 10-bit DAC, selectable PWM or linear drive modes, advanced ringing compensation for fast settling, and short/open protection. Ideal for precision lens positioning, miniature haptic actuators, and micro-motion applications.",
-  "json_version": "0.5",
+  "json_version": "0.6",
   "application_notes": []
 }

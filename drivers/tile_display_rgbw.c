@@ -1,9 +1,9 @@
 /**
- * @file   tile_disp_rgbw.c
+ * @file   tile_display_rgbw.c
  * @brief  Disp.RGBW (LP5811) — platform-agnostic driver.
  */
 
-#include "tile_disp_rgbw.h"
+#include "tile_display_rgbw.h"
 #include <stddef.h>
 
 /* ---- Instance table ---- */
@@ -32,14 +32,14 @@ static uint8_t lp_read(tile_t *tile, uint8_t reg)
 
 /* ---- Public API ---- */
 
-uint8_t tile_disp_rgbw_find(tiles_pal_t *hal, uint8_t instance)
+uint8_t tile_display_rgbw_find(tiles_pal_t *hal, uint8_t instance)
 {
     uint8_t addr = resolve_id(instance);
     if (!addr) return 0;
     return hal->i2c_is_ready(hal->handle, addr) == 0;
 }
 
-void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
+void tile_display_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
                          const disp_rgbw_cfg_t *cfg)
 {
     (void)cfg;  /* Reserved for future use */
@@ -94,7 +94,7 @@ void tile_disp_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
     tile->state = TILE_STATE_READY;
 }
 
-void tile_disp_rgbw_set(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
+void tile_display_rgbw_set(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
 {
     /* Channel mapping: LED0=R, LED1=B, LED2=G, LED3=W */
     lp_write(tile, LP5811_REG_PWM_0, r);
@@ -103,7 +103,7 @@ void tile_disp_rgbw_set(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w
     lp_write(tile, LP5811_REG_PWM_3, w);
 }
 
-void tile_disp_rgbw_off(tile_t *tile)
+void tile_display_rgbw_off(tile_t *tile)
 {
     lp_write(tile, LP5811_REG_PWM_0, 0);
     lp_write(tile, LP5811_REG_PWM_1, 0);
@@ -111,7 +111,7 @@ void tile_disp_rgbw_off(tile_t *tile)
     lp_write(tile, LP5811_REG_PWM_3, 0);
 }
 
-void tile_disp_rgbw_set_current(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
+void tile_display_rgbw_set_current(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
 {
     lp_write(tile, LP5811_REG_DC_0, r);
     lp_write(tile, LP5811_REG_DC_1, b);
@@ -119,20 +119,20 @@ void tile_disp_rgbw_set_current(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, u
     lp_write(tile, LP5811_REG_DC_3, w);
 }
 
-void tile_disp_rgbw_sleep(tile_t *tile)
+void tile_display_rgbw_sleep(tile_t *tile)
 {
     lp_write(tile, LP5811_REG_CHIP_EN, 0x00);
     tile->state = TILE_STATE_SLEEPING;
 }
 
-void tile_disp_rgbw_wake(tile_t *tile)
+void tile_display_rgbw_wake(tile_t *tile)
 {
     lp_write(tile, LP5811_REG_CHIP_EN, 0x01);
     tile->hal->delay_ms(2);
     tile->state = TILE_STATE_READY;
 }
 
-void tile_disp_rgbw_reset(tile_t *tile)
+void tile_display_rgbw_reset(tile_t *tile)
 {
     lp_write(tile, LP5811_REG_RESET, 0xFF);
     tile->hal->delay_ms(2);
