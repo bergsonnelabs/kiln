@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@7b590aa",
+  "source": "cores@3e1d488",
   "tile": "Drive.H",
   "palette": {
     "label": "Drive.H",
@@ -43,6 +43,75 @@
             20
           ],
           "description": "Number of times to play (1 = once)."
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "play_sequence"
+      ],
+      "symbol": "tile_drive_h_play_sequence",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Play a sequence of up to 8 waveform effects.",
+      "params": [
+        {
+          "name": "effects",
+          "type": "int[8]",
+          "description": "Array of effect indices (1-123, 0 = stop)"
+        }
+      ],
+      "returns": "void",
+      "c_in_buffer": {
+        "name": "effects",
+        "type": "uint8_t",
+        "length": 8,
+        "length_param": "count"
+      },
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "load_sequence"
+      ],
+      "symbol": "tile_drive_h_load_sequence",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Load effects into the waveform sequencer without triggering.",
+      "params": [
+        {
+          "name": "effects",
+          "type": "int[8]",
+          "description": "Array of effect indices (1-123, 0 = stop)"
+        }
+      ],
+      "returns": "void",
+      "c_in_buffer": {
+        "name": "effects",
+        "type": "uint8_t",
+        "length": 8,
+        "length_param": "count"
+      },
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_trigger"
+      ],
+      "symbol": "tile_drive_h_set_trigger",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Set the trigger mode.",
+      "params": [
+        {
+          "name": "mode",
+          "type": "int",
+          "description": "One of DRIVE_H_TRIG_INTERNAL, DRIVE_H_TRIG_EDGE,"
         }
       ],
       "returns": "void",
@@ -122,6 +191,20 @@
       "description": "Exit RTP mode and return to internal trigger mode.",
       "params": [],
       "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_status"
+      ],
+      "symbol": "tile_drive_h_get_status",
+      "header": "tile_drive_h.h",
+      "category": "tile",
+      "description": "Read the raw STATUS register (0x00).",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
       "receiver": "tile_t*"
     },
     {
