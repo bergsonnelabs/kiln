@@ -489,7 +489,15 @@ uint8_t tile_sense_mic_is_loud(tile_t *tile, int16_t threshold_db)
     return (spl > threshold_db) ? 1 : 0;
 }
 
-/** @brief Read instantaneous SPL in 0.1 dB units. */
+/** @brief Read instantaneous SPL in 0.1 dB units.
+ *
+ * TODO HW: SPL accuracy is rough (±5 dB in the 50–100 dB range, no
+ * A-weighting). The mV→dB LUT is units-only from the AMM-2742 typical
+ * −42 dBV/Pa sensitivity; calibration vs. a reference SPL meter has
+ * not been done. Also, DC offset is captured once at init() and any
+ * supply drift after that shifts SPL — call tile_sense_mic_calibrate()
+ * to re-zero. Good enough for clap/voice/event detection, not for
+ * studio metering. */
 int16_t tile_sense_mic_read_spl_db(tile_t *tile)
 {
     uint16_t mv_rms = mic_capture_rms_mv(tile);
@@ -510,7 +518,15 @@ uint8_t tile_sense_mic_wait_for_sound(tile_t *tile, int16_t threshold_db,
     return 0;
 }
 
-/** @brief Detect a clap pattern (two peaks bracketed by quiet). */
+/** @brief Detect a clap pattern (two peaks bracketed by quiet).
+ *
+ * TODO HW: coarse two-peaks-in-window pattern detector. Door slams,
+ * drawer slams, hand-against-thigh, double-knocks, and percussive
+ * impacts will all trigger this. The signature of a real human clap
+ * is broadband with a fast attack — distinguishing one from a slam
+ * needs a trained classifier, which won't fit the integer-only
+ * constraint. Tune `peak_thr`/`quiet_thr`/gap window at the bench
+ * for the target environment. */
 uint8_t tile_sense_mic_detect_clap(tile_t *tile, uint32_t timeout_ms)
 {
     /* Pattern thresholds (0.1 dB units):
