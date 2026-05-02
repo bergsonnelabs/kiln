@@ -46,8 +46,21 @@ static uint8_t drv_read(tile_t* tile, uint8_t reg)
     return val;
 }
 
+/* Read-modify-write: clear `mask` bits, OR in `bits`. */
+static void drv_rmw(tile_t* tile, uint8_t reg, uint8_t mask, uint8_t bits)
+{
+    uint8_t v = drv_read(tile, reg);
+    v = (uint8_t)((v & ~mask) | (bits & mask));
+    drv_write(tile, reg, v);
+}
+
 /* CONFIG4 base: STALL_REP=1, CBC_REP=1, PMODE=1 (PWM), I2C_BC=1 */
 #define CONFIG4_BASE  0x3C
+
+/* CONFIG4 bit masks */
+#define CONFIG4_PMODE_MASK   0x08
+#define CONFIG4_I2C_BC_MASK  0x04
+#define CONFIG4_INX_MASK     0x03   /* I2C_EN_IN1 + I2C_PH_IN2 */
 
 /* CS_GAIN_SEL → maximum current in mA */
 static const uint16_t cs_max_ma[] = {
@@ -60,6 +73,14 @@ static const uint16_t cs_max_ma[] = {
     250,   /* 110b (same as 100b, bit 1 don't care) */
     125,   /* 111b (same as 101b, bit 1 don't care) */
 };
+
+/* True when the bridge is currently driven by I²C registers (I2C_BC=1).
+ * Used as the gate for forward/reverse/brake/coast — those are no-ops
+ * in pad-control modes. */
+static uint8_t bridge_is_i2c(tile_t* tile)
+{
+    return (drv_read(tile, DRV8214_REG_CONFIG4) & CONFIG4_I2C_BC_MASK) ? 1 : 0;
+}
 
 /* -------------------------------------------------------------- */
 /* Public API                                                      */
@@ -120,26 +141,26 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
         kv_uv_per_rpm   = cfg->kv_uv_per_rpm;
     }
 
-    /* ---- CONFIG4: bridge control mode ---- */
-    if (mode == DRIVE_DC_H_MODE_PAD_PHEN) {
-        /* External pad control, PH/EN mode:
-         * [7:6] RC_REP     = 00  (no ripple count on nFAULT)
-         * [5]   STALL_REP  = 1   (report stall on nFAULT)
-         * [4]   CBC_REP    = 1   (report current regulation on nFAULT)
-         * [3]   PMODE      = 0   (PH/EN mode)
-         * [2]   I2C_BC     = 0   (external pad control)
-         * [1:0] -          = 00  (ignored when I2C_BC=0)           */
-        drv_write(tile, DRV8214_REG_CONFIG4, 0x30);
-    } else {
-        /* I2C bridge control, PWM mode:
-         * [7:6] RC_REP     = 00  (no ripple count on nFAULT)
-         * [5]   STALL_REP  = 1   (report stall on nFAULT)
-         * [4]   CBC_REP    = 1   (report current regulation on nFAULT)
-         * [3]   PMODE      = 1   (PWM mode — supports coast state)
-         * [2]   I2C_BC     = 1   (I2C controls bridge)
-         * [1]   I2C_EN_IN1 = 0   (start in coast)
-         * [0]   I2C_PH_IN2 = 0                                    */
-        drv_write(tile, DRV8214_REG_CONFIG4, CONFIG4_BASE);
+    /* ---- CONFIG4: bridge control mode ----
+     * [7:6] RC_REP     = 00  (no ripple count on nFAULT)
+     * [5]   STALL_REP  = 1   (report stall on nFAULT)
+     * [4]   CBC_REP    = 1   (report current regulation on nFAULT)
+     * [3]   PMODE      = mode-dependent
+     * [2]   I2C_BC     = mode-dependent
+     * [1]   I2C_EN_IN1 = 0   (start in coast)
+     * [0]   I2C_PH_IN2 = 0                                    */
+    {
+        uint8_t cfg4;
+        if (mode == DRIVE_DC_H_MODE_PAD_PHEN) {
+            /* PMODE=0 (PH/EN), I2C_BC=0 (external pad control) */
+            cfg4 = 0x30;
+        } else if (mode == DRIVE_DC_H_MODE_PAD_IN1IN2) {
+            /* PMODE=1 (PWM, supports independent half-bridge), I2C_BC=0 */
+            cfg4 = 0x38;
+        } else {
+            cfg4 = CONFIG4_BASE;
+        }
+        drv_write(tile, DRV8214_REG_CONFIG4, cfg4);
     }
 
     /* ---- CONFIG0: enable output stage, faults, voltage range ----
@@ -157,7 +178,7 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
     /* ---- CONFIG3: stall/current regulation settings ----
      * [7:6] IMODE     = mode-dependent
      *                   01 for I2C modes (current reg during tINRUSH)
-     *                   00 for PAD_PHEN (no current reg — user controls PWM)
+     *                   00 for PAD_* (no current reg — user controls PWM)
      * [5]   SMODE     = 1   (stall = indication only, outputs stay on)
      * [4]   INT_VREF  = 1   (use internal 500 mV stall reference)
      * [3]   TBLANK    = 0   (1.8 us blanking time)
@@ -165,7 +186,8 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
      * [1]   OCP_MODE  = 1   (auto-retry on overcurrent)
      * [0]   TSD_MODE  = 1   (auto-retry on thermal shutdown)        */
     {
-        uint8_t imode = (mode == DRIVE_DC_H_MODE_PAD_PHEN) ? 0x00 : 0x40;
+        uint8_t imode = (mode == DRIVE_DC_H_MODE_PAD_PHEN ||
+                         mode == DRIVE_DC_H_MODE_PAD_IN1IN2) ? 0x00 : 0x40;
         drv_write(tile, DRV8214_REG_CONFIG3, 0x33 | imode);
     }
 
@@ -178,7 +200,8 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
     uint8_t reg_ctrl_bits;
     if (mode == DRIVE_DC_H_MODE_SPEED) {
         reg_ctrl_bits = 0x02;  /* 10b = speed regulation */
-    } else if (mode == DRIVE_DC_H_MODE_PAD_PHEN) {
+    } else if (mode == DRIVE_DC_H_MODE_PAD_PHEN ||
+               mode == DRIVE_DC_H_MODE_PAD_IN1IN2) {
         reg_ctrl_bits = 0x00;  /* 00b = no regulation (external PWM) */
     } else {
         reg_ctrl_bits = 0x03;  /* 11b = voltage regulation (also for RIPPLE_COUNT) */
@@ -289,6 +312,10 @@ void tile_drive_dc_h_forward(tile_t* tile)
         TILE_ON_ERROR(tile, "forward: not ready");
         return;
     }
+    if (!bridge_is_i2c(tile)) {
+        TILE_ON_ERROR(tile, "forward: bridge in pad-control mode");
+        return;
+    }
     /* PWM mode: IN1=1, IN2=0 → Forward (OUT1=H, OUT2=L) */
     drv_write(tile, DRV8214_REG_CONFIG4, CONFIG4_BASE | 0x02);
 }
@@ -297,6 +324,10 @@ void tile_drive_dc_h_reverse(tile_t* tile)
 {
     if (tile->state != TILE_STATE_READY) {
         TILE_ON_ERROR(tile, "reverse: not ready");
+        return;
+    }
+    if (!bridge_is_i2c(tile)) {
+        TILE_ON_ERROR(tile, "reverse: bridge in pad-control mode");
         return;
     }
     /* PWM mode: IN1=0, IN2=1 → Reverse (OUT1=L, OUT2=H) */
@@ -309,6 +340,10 @@ void tile_drive_dc_h_brake(tile_t* tile)
         TILE_ON_ERROR(tile, "brake: not ready");
         return;
     }
+    if (!bridge_is_i2c(tile)) {
+        TILE_ON_ERROR(tile, "brake: bridge in pad-control mode");
+        return;
+    }
     /* PWM mode: IN1=1, IN2=1 → Brake (low-side slow decay) */
     drv_write(tile, DRV8214_REG_CONFIG4, CONFIG4_BASE | 0x03);
 }
@@ -319,8 +354,44 @@ void tile_drive_dc_h_coast(tile_t* tile)
         TILE_ON_ERROR(tile, "coast: not ready");
         return;
     }
+    if (!bridge_is_i2c(tile)) {
+        TILE_ON_ERROR(tile, "coast: bridge in pad-control mode");
+        return;
+    }
     /* PWM mode: IN1=0, IN2=0 → Coast (Hi-Z) */
     drv_write(tile, DRV8214_REG_CONFIG4, CONFIG4_BASE);
+}
+
+/* ---- Bridge control source ---- */
+
+void tile_drive_dc_h_set_control_mode(tile_t* tile,
+                                      drive_dc_h_control_mode_t mode)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_control_mode: not ready");
+        return;
+    }
+
+    /* Read CONFIG4, then update PMODE/I2C_BC/INx, preserving RC_REP/STALL_REP/CBC_REP. */
+    uint8_t cfg4 = drv_read(tile, DRV8214_REG_CONFIG4);
+    /* Clear PMODE, I2C_BC, INx bits — we set them per-mode below. */
+    cfg4 &= (uint8_t)~(CONFIG4_PMODE_MASK | CONFIG4_I2C_BC_MASK | CONFIG4_INX_MASK);
+
+    switch (mode) {
+        case DRIVE_DC_H_CTRL_PAD_PHEN:
+            /* PMODE=0 (PH/EN), I2C_BC=0 */
+            break;
+        case DRIVE_DC_H_CTRL_PAD_IN1IN2:
+            /* PMODE=1 (PWM), I2C_BC=0 */
+            cfg4 |= CONFIG4_PMODE_MASK;
+            break;
+        case DRIVE_DC_H_CTRL_I2C:
+        default:
+            /* PMODE=1 (PWM), I2C_BC=1, start in coast */
+            cfg4 |= CONFIG4_PMODE_MASK | CONFIG4_I2C_BC_MASK;
+            break;
+    }
+    drv_write(tile, DRV8214_REG_CONFIG4, cfg4);
 }
 
 /* ---- Regulation ---- */
@@ -332,6 +403,139 @@ void tile_drive_dc_h_set_target(tile_t* tile, uint8_t value)
         return;
     }
     drv_write(tile, DRV8214_REG_CTRL1, value);
+}
+
+void tile_drive_dc_h_set_regulation_mode(tile_t* tile,
+                                         drive_dc_h_reg_mode_t mode)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_regulation_mode: not ready");
+        return;
+    }
+
+    /* REG_CTRL[1:0] occupies CTRL0 bits [4:3]. */
+    uint8_t bits = (uint8_t)((mode & 0x03) << 3);
+    drv_rmw(tile, DRV8214_REG_CTRL0, 0x18, bits);
+
+    /* Speed regulation requires EN_RC=1; force it (and leave it on
+     * when switching away — clearing it would invalidate get_speed
+     * unexpectedly). */
+    if (mode == DRIVE_DC_H_REG_SPEED) {
+        drv_rmw(tile, DRV8214_REG_RC_CTRL0, 0x80, 0x80);
+    }
+}
+
+/* ---- Current regulation ---- */
+
+void tile_drive_dc_h_set_current_regulation_mode(tile_t* tile,
+                                                 drive_dc_h_imode_t mode)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_current_regulation_mode: not ready");
+        return;
+    }
+    /* IMODE[1:0] occupies CONFIG3 bits [7:6]. */
+    drv_rmw(tile, DRV8214_REG_CONFIG3, 0xC0,
+            (uint8_t)((mode & 0x03) << 6));
+}
+
+void tile_drive_dc_h_set_current_sense_gain(tile_t* tile, uint8_t code)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_current_sense_gain: not ready");
+        return;
+    }
+    if (code > 5) code = 5;
+    drv_rmw(tile, DRV8214_REG_RC_CTRL0, 0x07, code & 0x07);
+}
+
+/* ---- Stall detection ---- */
+
+void tile_drive_dc_h_set_stall_enabled(tile_t* tile, uint8_t enabled)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_stall_enabled: not ready");
+        return;
+    }
+    /* EN_STALL is CONFIG0 bit 5. */
+    drv_rmw(tile, DRV8214_REG_CONFIG0, 0x20,
+            enabled ? 0x20 : 0x00);
+}
+
+void tile_drive_dc_h_set_inrush_time_ms(tile_t* tile, uint16_t ms)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_inrush_time_ms: not ready");
+        return;
+    }
+    /* Each LSB = 102.4 us → ticks = ms * 1000 / 102 ≈ ms * 9.766.
+     * Use ms * 10000 / 1024 to stay integer. Clamp to 0xFFFF. */
+    uint32_t ticks = ((uint32_t)ms * 10000u) / 1024u;
+    if (ticks > 0xFFFF) ticks = 0xFFFF;
+    drv_write(tile, DRV8214_REG_CONFIG1, (uint8_t)(ticks & 0xFF));
+    drv_write(tile, DRV8214_REG_CONFIG2, (uint8_t)((ticks >> 8) & 0xFF));
+}
+
+void tile_drive_dc_h_set_stall_recovery(tile_t* tile,
+                                        drive_dc_h_stall_recovery_t mode)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_stall_recovery: not ready");
+        return;
+    }
+    /* SMODE is CONFIG3 bit 5. */
+    drv_rmw(tile, DRV8214_REG_CONFIG3, 0x20,
+            (mode == DRIVE_DC_H_STALL_REPORT) ? 0x20 : 0x00);
+}
+
+/* ---- Ripple-counter tuning ---- */
+
+void tile_drive_dc_h_set_ripple_threshold(tile_t* tile, uint16_t count)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_ripple_threshold: not ready");
+        return;
+    }
+
+    /* Threshold = RC_THR (10-bit) × RC_THR_SCALE (2, 8, 16, or 64).
+     * Pick the smallest scale that lets RC_THR fit in 10 bits. */
+    static const uint16_t scales[] = { 2, 8, 16, 64 };
+    static const uint8_t  scale_bits[] = { 0, 1, 2, 3 };
+    uint16_t rc_thr = 0;
+    uint8_t  scale_b = 3;
+
+    for (uint8_t i = 0; i < 4; i++) {
+        uint32_t v = (uint32_t)count / scales[i];
+        if (v <= 0x3FF) {
+            rc_thr  = (uint16_t)v;
+            scale_b = scale_bits[i];
+            break;
+        }
+    }
+    /* If count exceeds 0x3FF × 64 = 65472, clamp at max. */
+    if (count > 65472u) {
+        rc_thr  = 0x3FF;
+        scale_b = 3;
+    }
+
+    /* RC_CTRL1 = RC_THR[7:0]. */
+    drv_write(tile, DRV8214_REG_RC_CTRL1, (uint8_t)(rc_thr & 0xFF));
+
+    /* RC_CTRL2 [3:2]=RC_THR_SCALE, [1:0]=RC_THR[9:8]. Preserve INV_R_SCALE
+     * and KMC_SCALE (bits [7:4]). */
+    uint8_t lo = (uint8_t)(((scale_b & 0x03) << 2) | ((rc_thr >> 8) & 0x03));
+    drv_rmw(tile, DRV8214_REG_RC_CTRL2, 0x0F, lo);
+}
+
+void tile_drive_dc_h_set_ripple_filter_gain(tile_t* tile, uint8_t code)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_ripple_filter_gain: not ready");
+        return;
+    }
+    /* FLT_GAIN_SEL[1:0] is RC_CTRL0 bits [4:3]. */
+    drv_rmw(tile, DRV8214_REG_RC_CTRL0, 0x18,
+            (uint8_t)((code & 0x03) << 3));
 }
 
 /* ---- Monitoring ---- */
