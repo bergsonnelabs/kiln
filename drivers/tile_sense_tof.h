@@ -41,34 +41,16 @@
  * Driver gaps (chip capabilities not exposed by this driver):
  *
  * @tessera unsupported severity=common category="10 m extended-range mode"
- *   TMF8806 App0 firmware supports up to 5 m range. The 10 m mode
- *   requires downloading a RAM patch via the bootloader's W_RAM +
- *   RAMREMAP_RESET protocol. Driver doesn't ship the patch or the
- *   bootloader handshake — relevant for room-scale presence
- *   detection.
- *
- * @tessera unsupported severity=advanced category="Threshold-based interrupts"
- *   Chip can fire INT when the measured distance crosses a
- *   programmable threshold (above / below). Driver fires INT on
- *   every measurement completion only — threshold-mode would let
- *   the host stay asleep until a target gets close.
- *
- * @tessera unsupported severity=advanced category="Raw histogram readout"
- *   Command 0x23 returns the SPAD/TDC histogram (~128 photon-count
- *   bins). Useful for custom multi-target detection, reflectance
- *   estimation, or peak-curvature analysis. Driver doesn't expose
- *   the command — application-layer post-processing only.
- *
- * @tessera unsupported severity=niche category="Oscillator drift correction / re-trim"
- *   Internal clock can drift ±5 % over temperature, biasing
- *   distance readings. Chip supports a one-point clock-correction
- *   step against a reference distance, plus a lab re-trim
- *   procedure. Driver doesn't expose either — relevant for
- *   production-line calibration or hot/cold accuracy.
+ *   Deferred to a dedicated session. TMF8806 App0 firmware supports
+ *   up to 5 m range out of ROM; 10 m mode requires downloading a
+ *   binary RAM patch from AMS via the bootloader's W_RAM +
+ *   RAMREMAP_RESET protocol — non-trivial firmware-loading flow not
+ *   in scope for this driver-coverage pass.
  *
  * @tessera unsupported severity=niche category="GPIO0 / GPIO1 external trigger"
- *   Chip's GPIO0/1 (external trigger / status output) aren't
- *   routed to tile pads — pure hardware limitation. Future tile
+ *   Hardware-gated. Chip's GPIO0/1 (external trigger / status
+ *   output) aren't routed to tile pads (verified in
+ *   Sense-TOF-a.json — pads 6/7/8 carry no function). Future tile
  *   revisions could expose them for hardware-synchronized ranging.
  *
  * @note All bus I/O is routed through tiles_pal_t function pointers.
@@ -83,7 +65,7 @@
 /* ---- Driver version ---- */
 
 #define TILE_SENSE_TOF_VERSION_MAJOR  1
-#define TILE_SENSE_TOF_VERSION_MINOR  0
+#define TILE_SENSE_TOF_VERSION_MINOR  1
 #define TILE_SENSE_TOF_VERSION_PATCH  0
 
 TILES_CHECK_VERSION(1, 0);
@@ -522,5 +504,102 @@ void tile_sense_tof_save_state(tile_t *tile, uint8_t *data);
  * @param  data  Pointer to 11 bytes of previously saved state data.
  */
 void tile_sense_tof_restore_state(tile_t *tile, const uint8_t *data);
+
+/* ---- Threshold-based interrupts (App0 cmd 0x08 / 0x09) ---- */
+
+/**
+ * @brief  Configure threshold-based interrupt suppression.
+ *
+ * Without this configured, the chip fires INT on every measurement
+ * completion. With it: INT only fires when an object is detected in
+ * the [low_mm, high_mm] range for `persistence` consecutive
+ * measurements. Lets a sleeping host stay asleep until something
+ * gets close.
+ *
+ * @tessera expose category=tile name=set_threshold_interrupt
+ *
+ * Per HostDriverCommunication §8.12 (cmd 0x08 = WR_ADD_CONFIG):
+ *   - persistence = 0  → interrupt every measurement (default)
+ *   - persistence = N  → require N consecutive in-range hits
+ *   - low_mm > high_mm → no interrupts (no valid range)
+ *
+ * @param  tile          Initialised tile handle.
+ * @param  persistence   0–255; 0 = disabled (every-measurement INT).
+ * @param  low_mm        Lower bound (inclusive), millimetres.
+ * @param  high_mm       Upper bound (inclusive), millimetres.
+ * @return 1 on success, 0 on bus / command-execution timeout.
+ */
+uint8_t tile_sense_tof_set_threshold_interrupt(tile_t *tile,
+                                               uint8_t persistence,
+                                               uint16_t low_mm,
+                                               uint16_t high_mm);
+
+/**
+ * @brief  Read back the current threshold-interrupt configuration.
+ *
+ * Per HostDriverCommunication §8.12.2 (cmd 0x09 = RD_ADD_CONFIG).
+ *
+ * @param  tile          Initialised tile handle.
+ * @param  persistence   Output (may be NULL).
+ * @param  low_mm        Output (may be NULL).
+ * @param  high_mm       Output (may be NULL).
+ * @return 1 on success, 0 on timeout.
+ */
+uint8_t tile_sense_tof_get_threshold_interrupt(tile_t *tile,
+                                               uint8_t *persistence,
+                                               uint16_t *low_mm,
+                                               uint16_t *high_mm);
+
+/* ---- System-clock readout (host-side oscillator drift correction) ---- */
+
+/**
+ * @brief  Read the chip's 32-bit system-clock tick counter.
+ *
+ * The TMF8806's internal oscillator can drift ±5 % over temperature,
+ * which biases distance readings if the host's measurement period
+ * doesn't compensate. Reading this register set after each
+ * measurement lets the host compute the actual elapsed chip-time
+ * vs. its own elapsed wall-time and apply a software correction
+ * (HostDriverCommunication §10).
+ *
+ * Reads SYS_CLOCK_0..3 (0x24–0x27) as a single 4-byte burst.
+ *
+ * @tessera expose category=tile name=get_sys_clock_ticks returns=int
+ *
+ * @param  tile  Initialised tile handle.
+ * @return 32-bit system-clock tick count (0 if not in App0 / no
+ *         measurement yet).
+ */
+uint32_t tile_sense_tof_get_sys_clock_ticks(tile_t *tile);
+
+/* ---- Raw histogram readout ---- */
+
+/**
+ * @brief  Capture and read a raw histogram from the SPAD/TDC array.
+ *
+ * Useful for custom multi-target detection, reflectance estimation,
+ * or peak-curvature analysis beyond what App0's distance API
+ * provides. Per HostDriverCommunication §8.11.
+ *
+ * Procedure (handled internally): stop any running measurement,
+ * configure histogram-readout mode (cmd 0x30), start cyclic
+ * measurement, wait for INT_STATUS bit 1, issue 0x80 to start the
+ * histogram block read, wait for TID to advance, then read 128
+ * bytes from the histogram register.
+ *
+ * After this returns, the chip stays in histogram mode. Call
+ * `tile_sense_tof_stop()` and re-issue the original measurement
+ * config to return to normal distance reads.
+ *
+ * @param  tile         Initialised tile handle.
+ * @param  hist_type    Histogram type byte (see HostDriverCommunication
+ *                      §8.11 / TMF8806 datasheet for available types;
+ *                      0x10 = short-range example).
+ * @param  buf128       Caller-supplied 128-byte buffer.
+ * @param  timeout_ms   Maximum wait for the histogram-ready interrupt.
+ * @return 1 on success (buf128 populated), 0 on timeout / bus error.
+ */
+uint8_t tile_sense_tof_read_histogram(tile_t *tile, uint8_t hist_type,
+                                      uint8_t *buf128, uint32_t timeout_ms);
 
 #endif /* TILE_SENSE_TOF_H */
