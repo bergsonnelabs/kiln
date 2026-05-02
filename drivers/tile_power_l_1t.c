@@ -470,3 +470,57 @@ void tile_power_l_1t_write_reg(tile_t* tile, uint8_t reg, uint8_t value)
 {
     bq_write(tile, reg, value);
 }
+
+/* -------------------------------------------------------------- */
+/* Runtime — tier-2 idiomatic helpers                              */
+/* -------------------------------------------------------------- */
+
+uint8_t tile_power_l_1t_is_charging(tile_t* tile)
+{
+    power_l_1t_status_t s;
+    tile_power_l_1t_get_charge_status(tile, &s);
+    return s.charging ? 1 : 0;
+}
+
+uint8_t tile_power_l_1t_is_charge_done(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY) return 0;
+    /* Read STAT0 directly so we don't disturb the clear-on-read
+     * FLAG3 register. CHARGE_DONE is bit 5 of STAT0. */
+    return (bq_read(tile, BQ25150_REG_STAT0) & 0x20) ? 1 : 0;
+}
+
+uint8_t tile_power_l_1t_is_battery_low(tile_t* tile, uint8_t threshold_pct)
+{
+    return (tile_power_l_1t_get_percent(tile) < threshold_pct) ? 1 : 0;
+}
+
+uint8_t tile_power_l_1t_is_powered(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY) return 0;
+    /* VIN_PGOOD is bit 0 of STAT0. Read STAT0 directly to leave
+     * FLAG3 (clear-on-read) alone for callers that also poll
+     * get_charge_status. */
+    return (bq_read(tile, BQ25150_REG_STAT0) & 0x01) ? 1 : 0;
+}
+
+uint8_t tile_power_l_1t_wait_for_charge_done(tile_t* tile, uint32_t timeout_ms)
+{
+    if (tile->state != TILE_STATE_READY) return 0;
+
+    /* Poll cadence: 1 s. Charge state evolves on the order of
+     * minutes, so polling faster gains nothing. We always check
+     * once before sleeping so a zero timeout still does the
+     * right thing if the cycle is already complete. */
+    const uint32_t poll_ms = 1000u;
+    uint32_t elapsed = 0;
+    while (1) {
+        if (tile_power_l_1t_is_charge_done(tile)) return 1;
+        if (elapsed >= timeout_ms) return 0;
+        uint32_t step = (timeout_ms - elapsed < poll_ms)
+                          ? (timeout_ms - elapsed)
+                          : poll_ms;
+        tile->hal->delay_ms(step);
+        elapsed += step;
+    }
+}
