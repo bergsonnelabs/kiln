@@ -36,28 +36,23 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="Qvar charge-variation sensing"
- *   ILPS22QS has a charge-variation sensing mode that uses pressure-port
- *   capacitance changes for proximity / touch detection. Driver explicitly
- *   disables Qvar at init and doesn't expose it — opening up Qvar would
- *   unlock proximity-style use cases on a pressure tile.
- *
- * @tessera unsupported severity=niche category="Analog Hub (AH) mode"
- *   ILPS22QS can repurpose its I²C lines as analog inputs (AH_QVAR_EN).
- *   Driver doesn't expose this mode; advanced sensor-fusion projects
- *   might want it.
+ * @tessera unsupported severity=advanced category="Analog Hub / Qvar charge-variation sensing"
+ *   Hardware-gated on Sense.BP rev a. The ILPS22QS reads charge variation
+ *   on dedicated input pins (chip pins 5 = AH2/QVAR2 and 7 = AH1/QVAR1)
+ *   that need an external electrode wired in. The current tile rev
+ *   leaves tile pads 6/7/8 unconnected (per Sense-BP-a.json) — those
+ *   chip pins are tied to GND on the PCB per the datasheet's "if not
+ *   used" recommendation. Even with AH_QVAR_EN=1, no signal can reach
+ *   the chip. Closing this gap requires a tile hardware revision that
+ *   routes one or both AH pins to a tile pad with electrode access.
  *
  * @tessera unsupported severity=advanced category="Alternate bus modes (SPI / I3C)"
- *   Driver is I²C-only. ILPS22QS also supports 3-wire and 4-wire SPI
- *   (selectable via IF_CTRL/SIM) and I3C (in-band interrupts, hot-join,
- *   dynamic addressing). SPI would unlock higher sample rates without
- *   bus contention; I3C lowers power and latency once Tessera adds an
- *   I3C bus.
- *
- * @tessera unsupported severity=niche category="Boot status"
- *   Chip exposes a BOOT bit in INT_SOURCE / IF_CTRL that signals
- *   power-on completion. Driver doesn't expose it; matters when
- *   interrogating the chip immediately after VDD comes up.
+ *   Ecosystem-gated. ILPS22QS supports 3-wire and 4-wire SPI (CS = pad
+ *   3 strap) and I3C SDR. The driver framework currently uses tiles_pal
+ *   I²C calls exclusively; adding SPI requires plumbing hal->spi_*
+ *   through the driver, and I3C requires a new bus abstraction in
+ *   Tessera that doesn't exist yet. Defer to a future multi-bus
+ *   driver framework pass.
  *
  * @note All bus I/O is routed through tiles_pal_t function pointers.
  *       This driver contains no platform-specific code.
@@ -71,7 +66,7 @@
 /* ---- Driver version ---- */
 
 #define TILE_SENSE_BP_VERSION_MAJOR  1
-#define TILE_SENSE_BP_VERSION_MINOR  0
+#define TILE_SENSE_BP_VERSION_MINOR  1
 #define TILE_SENSE_BP_VERSION_PATCH  0
 
 TILES_CHECK_VERSION(1, 0);
@@ -480,6 +475,30 @@ void tile_sense_bp_set_interrupt_cfg(tile_t *tile, uint8_t cfg);
  * @return Raw INT_SOURCE byte (use ILPS22QS_INT_SRC_* masks).
  */
 uint8_t tile_sense_bp_get_int_source(tile_t *tile);
+
+/**
+ * @brief  Check whether the chip's power-on boot sequence is complete.
+ *
+ * @tessera expose category=tile name=is_boot_complete returns=int
+ *
+ * After VDD ramps, the ILPS22QS reloads its trim parameters from NVM.
+ * The BOOT_ON bit in INT_SOURCE reads 1 during this phase and 0 once
+ * the chip is ready to be configured. Reads of this getter are
+ * non-clearing (the BOOT_ON bit is preserved across the read; only
+ * the threshold/IA flags clear on read).
+ *
+ * Useful when interrogating the chip immediately after VDD comes up,
+ * or after software reset. A typical pattern:
+ * @code
+ *   tile_sense_bp_reset(&baro);
+ *   while (!tile_sense_bp_is_boot_complete(&baro)) core_delay_ms(1);
+ *   // chip is now ready for re-configuration
+ * @endcode
+ *
+ * @param  tile  Initialised tile handle.
+ * @return 1 if boot complete (BOOT_ON cleared), 0 if still booting.
+ */
+uint8_t tile_sense_bp_is_boot_complete(tile_t *tile);
 
 /* ---- Reference / offset calibration ---- */
 
