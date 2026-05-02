@@ -53,6 +53,52 @@
  * @tessera event name=tilt mask=ICM42686P_INT_STATUS3_TILT_DET
  * @tessera event name=tap mask=ICM42686P_INT_STATUS3_TAP_DET payload=count:int,axis:int,direction:int read=tile_sense_i_6p6_get_tap_result read_type=sense_i_6p6_tap_result_t
  * @tessera event name=wake_on_motion mask=ICM42686P_INT_STATUS2_WOM_ANY
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=common category="Self-test sweep"
+ *   Chip has factory self-test capability (SELF_TEST_CONFIG) that
+ *   compares accel/gyro responses against stored factory limits.
+ *   Driver has no self-test API — relevant for production-line
+ *   validation.
+ *
+ * @tessera unsupported severity=common category="INT2 pin entirely unconfigured"
+ *   Tile JSON wires INT2 (pad 8) but the driver only configures INT1.
+ *   Pad 8 is currently dead — users can't route data-ready / motion /
+ *   FIFO interrupts to it for two-line interrupt schemes.
+ *
+ * @tessera unsupported severity=advanced category="Accel offset registers"
+ *   Bank 1 OFFSET_USER0–2 registers let firmware apply a hardware-side
+ *   accel zero offset. Driver exposes set_gyro_offset but the matching
+ *   accel offset path is missing — relevant for runtime zero-G
+ *   calibration.
+ *
+ * @tessera unsupported severity=advanced category="FSYNC external-clock / timestamping"
+ *   Chip can take a 31–50 kHz FSYNC input and stamp samples against
+ *   external timing (TIMESTAMP_FSYNC_EN in FIFO_CONFIG). Driver
+ *   doesn't expose FSYNC — relevant for multi-IMU sync or
+ *   external-clock PPS alignment.
+ *
+ * @tessera unsupported severity=advanced category="Advanced INT pin config"
+ *   INT_CONFIG has bits for drive strength, push-pull vs open-drain,
+ *   latched vs pulse, polarity. Driver writes a default-good config;
+ *   exposing the knobs matters when wiring INT into level-shifters or
+ *   cross-domain receivers.
+ *
+ * @tessera unsupported severity=advanced category="I3C support"
+ *   Driver is I²C-only. ICM-42686-P supports I3C SDR (up to 12.5 MHz
+ *   with in-band interrupts and dynamic addressing); would unlock
+ *   lower-latency reads once Tessera adds I3C bus support.
+ *
+ * @tessera unsupported severity=niche category="FIFO 20-bit hi-res mode"
+ *   FIFO_HIRES_EN switches FIFO packets to 20-bit accel + 20-bit gyro
+ *   (Packet 4 with 3-byte extensions) at higher sensitivity scale
+ *   factors. Driver supports the 16-bit packet formats only.
+ *
+ * @tessera unsupported severity=niche category="Subsystem-scoped resets"
+ *   Chip has dedicated reset registers for individual subsystems
+ *   (FIFO, signal path, APEX). Driver exposes one global reset but
+ *   not the subsystem-scoped variants.
  */
 
 #ifndef INC_TILE_SENSE_I_6P6_H_

@@ -28,6 +28,44 @@
  *       tile_drive_p_write_fifo(&piezo, 0x7FFF);
  *   }
  * @endcode
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=advanced category="Output voltage range select (CONFIG.GAIND)"
+ *   BOS1921 supports two output ranges: ±95 V (high gain) and
+ *   ±13.25 V (low gain), selectable via CONFIG.GAIND. Driver
+ *   uses one default — switching matters for low-voltage piezos
+ *   where ±95 V is wasteful or destructive.
+ *
+ * @tessera unsupported severity=advanced category="Sense gain selection (CONFIG.GAINS)"
+ *   Sense-channel gain selects between 7.6 mV and 54.5 mV ADC
+ *   resolution. Driver reads sense at default gain; switching
+ *   matters for finer impedance / press-detection tuning.
+ *
+ * @tessera unsupported severity=advanced category="Multi-device SYNC pin"
+ *   SYNC pin coordinates phase between cascaded BOS1921s
+ *   (< 2 µs delay). Tile doesn't expose the pin and driver has
+ *   no SYNC-mode API — relevant for multi-actuator surfaces.
+ *
+ * @tessera unsupported severity=advanced category="Sleep state retention (RET)"
+ *   In SLEEP, RET=0 preserves RAM/registers (~2.4 µA quiescent);
+ *   RET=1 clears them for ~0.6 µA. Driver's sleep() doesn't expose
+ *   the trade-off — relevant for ultra-low-power wearables that
+ *   re-init on every wake anyway.
+ *
+ * @tessera unsupported severity=advanced category="I3C alternate bus mode"
+ *   Pads 4/5 are bus-shared between I²C (default) and I3C SDR
+ *   (≤12.5 Mbps with in-band interrupts). Driver is I²C-only.
+ *
+ * @tessera unsupported severity=niche category="Auto-sleep timeout (TOUT)"
+ *   COMM.TOUT auto-sleeps the device after 4 ms of bus inactivity
+ *   in Direct / FIFO playback. Driver doesn't expose the bit —
+ *   relevant for unattended one-shot playback.
+ *
+ * @tessera unsupported severity=niche category="Energy recovery / UPI"
+ *   Chip can recover energy from piezo discharge into CVDD, or be
+ *   forced into sink-only via UPI for battery-powered designs.
+ *   Driver doesn't expose either knob.
  */
 
 #ifndef INC_TILE_DRIVE_P_H_

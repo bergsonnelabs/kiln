@@ -51,6 +51,36 @@
  * Datasheet (Amp): https://www.ti.com/product/TPA2028D1
  *
  * @tessera tile label=Drive.A.2 icon=♬
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=common category="DAC NVM save / restore"
+ *   DAC63202W has shadow-NVM that survives power cycles (NVM-PROG /
+ *   NVM-RELOAD bits). Driver doesn't expose NVM operations — relevant
+ *   for storing factory-tuned default outputs that survive reset.
+ *
+ * @tessera unsupported severity=advanced category="DAC PWM-output mode (FBx pins)"
+ *   Comparator FBx pins can be configured as PWM outputs for driving
+ *   external power-stage gates. Driver leaves pins in default
+ *   comparator mode; PWM-output mode isn't exposed.
+ *
+ * @tessera unsupported severity=advanced category="DAC slew-rate / margin control"
+ *   SLEW-RATE-X and MARGIN-HIGH/LOW registers control output
+ *   ramping speed (slow ramps) and comparator window thresholds.
+ *   Driver uses default fast slew; slow-ramp / window-comparator
+ *   modes aren't exposed.
+ *
+ * @tessera unsupported severity=advanced category="DAC built-in waveform synthesizer"
+ *   Chip has a built-in waveform generator (sine / cosine / triangle
+ *   / sawtooth) controllable via GEN-WAVE register. Driver's
+ *   set_waveform exposes user-supplied buffers but not the
+ *   parametric on-chip generator.
+ *
+ * @tessera unsupported severity=niche category="Per-amp independent control"
+ *   Tile carries 2× TPA2028D1 amps, but both share the chip's fixed
+ *   I²C address (0x58) and therefore receive identical writes.
+ *   Independent left / right gain or AGC isn't possible without an
+ *   I²C mux — this is a tile-design constraint, not a driver gap.
  */
 
 #ifndef INC_TILE_DRIVE_A_2_H_

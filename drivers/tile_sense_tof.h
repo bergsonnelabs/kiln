@@ -38,6 +38,39 @@
  *
  * @tessera tile label=Sense.TOF icon=◊
  *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=common category="10 m extended-range mode"
+ *   TMF8806 App0 firmware supports up to 5 m range. The 10 m mode
+ *   requires downloading a RAM patch via the bootloader's W_RAM +
+ *   RAMREMAP_RESET protocol. Driver doesn't ship the patch or the
+ *   bootloader handshake — relevant for room-scale presence
+ *   detection.
+ *
+ * @tessera unsupported severity=advanced category="Threshold-based interrupts"
+ *   Chip can fire INT when the measured distance crosses a
+ *   programmable threshold (above / below). Driver fires INT on
+ *   every measurement completion only — threshold-mode would let
+ *   the host stay asleep until a target gets close.
+ *
+ * @tessera unsupported severity=advanced category="Raw histogram readout"
+ *   Command 0x23 returns the SPAD/TDC histogram (~128 photon-count
+ *   bins). Useful for custom multi-target detection, reflectance
+ *   estimation, or peak-curvature analysis. Driver doesn't expose
+ *   the command — application-layer post-processing only.
+ *
+ * @tessera unsupported severity=niche category="Oscillator drift correction / re-trim"
+ *   Internal clock can drift ±5 % over temperature, biasing
+ *   distance readings. Chip supports a one-point clock-correction
+ *   step against a reference distance, plus a lab re-trim
+ *   procedure. Driver doesn't expose either — relevant for
+ *   production-line calibration or hot/cold accuracy.
+ *
+ * @tessera unsupported severity=niche category="GPIO0 / GPIO1 external trigger"
+ *   Chip's GPIO0/1 (external trigger / status output) aren't
+ *   routed to tile pads — pure hardware limitation. Future tile
+ *   revisions could expose them for hardware-synchronized ranging.
+ *
  * @note All bus I/O is routed through tiles_pal_t function pointers.
  *       This driver contains no platform-specific code.
  */

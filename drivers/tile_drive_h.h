@@ -27,6 +27,57 @@
  * @endcode
  *
  * @tessera tile label=Drive.H icon=≋
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=common category="ROM library selection"
+ *   DRV2605 ships 5 effect libraries (LRA, ERM A/B/C/D) tuned for
+ *   different actuator types. Driver always uses the default library;
+ *   switching would let users pick a library matched to their wired
+ *   actuator.
+ *
+ * @tessera unsupported severity=common category="Actuator type & calibration parameters"
+ *   ERM_LRA bit + RATED_VOLTAGE / OD_CLAMP / FB_BRAKE_FACTOR / LOOP_GAIN
+ *   registers tune the smart-loop for the connected actuator. Driver
+ *   picks a fixed config at init; users with non-default actuators
+ *   can't retune.
+ *
+ * @tessera unsupported severity=advanced category="PWM input mode (MODE=3)"
+ *   Chip can accept a 10–250 kHz PWM signal on TRIG and drive the
+ *   actuator directly from the duty cycle. Driver doesn't expose this
+ *   mode — useful for offloading waveform generation to a hardware
+ *   timer.
+ *
+ * @tessera unsupported severity=advanced category="Analog input mode (MODE=3 + N_PWM_ANALOG)"
+ *   Chip can drive the actuator from a 0–1.8 V analog input on TRIG
+ *   (mid-scale = no drive). Driver doesn't expose this mode — useful
+ *   for waveform synthesis from a DAC.
+ *
+ * @tessera unsupported severity=advanced category="Audio-to-vibe (MODE=4)"
+ *   Chip can accept analog audio on the TRIG pin and synthesize haptic
+ *   effects from the envelope. Driver doesn't expose this mode — users
+ *   wanting audio-coupled haptics need to write the MODE register
+ *   manually.
+ *
+ * @tessera unsupported severity=advanced category="Auto-resonance tracking parameters"
+ *   Bemf-gain / sample-time / blanking-time / current-dissipation
+ *   registers tune the closed-loop resonance tracker. Driver uses chip
+ *   defaults; tuning these matters for non-standard LRAs.
+ *
+ * @tessera unsupported severity=advanced category="Real-time playback envelope"
+ *   RTP supports more shaping options (signed/unsigned input,
+ *   data-format selection, ZC-detection bypass). Driver exposes the
+ *   basic amplitude write but not the RTP-config registers.
+ *
+ * @tessera unsupported severity=advanced category="Sequencer slot effects"
+ *   The 8-slot waveform sequencer supports per-slot wait-time and
+ *   effect-index combinations. Driver writes effect IDs but doesn't
+ *   expose the wait-slot mode or the per-slot delay register.
+ *
+ * @tessera unsupported severity=niche category="OTP programming"
+ *   DRV2605 has one-time-programmable registers for production
+ *   calibration. Driver doesn't expose OTP burning — intentionally
+ *   niche, and dangerous (irreversible).
  */
 
 #ifndef INC_TILE_DRIVE_H_H_

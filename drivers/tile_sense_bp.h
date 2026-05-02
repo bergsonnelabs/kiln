@@ -34,6 +34,31 @@
  *
  * @tessera tile label=Sense.BP icon=◇
  *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=common category="Qvar charge-variation sensing"
+ *   ILPS22QS has a charge-variation sensing mode that uses pressure-port
+ *   capacitance changes for proximity / touch detection. Driver explicitly
+ *   disables Qvar at init and doesn't expose it — opening up Qvar would
+ *   unlock proximity-style use cases on a pressure tile.
+ *
+ * @tessera unsupported severity=niche category="Analog Hub (AH) mode"
+ *   ILPS22QS can repurpose its I²C lines as analog inputs (AH_QVAR_EN).
+ *   Driver doesn't expose this mode; advanced sensor-fusion projects
+ *   might want it.
+ *
+ * @tessera unsupported severity=advanced category="Alternate bus modes (SPI / I3C)"
+ *   Driver is I²C-only. ILPS22QS also supports 3-wire and 4-wire SPI
+ *   (selectable via IF_CTRL/SIM) and I3C (in-band interrupts, hot-join,
+ *   dynamic addressing). SPI would unlock higher sample rates without
+ *   bus contention; I3C lowers power and latency once Tessera adds an
+ *   I3C bus.
+ *
+ * @tessera unsupported severity=niche category="Boot status"
+ *   Chip exposes a BOOT bit in INT_SOURCE / IF_CTRL that signals
+ *   power-on completion. Driver doesn't expose it; matters when
+ *   interrogating the chip immediately after VDD comes up.
+ *
  * @note All bus I/O is routed through tiles_pal_t function pointers.
  *       This driver contains no platform-specific code.
  */

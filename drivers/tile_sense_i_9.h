@@ -36,6 +36,67 @@
  *   tile_sense_i_9_init(hal, 0, &imu_a, NULL);  // pad 2 floating (0x69)
  *   tile_sense_i_9_init(hal, 1, &imu_b, NULL);  // pad 2 grounded (0x68)
  * @endcode
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * @tessera unsupported severity=common category="DMP3 (Digital Motion Processor)"
+ *   ICM-20948 ships with a full DMP3 firmware blob in ROM
+ *   (quaternion fusion, gesture detection, pedometer, BAC
+ *   classifier, tap / double-tap, significant motion). Driver
+ *   doesn't initialize or read DMP — significant chunk of chip
+ *   capability missing. Headline feature for fusion-heavy use cases.
+ *
+ * @tessera unsupported severity=common category="AK09916 FUSE ROM sensitivity adjustment"
+ *   Magnetometer ships with per-axis sensitivity-adjustment ASA
+ *   codes in FUSE ROM. Calibrated readings = raw × (ASA + 128) / 256.
+ *   Driver returns raw counts without applying FUSE ROM correction —
+ *   any user trying to do compass-grade work will see per-axis bias.
+ *
+ * @tessera unsupported severity=advanced category="AK09916 magnetic overflow flag (HOFL)"
+ *   Mag readings can saturate near strong fields; the AK09916 raises
+ *   HOFL in its status register to flag invalid samples. Driver
+ *   doesn't surface the flag — readings during overflow look valid
+ *   but aren't.
+ *
+ * @tessera unsupported severity=common category="Self-test sweep"
+ *   Chip has factory self-test capability for accel and gyro
+ *   (mechanical self-excitation against stored factory limits).
+ *   Driver has no self-test API — relevant for production-line
+ *   validation.
+ *
+ * @tessera unsupported severity=common category="Wake-on-Motion"
+ *   Accel can run in low-power mode and wake the chip on motion
+ *   above a programmable threshold (WOM_THRESHOLD: 0–255 mg in
+ *   4 mg steps). Driver doesn't expose WoM — relevant for
+ *   battery-powered always-on motion-detection use cases.
+ *
+ * @tessera unsupported severity=common category="FIFO"
+ *   Chip has a 512+ byte FIFO with watermark / overflow interrupts
+ *   and DMP / raw packet formats. Driver only reads sensor registers
+ *   directly (no batched / buffered acquisition).
+ *
+ * @tessera unsupported severity=common category="Interrupt source configuration"
+ *   INT pad is wired but the driver doesn't configure INT_PIN_CFG
+ *   (edge / level / latch / open-drain) or route specific sources
+ *   (data-ready, WoM, FIFO watermark, DMP) to the pin. Pad is
+ *   currently dead.
+ *
+ * @tessera unsupported severity=advanced category="Sensor hub for external aux sensors"
+ *   ICM acts as I²C master with 4 slave slots. Driver uses slot 0
+ *   for the internal AK09916; slots 1–3 are unused. Hooking external
+ *   aux sensors (additional mag, baro, etc.) into the ICM's FIFO
+ *   isn't exposed.
+ *
+ * @tessera unsupported severity=advanced category="FSYNC external-clock / timestamping"
+ *   Chip can take an external 31–50 kHz FSYNC input and stamp
+ *   samples against it. Tile doesn't expose the FSYNC pad and the
+ *   driver has no FSYNC API — relevant for multi-IMU sync.
+ *
+ * @tessera unsupported severity=advanced category="Alternate bus modes (SPI / I3C)"
+ *   Tile JSON straps support I²C (default) or SPI 4-wire on the same
+ *   pads (AD0 = MISO, EN = CS). Driver is I²C-only. ICM-20948 also
+ *   has I3C electrical compliance but TDK doesn't fully document it;
+ *   would need additional bring-up work.
  */
 
 #ifndef INC_TILE_SENSE_I_9_H_
