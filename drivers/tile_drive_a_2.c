@@ -126,6 +126,18 @@ static uint8_t dac_func_cfg_reg(uint8_t ch)
                      : DAC63202W_REG_DAC_1_FUNC_CFG;
 }
 
+static uint8_t dac_margin_high_reg(uint8_t ch)
+{
+    return (ch == 0) ? DAC63202W_REG_DAC_0_MARGIN_HIGH
+                     : DAC63202W_REG_DAC_1_MARGIN_HIGH;
+}
+
+static uint8_t dac_margin_low_reg(uint8_t ch)
+{
+    return (ch == 0) ? DAC63202W_REG_DAC_0_MARGIN_LOW
+                     : DAC63202W_REG_DAC_1_MARGIN_LOW;
+}
+
 /* --- Reference voltage resolution --- */
 
 static uint16_t resolve_vref(uint8_t gain_sel)
@@ -403,6 +415,74 @@ void tile_drive_a_2_stop_waveform(tile_t *tile, uint8_t channel)
     dac_write(tile, dac_func_cfg_reg(channel), func_cfg);
 }
 
+void tile_drive_a_2_set_slew_rate(tile_t *tile, uint8_t channel,
+                                  drive_a_2_slew_t slew)
+{
+    if (channel > 1) return;
+    uint16_t func_cfg = dac_read(tile, dac_func_cfg_reg(channel));
+    func_cfg &= ~0x000F;                       /* clear SLEW-RATE-X[3:0] */
+    func_cfg |= ((uint16_t)slew & 0x000F);
+    dac_write(tile, dac_func_cfg_reg(channel), func_cfg);
+}
+
+void tile_drive_a_2_set_code_step(tile_t *tile, uint8_t channel,
+                                  drive_a_2_step_t step)
+{
+    if (channel > 1) return;
+    uint16_t func_cfg = dac_read(tile, dac_func_cfg_reg(channel));
+    func_cfg &= ~(0x07 << 4);                  /* clear CODE-STEP-X[6:4] */
+    func_cfg |= (((uint16_t)step & 0x07) << 4);
+    dac_write(tile, dac_func_cfg_reg(channel), func_cfg);
+}
+
+void tile_drive_a_2_set_margins(tile_t *tile, uint8_t channel,
+                                uint16_t low, uint16_t high)
+{
+    if (channel > 1) return;
+    if (low  > DAC63202W_DAC_MAX) low  = DAC63202W_DAC_MAX;
+    if (high > DAC63202W_DAC_MAX) high = DAC63202W_DAC_MAX;
+    /* Datasheet requires margin_high > margin_low — silently swap so
+     * caller doesn't accidentally lock the function generator. */
+    if (low > high) {
+        uint16_t t = low; low = high; high = t;
+    }
+    /* Margin registers use the same left-shifted-by-4 alignment as
+     * DAC-X-DATA (12-bit value occupies bits[15:4]). */
+    dac_write(tile, dac_margin_low_reg(channel),  (uint16_t)(low  << 4));
+    dac_write(tile, dac_margin_high_reg(channel), (uint16_t)(high << 4));
+}
+
+void tile_drive_a_2_set_phase(tile_t *tile, uint8_t channel,
+                              drive_a_2_phase_t phase)
+{
+    if (channel > 1) return;
+    uint16_t func_cfg = dac_read(tile, dac_func_cfg_reg(channel));
+    func_cfg &= ~(0x03 << 11);                 /* clear PHASE-SEL-X[12:11] */
+    func_cfg |= (((uint16_t)phase & 0x03) << 11);
+    dac_write(tile, dac_func_cfg_reg(channel), func_cfg);
+}
+
+void tile_drive_a_2_set_waveform_params(tile_t *tile, uint8_t channel,
+                                        drive_a_2_wave_t wave,
+                                        drive_a_2_step_t step,
+                                        drive_a_2_slew_t slew)
+{
+    if (channel > 1) return;
+    /* Full-scale margins for max amplitude swing.
+     * Use the existing setters so the bit-mask logic stays in one place. */
+    tile_drive_a_2_set_margins(tile, channel, 0, DAC63202W_DAC_MAX);
+
+    /* Single read-modify-write so we don't bounce slew/step/wave/phase
+     * separately across three round-trips. */
+    uint16_t func_cfg = dac_read(tile, dac_func_cfg_reg(channel));
+    func_cfg &= ~((0x07 << 8) | (0x07 << 4) | 0x000F | (1 << 7));
+    func_cfg |= ((uint16_t)wave & 0x07) << 8;   /* FUNC-CONFIG-X */
+    func_cfg |= ((uint16_t)step & 0x07) << 4;   /* CODE-STEP-X */
+    func_cfg |= ((uint16_t)slew & 0x0F);        /* SLEW-RATE-X */
+    /* LOG-SLEW-EN-X (bit 7) cleared — linear slew. */
+    dac_write(tile, dac_func_cfg_reg(channel), func_cfg);
+}
+
 /* ================================================================
  * Public API — Amplifier control
  * ================================================================ */
@@ -480,4 +560,52 @@ uint8_t tile_drive_a_2_amp_read_status(tile_t *tile)
 uint16_t tile_drive_a_2_read_status(tile_t *tile)
 {
     return dac_read(tile, DAC63202W_REG_GENERAL_STATUS);
+}
+
+/* ================================================================
+ * Public API — NVM (shadow flash for power-on defaults)
+ * ================================================================ */
+
+/* Datasheet section 5.8 / 6.3.3: an NVM write blocks the bus for the
+ * specified cycle time. 50 ms is comfortably above the typical
+ * spec; an NVM-RELOAD is faster (handful of ms) but uses the same
+ * delay for simplicity. */
+#define DRIVE_A_2_NVM_WRITE_DELAY_MS  50
+
+void tile_drive_a_2_nvm_save(tile_t *tile)
+{
+    /* COMMON-TRIGGER bit 1 = NVM-PROG (auto-resetting) */
+    dac_write(tile, DAC63202W_REG_COMMON_TRIGGER, 0x0002);
+    tile->hal->delay_ms(DRIVE_A_2_NVM_WRITE_DELAY_MS);
+}
+
+void tile_drive_a_2_nvm_reload(tile_t *tile)
+{
+    /* COMMON-TRIGGER bit 0 = NVM-RELOAD (auto-resetting) */
+    dac_write(tile, DAC63202W_REG_COMMON_TRIGGER, 0x0001);
+    tile->hal->delay_ms(DRIVE_A_2_NVM_WRITE_DELAY_MS);
+
+    /* The reload may have changed the active gain; re-derive the
+     * cached vref from whatever is now in DAC-0-VOUT-CMP-CONFIG so
+     * set_mv() keeps producing sensible output codes. */
+    drive_a_2_state_t *s = state_for(tile);
+    uint16_t vout0 = dac_read(tile, dac_vout_cmp_reg(0));
+    uint16_t vout1 = dac_read(tile, dac_vout_cmp_reg(1));
+    s->gain[0] = (vout0 >> 10) & 0x07;
+    s->gain[1] = (vout1 >> 10) & 0x07;
+    s->vref_mv = resolve_vref(s->gain[0]);
+}
+
+/* ================================================================
+ * Public API — Raw register access (escape hatches)
+ * ================================================================ */
+
+uint16_t tile_drive_a_2_read_reg(tile_t *tile, uint8_t reg)
+{
+    return dac_read(tile, reg);
+}
+
+void tile_drive_a_2_write_reg(tile_t *tile, uint8_t reg, uint16_t value)
+{
+    dac_write(tile, reg, value);
 }
