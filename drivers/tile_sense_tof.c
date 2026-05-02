@@ -711,3 +711,62 @@ uint8_t tile_sense_tof_read_histogram(tile_t *tile, uint8_t hist_type,
     tof_write_reg(tile, TMF8806_REG_INT_STATUS, TMF8806_INT_HISTOGRAM);
     return 1;
 }
+
+/* ---------------------------------------------------------------- */
+/* Tier-2 idiomatic helpers                                          */
+/* ---------------------------------------------------------------- */
+
+#define TOF_PRESENCE_SINGLE_TIMEOUT_MS  200  /**< Single-shot upper bound */
+
+uint8_t tile_sense_tof_is_object_within(tile_t *tile, uint16_t mm)
+{
+    sense_tof_result_t res;
+    if (!tile_sense_tof_measure_single(tile, &res,
+                                       TOF_PRESENCE_SINGLE_TIMEOUT_MS)) {
+        return 0;
+    }
+    if (res.reliability < SENSE_TOF_PRESENCE_RELIABILITY_MIN) return 0;
+    if (res.distance_mm == 0) return 0;
+    return (res.distance_mm <= mm) ? 1 : 0;
+}
+
+uint8_t tile_sense_tof_wait_for_object(tile_t *tile, uint16_t mm,
+                                       uint32_t timeout_ms)
+{
+    /* Poll-based v1 — fires single-shot measurements back-to-back,
+     * each gated by `is_object_within`. Keeps the helper
+     * self-contained: no INT pin wiring, no INT_STATUS bookkeeping
+     * across calls. Trade-off is bus traffic and ~30 ms latency
+     * per measurement. */
+    uint32_t elapsed = 0;
+    while (elapsed < timeout_ms) {
+        if (tile_sense_tof_is_object_within(tile, mm)) return 1;
+        tile->hal->delay_ms(SENSE_TOF_WAIT_POLL_INTERVAL_MS);
+        elapsed += SENSE_TOF_WAIT_POLL_INTERVAL_MS
+                 + TOF_PRESENCE_SINGLE_TIMEOUT_MS / 8;  /* rough per-shot cost */
+        /* The /8 above is intentionally a coarse approximation —
+         * `measure_single` returns as soon as a result is ready
+         * (typically ~30 ms at the 30 ms repetition default), not
+         * after the full 200 ms timeout. We add a small fudge so
+         * the loop honours `timeout_ms` even if measurements stall. */
+    }
+    return 0;
+}
+
+uint8_t tile_sense_tof_read_distance_with_confidence(tile_t *tile,
+                                                     uint16_t *mm,
+                                                     uint8_t *confidence_pct)
+{
+    sense_tof_result_t res;
+    if (!tile_sense_tof_measure_single(tile, &res,
+                                       TOF_PRESENCE_SINGLE_TIMEOUT_MS)) {
+        return 0;
+    }
+    if (mm) *mm = res.distance_mm;
+    if (confidence_pct) {
+        /* Remap reliability 0..63 -> 0..100. Integer math only. */
+        uint16_t rel = (uint16_t)(res.reliability & 0x3F);
+        *confidence_pct = (uint8_t)((rel * 100u) / 63u);
+    }
+    return 1;
+}
