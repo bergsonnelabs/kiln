@@ -501,6 +501,88 @@ void tile_sense_t_c_set_comm_mode(tile_t *tile, sense_t_c_comm_mode_t mode)
 }
 
 /* ================================================================
+ * Tier-2 idiomatic helpers
+ * ================================================================ */
+
+/* Bitmask of all per-channel touch bits (CH0/CH1/CH2). */
+#define IQS323_STATUS_ANY_TOUCH \
+    (IQS323_STATUS_CH_TOUCH(0) | IQS323_STATUS_CH_TOUCH(1) | IQS323_STATUS_CH_TOUCH(2))
+
+/* Bitmask covering every gesture event bit defined in §A.2. */
+#define IQS323_GESTURE_ANY \
+    (IQS323_GESTURE_TAP | IQS323_GESTURE_SWIPE_POS | IQS323_GESTURE_SWIPE_NEG | \
+     IQS323_GESTURE_FLICK_POS | IQS323_GESTURE_FLICK_NEG | IQS323_GESTURE_HOLD)
+
+/* Poll cadence for wait_for_* helpers (ms). 5ms keeps latency low while
+ * leaving plenty of headroom for the host's other work; in RDY mode the
+ * underlying process() returns immediately when no event is pending. */
+#define SENSE_T_C_POLL_INTERVAL_MS  5
+
+uint8_t tile_sense_t_c_is_touched_any(tile_t *tile)
+{
+    iqs323_state_t *s = state_for(tile);
+    return (s->last_status & IQS323_STATUS_ANY_TOUCH) ? 1 : 0;
+}
+
+uint8_t tile_sense_t_c_wait_for_touch(tile_t *tile, uint32_t timeout_ms)
+{
+    if (tile->state != TILE_STATE_READY) return 0;
+
+    uint32_t elapsed = 0;
+    /* First sample: process() may already have a fresh status. */
+    tile_sense_t_c_process(tile);
+    if (tile_sense_t_c_is_touched_any(tile))
+        return 1;
+
+    while (elapsed < timeout_ms) {
+        tile->hal->delay_ms(SENSE_T_C_POLL_INTERVAL_MS);
+        elapsed += SENSE_T_C_POLL_INTERVAL_MS;
+        tile_sense_t_c_process(tile);
+        if (tile_sense_t_c_is_touched_any(tile))
+            return 1;
+    }
+    return 0;
+}
+
+uint16_t tile_sense_t_c_wait_for_gesture(tile_t *tile, uint32_t timeout_ms)
+{
+    if (tile->state != TILE_STATE_READY) return 0;
+
+    uint32_t elapsed = 0;
+    /* Gesture status is read directly (not cached by process()) so we
+     * always pull a fresh value here. */
+    uint16_t g = iqs_read_window(tile, IQS323_REG_GESTURE_STATUS);
+    if (g != IQS323_INVALID_RESPONSE && (g & IQS323_GESTURE_ANY))
+        return g;
+
+    while (elapsed < timeout_ms) {
+        tile->hal->delay_ms(SENSE_T_C_POLL_INTERVAL_MS);
+        elapsed += SENSE_T_C_POLL_INTERVAL_MS;
+        g = iqs_read_window(tile, IQS323_REG_GESTURE_STATUS);
+        if (g != IQS323_INVALID_RESPONSE && (g & IQS323_GESTURE_ANY))
+            return g;
+    }
+    return 0;
+}
+
+uint8_t tile_sense_t_c_read_slider_pct(tile_t *tile, uint8_t *out_pct)
+{
+    if (!out_pct) return 0;
+
+    uint16_t raw = iqs_read_window(tile, IQS323_REG_SLIDER_POSITION);
+    if (raw == IQS323_INVALID_RESPONSE)
+        return 0;
+
+    /* Slider position is a 10-bit field (0..1023). Clamp defensively in
+     * case a future firmware widens the range, then integer-scale to
+     * 0..100. (raw * 100) fits in 17 bits when raw <= 1023, safely
+     * inside uint32_t. */
+    if (raw > 1023) raw = 1023;
+    *out_pct = (uint8_t)(((uint32_t)raw * 100u) / 1023u);
+    return 1;
+}
+
+/* ================================================================
  * Low-level register access
  * ================================================================ */
 
