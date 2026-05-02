@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@78763e7",
+  "source": "cores@ca74389",
   "tile": "Drive.P",
   "palette": {
     "label": "Drive.P",
@@ -9,7 +9,7 @@
   "driver": {
     "prefix": "tile_drive_p",
     "header": "tile_drive_p.h",
-    "version": "3.0.0"
+    "version": "3.1.0"
   },
   "handle": {
     "type": "tile_t",
@@ -219,6 +219,204 @@
           "name": "enabled",
           "type": "int",
           "description": "1 = sink-only (UPI on), 0 = energy recovery (default)"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "play_click"
+      ],
+      "symbol": "tile_drive_p_play_click",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Fire a single sharp tactile click.",
+      "params": [
+        {
+          "name": "intensity_pct",
+          "type": "int",
+          "description": "0–100 percent of full-scale output"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "play_sine"
+      ],
+      "symbol": "tile_drive_p_play_sine",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Play a continuous sine wave for `ms` milliseconds.",
+      "params": [
+        {
+          "name": "freq_hz",
+          "type": "int",
+          "description": "Sine frequency in Hz (50–3000 useful range)"
+        },
+        {
+          "name": "intensity_pct",
+          "type": "int",
+          "description": "0–100 percent of full-scale output"
+        },
+        {
+          "name": "ms",
+          "type": "int",
+          "description": "Duration in milliseconds"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "play_buzz"
+      ],
+      "symbol": "tile_drive_p_play_buzz",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Play a buzz (sustained mid-frequency vibration).",
+      "params": [
+        {
+          "name": "intensity_pct",
+          "type": "int",
+          "description": "0–100 percent of full-scale output"
+        },
+        {
+          "name": "ms",
+          "type": "int",
+          "description": "Duration in milliseconds"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "play_pulse_train"
+      ],
+      "symbol": "tile_drive_p_play_pulse_train",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Play N clicks separated by gaps.",
+      "params": [
+        {
+          "name": "intensity_pct",
+          "type": "int",
+          "description": "0–100 percent of full-scale output"
+        },
+        {
+          "name": "count",
+          "type": "int",
+          "description": "Number of clicks (1–255)"
+        },
+        {
+          "name": "gap_ms",
+          "type": "int",
+          "description": "Milliseconds between successive clicks"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "is_touched"
+      ],
+      "symbol": "tile_drive_p_is_touched",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Check whether the piezo is being touched / pressed.",
+      "params": [
+        {
+          "name": "threshold_mv",
+          "type": "int",
+          "description": "Absolute sense voltage threshold in mV"
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "play_on_touch"
+      ],
+      "symbol": "tile_drive_p_play_on_touch",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Block until touch detected, then fire a click.",
+      "params": [
+        {
+          "name": "intensity_pct",
+          "type": "int",
+          "description": "0–100 percent of full-scale output"
+        },
+        {
+          "name": "threshold_mv",
+          "type": "int",
+          "description": "Touch threshold in mV"
+        },
+        {
+          "name": "timeout_ms",
+          "type": "int",
+          "description": "Maximum time to wait"
+        }
+      ],
+      "returns": "uint8_t",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "play_samples"
+      ],
+      "symbol": "tile_drive_p_play_samples",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Stream a buffer of pre-computed samples through the FIFO.",
+      "params": [
+        {
+          "name": "samples",
+          "type": "?const int16_t*",
+          "description": "Pointer to buffer of int16_t samples"
+        },
+        {
+          "name": "count",
+          "type": "int",
+          "description": "Number of samples to write"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read_sense_samples"
+      ],
+      "symbol": "tile_drive_p_read_sense_samples",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Read a buffer of sense samples.",
+      "params": [
+        {
+          "name": "buf",
+          "type": "?int16_t*",
+          "description": "Output buffer for int16_t sense samples"
+        },
+        {
+          "name": "count",
+          "type": "int",
+          "description": "Number of samples to read"
         }
       ],
       "returns": "void",

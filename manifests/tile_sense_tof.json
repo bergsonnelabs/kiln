@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@ad1485f",
+  "source": "cores@ca74389",
   "tile": "Sense.TOF",
   "palette": {
     "label": "Sense.TOF",
@@ -9,7 +9,7 @@
   "driver": {
     "prefix": "tile_sense_tof",
     "header": "tile_sense_tof.h",
-    "version": "1.0.0"
+    "version": "1.2.0"
   },
   "handle": {
     "type": "tile_t",
@@ -38,6 +38,19 @@
       "header": "tile_sense_tof.h",
       "category": "tile",
       "description": "Resume from standby mode.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "reset"
+      ],
+      "symbol": "tile_sense_tof_reset",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Reset the device via the CPU reset bit in ENABLE.",
       "params": [],
       "returns": "void",
       "receiver": "tile_t *"
@@ -152,6 +165,94 @@
         }
       ],
       "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_threshold_interrupt"
+      ],
+      "symbol": "tile_sense_tof_set_threshold_interrupt",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Configure threshold-based interrupt suppression.",
+      "params": [
+        {
+          "name": "persistence",
+          "type": "int",
+          "description": "0–255; 0 = disabled (every-measurement INT)."
+        },
+        {
+          "name": "low_mm",
+          "type": "int",
+          "description": "Lower bound (inclusive), millimetres."
+        },
+        {
+          "name": "high_mm",
+          "type": "int",
+          "description": "Upper bound (inclusive), millimetres."
+        }
+      ],
+      "returns": "uint8_t",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_sys_clock_ticks"
+      ],
+      "symbol": "tile_sense_tof_get_sys_clock_ticks",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Read the chip's 32-bit system-clock tick counter.",
+      "params": [],
+      "returns": "uint32_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "is_object_within"
+      ],
+      "symbol": "tile_sense_tof_is_object_within",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Single-shot measurement; true if an object is within `mm`.",
+      "params": [
+        {
+          "name": "mm",
+          "type": "int",
+          "description": "Distance threshold in millimetres (inclusive)."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wait_for_object"
+      ],
+      "symbol": "tile_sense_tof_wait_for_object",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Block until an object is detected within `mm`, or timeout.",
+      "params": [
+        {
+          "name": "mm",
+          "type": "int",
+          "description": "Distance threshold in millimetres (inclusive)."
+        },
+        {
+          "name": "timeout_ms",
+          "type": "int",
+          "description": "Maximum wait time in milliseconds."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
       "receiver": "tile_t *"
     }
   ],

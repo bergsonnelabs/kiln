@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@ad1485f",
+  "source": "cores@ca74389",
   "tile": "Sense.I.6P6",
   "palette": {
     "label": "Sense.I.6P6",
@@ -9,13 +9,50 @@
   "driver": {
     "prefix": "tile_sense_i_6p6",
     "header": "tile_sense_i_6p6.h",
-    "version": "1.0.0"
+    "version": "1.2.0"
   },
   "handle": {
     "type": "tile_t",
     "init": "tile_sense_i_6p6_init"
   },
   "hosts": [
+    {
+      "qname": [
+        "$slot",
+        "process"
+      ],
+      "symbol": "tile_sense_i_6p6_process",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Process pending interrupt events. Call from your main loop.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "on_event"
+      ],
+      "symbol": "tile_sense_i_6p6_on_event",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Register or change the event callback.",
+      "params": [
+        {
+          "name": "cb",
+          "type": "?sense_i_6p6_event_cb_t",
+          "description": "Callback to fire on interrupt events. NULL to clear."
+        },
+        {
+          "name": "ctx",
+          "type": "?void *",
+          "description": "Opaque user pointer passed to the callback."
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
     {
       "qname": [
         "$slot",
@@ -332,6 +369,119 @@
     {
       "qname": [
         "$slot",
+        "is_face_up"
+      ],
+      "symbol": "tile_sense_i_6p6_is_face_up",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Detect whether the device is approximately face-up (Z ≈ +1g).",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "is_face_down"
+      ],
+      "symbol": "tile_sense_i_6p6_is_face_down",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Detect whether the device is approximately face-down (Z ≈ −1g).",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "is_moving"
+      ],
+      "symbol": "tile_sense_i_6p6_is_moving",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Detect motion: |‖a‖ − 1g| > threshold.",
+      "params": [
+        {
+          "name": "threshold_mg",
+          "type": "int",
+          "description": "Deviation threshold in milli-g (typical: 50–200)."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read_tilt_centi_degrees"
+      ],
+      "symbol": "tile_sense_i_6p6_read_tilt_centi_degrees",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Tilt angle of one axis vs gravity, in 0.01°.",
+      "params": [
+        {
+          "name": "axis",
+          "type": "int",
+          "description": "0 = X, 1 = Y, 2 = Z."
+        },
+        {
+          "name": "out_centi_deg",
+          "type": "?int16_t *",
+          "description": "Output tilt in 0.01° (signed, −18000..+18000)."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wait_for_tap"
+      ],
+      "symbol": "tile_sense_i_6p6_wait_for_tap",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Block until a tap interrupt fires or the timeout expires.",
+      "params": [
+        {
+          "name": "timeout_ms",
+          "type": "int",
+          "description": "Max time to wait, in ms. Use 0 for a single-shot poll."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wait_for_motion"
+      ],
+      "symbol": "tile_sense_i_6p6_wait_for_motion",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Block until a wake-on-motion interrupt fires or the timeout expires.",
+      "params": [
+        {
+          "name": "timeout_ms",
+          "type": "int",
+          "description": "Max time to wait, in ms. Use 0 for a single-shot poll."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
         "fifo_config"
       ],
       "symbol": "tile_sense_i_6p6_fifo_config",
@@ -498,6 +648,120 @@
           "name": "enabled",
           "type": "int",
           "description": "1 to enable, 0 to disable"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "int2_config"
+      ],
+      "symbol": "tile_sense_i_6p6_int2_config",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Configure INT2 pin behavior.",
+      "params": [
+        {
+          "name": "config",
+          "type": "int",
+          "description": "OR'd flags: ACTIVE_HIGH|PUSH_PULL|LATCHED etc. (same"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "int2_data_ready"
+      ],
+      "symbol": "tile_sense_i_6p6_int2_data_ready",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Route data-ready interrupt to INT2.",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 to enable, 0 to disable"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "int2_fifo_ths"
+      ],
+      "symbol": "tile_sense_i_6p6_int2_fifo_ths",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Route FIFO watermark interrupt to INT2.",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 to enable, 0 to disable"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "int2_wom"
+      ],
+      "symbol": "tile_sense_i_6p6_int2_wom",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Route WOM (wake-on-motion) interrupt to INT2.",
+      "params": [
+        {
+          "name": "enabled",
+          "type": "int",
+          "description": "1 to enable, 0 to disable"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_int_pulse_duration"
+      ],
+      "symbol": "tile_sense_i_6p6_set_int_pulse_duration",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set the INT pin pulse-width when configured for pulse mode.",
+      "params": [
+        {
+          "name": "pulse",
+          "type": "?sense_i_6p6_int_pulse_t",
+          "description": "Pulse-width selector"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "subsystem_reset"
+      ],
+      "symbol": "tile_sense_i_6p6_subsystem_reset",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Reset a single chip subsystem without touching the others.",
+      "params": [
+        {
+          "name": "which",
+          "type": "?sense_i_6p6_subsystem_t",
+          "description": "Subsystem to reset"
         }
       ],
       "returns": "void",
@@ -757,6 +1021,118 @@
       "category": "tile",
       "description": "Disable tap detection.",
       "params": [],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_gyro_offset"
+      ],
+      "symbol": "tile_sense_i_6p6_set_gyro_offset",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set user-programmable gyro offset.",
+      "params": [
+        {
+          "name": "x_dps",
+          "type": "int",
+          "description": "X offset in dps × 16 (12-bit signed, ±128 dps max, 0.0625 dps resolution)"
+        },
+        {
+          "name": "y_dps",
+          "type": "int",
+          "description": "Y offset"
+        },
+        {
+          "name": "z_dps",
+          "type": "int",
+          "description": "Z offset"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "set_accel_offset"
+      ],
+      "symbol": "tile_sense_i_6p6_set_accel_offset",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Set user-programmable accel offset.",
+      "params": [
+        {
+          "name": "x_mg",
+          "type": "int",
+          "description": "X offset in mg (12-bit signed, ±2000 mg max, 1 mg resolution)"
+        },
+        {
+          "name": "y_mg",
+          "type": "int",
+          "description": "Y offset"
+        },
+        {
+          "name": "z_mg",
+          "type": "int",
+          "description": "Z offset"
+        }
+      ],
+      "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read_reg"
+      ],
+      "symbol": "tile_sense_i_6p6_read_reg",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Read a register from any bank.",
+      "params": [
+        {
+          "name": "bank",
+          "type": "int",
+          "description": "Bank index (0, 1, 2, or 4)."
+        },
+        {
+          "name": "reg",
+          "type": "int",
+          "description": "Register address within the bank."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "write_reg"
+      ],
+      "symbol": "tile_sense_i_6p6_write_reg",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Write a register in any bank.",
+      "params": [
+        {
+          "name": "bank",
+          "type": "int",
+          "description": "Bank index (0, 1, 2, or 4)."
+        },
+        {
+          "name": "reg",
+          "type": "int",
+          "description": "Register address within the bank."
+        },
+        {
+          "name": "val",
+          "type": "int",
+          "description": "Byte to write."
+        }
+      ],
       "returns": "void",
       "receiver": "tile_t *"
     }

@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@ad1485f",
+  "source": "cores@ca74389",
   "tile": "Sense.BP",
   "palette": {
     "label": "Sense.BP",
@@ -9,7 +9,7 @@
   "driver": {
     "prefix": "tile_sense_bp",
     "header": "tile_sense_bp.h",
-    "version": "1.0.0"
+    "version": "1.2.0"
   },
   "handle": {
     "type": "tile_t",
@@ -407,6 +407,20 @@
     {
       "qname": [
         "$slot",
+        "is_boot_complete"
+      ],
+      "symbol": "tile_sense_bp_is_boot_complete",
+      "header": "tile_sense_bp.h",
+      "category": "tile",
+      "description": "Check whether the chip's power-on boot sequence is complete.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
         "set_autozero"
       ],
       "symbol": "tile_sense_bp_set_autozero",
@@ -486,6 +500,51 @@
       "description": "Read the reference pressure registers (REF_P).",
       "params": [],
       "returns": "int16_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read_altitude_mm"
+      ],
+      "symbol": "tile_sense_bp_read_altitude_mm",
+      "header": "tile_sense_bp.h",
+      "category": "tile",
+      "description": "Estimate altitude (mm) above the supplied sea-level pressure.",
+      "params": [
+        {
+          "name": "sea_level_pa",
+          "type": "int",
+          "description": "Reference pressure in pascals (e.g. 101325)."
+        }
+      ],
+      "returns": "int32_t",
+      "dsl_returns": "int",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wait_for_pressure_change"
+      ],
+      "symbol": "tile_sense_bp_wait_for_pressure_change",
+      "header": "tile_sense_bp.h",
+      "category": "tile",
+      "description": "Block until measured pressure deviates from a captured baseline.",
+      "params": [
+        {
+          "name": "threshold_hpa",
+          "type": "int",
+          "description": "Absolute deviation that triggers return (hPa)."
+        },
+        {
+          "name": "timeout_ms",
+          "type": "int",
+          "description": "Maximum wait in milliseconds."
+        }
+      ],
+      "returns": "uint8_t",
       "dsl_returns": "int",
       "receiver": "tile_t *"
     }
