@@ -31,6 +31,31 @@ static uint8_t resolve_id(uint8_t instance)
 }
 
 /* -------------------------------------------------------------- */
+/* Per-instance shadow state                                       */
+/* -------------------------------------------------------------- */
+
+/*
+ * The DRV8214's RC tuning registers (RC_CTRL3/4) and W_SCALE field
+ * encode physically meaningful units, but the chip can't tell us
+ * back the per-revolution ripple count we used to compute them.
+ * The tier-2 helper set_speed_rpm() needs that value to convert
+ * RPM → WSET_VSET cleanly, so we cache it from the init config.
+ */
+typedef struct {
+    uint8_t ripples_per_rev;  /**< Mirrors drive_dc_h_cfg_t.ripples_per_rev. */
+} drive_dc_h_state_t;
+
+static drive_dc_h_state_t drv_state[ID_TABLE_LEN];
+
+static drive_dc_h_state_t *state_for(tile_t *tile)
+{
+    for (uint8_t i = 0; i < ID_TABLE_LEN; i++) {
+        if (id_table[i] == tile->id) return &drv_state[i];
+    }
+    return &drv_state[0];
+}
+
+/* -------------------------------------------------------------- */
 /* Private helpers                                                 */
 /* -------------------------------------------------------------- */
 
@@ -140,6 +165,10 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
         if (ripples_per_rev == 0) ripples_per_rev = 12;
         kv_uv_per_rpm   = cfg->kv_uv_per_rpm;
     }
+
+    /* Cache ripples_per_rev for set_speed_rpm() — the chip doesn't
+     * carry this anywhere we can read back. */
+    state_for(tile)->ripples_per_rev = ripples_per_rev;
 
     /* ---- CONFIG4: bridge control mode ----
      * [7:6] RC_REP     = 00  (no ripple count on nFAULT)
@@ -622,4 +651,156 @@ void tile_drive_dc_h_wake(tile_t* tile)
     drv_write(tile, DRV8214_REG_CONFIG0, cfg0 | 0x80);   /* EN_OUT = 1 */
     tile->hal->delay_ms(1);  /* tWAKE < 410 us */
     tile->state = TILE_STATE_READY;
+}
+
+/* ============================================================== */
+/* Runtime — tier-2 idiomatic helpers                              */
+/* ============================================================== */
+
+/* W_SCALE encoding in REG_CTRL0 [1:0]:
+ *   00 → 24, 01 → 40, 10 → 64, 11 → 128.
+ * The chip's speed estimator multiplies the ripple-counter output by
+ * this scaling factor; WSET_VSET is interpreted in the same units. */
+static const uint16_t w_scale_lookup[4] = { 24, 40, 64, 128 };
+
+/* Drive in `direction` by writing the appropriate IN1/IN2 bridge
+ * bits. Caller must already be in I²C bridge-control mode and the
+ * tile must be READY. Returns 0 on success, 1 if the bridge is in
+ * pad-control mode (matching the existing forward()/reverse() guard). */
+static uint8_t drv_drive(tile_t *tile, drive_dc_h_direction_t direction)
+{
+    if (!bridge_is_i2c(tile)) return 1;
+    uint8_t bits = (direction == DRIVE_DC_H_DIR_REVERSE) ? 0x01 : 0x02;
+    drv_write(tile, DRV8214_REG_CONFIG4, CONFIG4_BASE | bits);
+    return 0;
+}
+
+void tile_drive_dc_h_set_speed_rpm(tile_t *tile, uint32_t rpm,
+                                   drive_dc_h_direction_t direction)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "set_speed_rpm: not ready");
+        return;
+    }
+
+    /* Switch into speed-regulation mode. set_regulation_mode also
+     * forces EN_RC=1 so the ripple-speed estimator is live. */
+    tile_drive_dc_h_set_regulation_mode(tile, DRIVE_DC_H_REG_SPEED);
+
+    /* Read W_SCALE back from CTRL0 so we honour any user-side override
+     * (default from init is 0b11 = 128). */
+    uint8_t ctrl0 = drv_read(tile, DRV8214_REG_CTRL0);
+    uint16_t w_scale = w_scale_lookup[ctrl0 & 0x03];
+
+    drive_dc_h_state_t *st = state_for(tile);
+    uint8_t rpr = st->ripples_per_rev ? st->ripples_per_rev : 12;
+
+    /* WSET_VSET = (rpm × ripples_per_rev) / (60 × W_SCALE).
+     * Integer math; clamp to 8-bit register range. */
+    uint32_t wset = (rpm * (uint32_t)rpr) / (60u * (uint32_t)w_scale);
+    if (wset > 0xFFu) wset = 0xFFu;
+
+    drv_write(tile, DRV8214_REG_CTRL1, (uint8_t)wset);
+
+    /* Engage the bridge in the requested direction. The chip's PI loop
+     * drives the motor toward the target speed autonomously. */
+    if (drv_drive(tile, direction) != 0) {
+        TILE_ON_ERROR(tile, "set_speed_rpm: bridge in pad-control mode");
+    }
+}
+
+void tile_drive_dc_h_move_distance(tile_t *tile, uint16_t ripples,
+                                   drive_dc_h_direction_t direction)
+{
+    if (tile->state != TILE_STATE_READY) {
+        TILE_ON_ERROR(tile, "move_distance: not ready");
+        return;
+    }
+    if (!bridge_is_i2c(tile)) {
+        TILE_ON_ERROR(tile, "move_distance: bridge in pad-control mode");
+        return;
+    }
+    if (ripples == 0) {
+        return;
+    }
+
+    /* Program the ripple-count threshold so the chip raises CNT_DONE
+     * once the running count reaches `ripples`. set_ripple_threshold
+     * picks the smallest RC_THR_SCALE that fits and clamps at 65472. */
+    tile_drive_dc_h_set_ripple_threshold(tile, ripples);
+
+    /* Make sure ripple counting is enabled; init only flips EN_RC for
+     * SPEED / RIPPLE_COUNT modes. Closed-loop step needs it on. */
+    drv_rmw(tile, DRV8214_REG_RC_CTRL0, 0x80, 0x80);
+
+    /* Zero the counter and clear any latent CNT_DONE. */
+    tile_drive_dc_h_clear_ripple_count(tile);
+    tile_drive_dc_h_clear_fault(tile);
+
+    /* Engage the bridge in the requested direction. */
+    (void)drv_drive(tile, direction);
+
+    /* Poll the FAULT register for CNT_DONE or STALL. The chip's stall
+     * detector is the closest thing to a built-in timeout — if the
+     * motor jams, STALL fires and we abort. Polling cadence 5 ms
+     * keeps response tight without flooding the I²C bus. */
+    while (1) {
+        uint8_t fault = drv_read(tile, DRV8214_REG_FAULT);
+        if (fault & DRV8214_FAULT_CNT_DONE) {
+            break;
+        }
+        if (fault & DRV8214_FAULT_STALL) {
+            break;
+        }
+        tile->hal->delay_ms(5);
+    }
+
+    /* Brake-on-completion: actively hold the new position rather than
+     * coasting past it. Caller can call coast() afterwards if they
+     * want freewheel instead. */
+    drv_write(tile, DRV8214_REG_CONFIG4, CONFIG4_BASE | 0x03);
+}
+
+uint8_t tile_drive_dc_h_is_running(tile_t *tile)
+{
+    if (tile->state != TILE_STATE_READY) return 0;
+
+    uint8_t cfg4 = drv_read(tile, DRV8214_REG_CONFIG4);
+
+    /* Pad-control modes don't have I²C-visible drive state. */
+    if (!(cfg4 & CONFIG4_I2C_BC_MASK)) return 0;
+
+    /* IN1/IN2 patterns in PWM mode:
+     *   00 = coast   → not running
+     *   01 = reverse → running
+     *   10 = forward → running
+     *   11 = brake   → not running                                 */
+    uint8_t inx = cfg4 & CONFIG4_INX_MASK;
+    return (inx == 0x01 || inx == 0x02) ? 1 : 0;
+}
+
+uint8_t tile_drive_dc_h_wait_for_stop(tile_t *tile, uint32_t timeout_ms)
+{
+    if (tile->state != TILE_STATE_READY) return 0;
+
+    /* Sample the ripple counter at 10 ms intervals. The rotor is
+     * declared "stopped" when two consecutive 10 ms-spaced samples
+     * (≥30 ms total observation) report the same count — well below
+     * mechanical settling time even for fast unloaded motors. */
+    uint16_t prev = tile_drive_dc_h_get_ripple_count(tile);
+    uint8_t  stable_runs = 0;
+
+    for (uint32_t elapsed = 0; elapsed < timeout_ms; elapsed += 10) {
+        tile->hal->delay_ms(10);
+        uint16_t cur = tile_drive_dc_h_get_ripple_count(tile);
+        if (cur == prev) {
+            stable_runs++;
+            if (stable_runs >= 2) return 1;
+        } else {
+            stable_runs = 0;
+            prev = cur;
+        }
+    }
+
+    return 0;
 }
