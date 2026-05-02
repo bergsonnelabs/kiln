@@ -3,15 +3,16 @@
  * @brief  Li-Ion charge controller driver for the Power.L.1T tile (rev a).
  *
  * Embeds the Texas Instruments BQ25150, a single-cell Li-Ion charge
- * controller with programmable 1.8 V LDO output and 12-bit ADC
- * for battery and system monitoring.
+ * controller with programmable 1.8 V LDO output and 12-bit ADC for
+ * battery and system monitoring.
  *
  * Key specifications:
  *   - Charge input:     3.4–5.5 V (up to 500 mA)
- *   - Battery voltage:  3.6–4.6 V (rechargeable Li-Ion)
- *   - LDO output:       1.8 V, up to 10 mA
- *   - ADC:              12-bit battery voltage monitoring
- *   - Charge current:   programmable, up to 500 mA
+ *   - Battery voltage:  3.6–4.6 V (programmable in 10 mV steps)
+ *   - LDO output:       1.8 V on this tile (chip is programmable)
+ *   - ADC:              12-bit, 6 input channels
+ *   - Charge current:   1.25–500 mA programmable
+ *   - JEITA-style NTC:  cold / cool / warm / hot thresholds
  *
  * Datasheet: https://www.bergsonne.io/tiles/power/l1t
  * IC datasheet: https://www.ti.com/lit/ds/symlink/bq25150.pdf
@@ -25,83 +26,22 @@
  *   tile_t battery;
  *   tile_power_l_1t_init(core_tiles_pal(&core_i2c1), 0, &battery, NULL);
  *   if (tile_is_ready(&battery)) {
- *       uint16_t vbat = tile_power_l_1t_get_vbat(&battery);
- *       uint8_t  pct  = tile_power_l_1t_get_percent(&battery);
+ *       tile_power_l_1t_set_charge_current_ma(&battery, 100);
+ *       tile_power_l_1t_set_charge_voltage_mv(&battery, 4200);
+ *       uint16_t vbat = tile_power_l_1t_get_vbat_mv(&battery);
+ *       uint16_t ichg = tile_power_l_1t_get_charge_current_ma(&battery);
  *   }
  * @endcode
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * The current driver is intentionally minimal (vbat read + state-of-
- * charge derivation) and surfaces only a fraction of the BQ25150's
- * capability surface. The gaps below are slated for the next driver
- * pass; the watchdog gap in particular is a correctness issue, not
- * just a feature deferral.
- *
- * @tessera unsupported severity=common category="I²C watchdog feed"
- *   BQ25150 has a 50-second I²C watchdog that resets ALL charge
- *   parameters (ICHG, VBATREG, ITERM, ILIM, etc.) to defaults if
- *   the host doesn't periodically write to a charger register.
- *   Driver doesn't kick the watchdog — meaning any custom charge
- *   configuration is silently lost every 50 s. Correctness bug,
- *   not just a missing feature.
- *
- * @tessera unsupported severity=common category="Charge current programming (ICHG_CTRL)"
- *   Programmable 1.25–500 mA in 10 mA steps via ICHG_CTRL. Driver
- *   uses chip default (typically 200 mA) — required for matching
- *   battery's 0.5C–1C charge spec.
- *
- * @tessera unsupported severity=common category="Charge voltage programming (VBATREG)"
- *   Programmable 3.6–4.6 V in 10 mV steps via VBAT_CTRL. Driver
- *   uses chip default (4.2 V) — relevant for LFP cells (3.65 V)
- *   or high-voltage NMC variants.
- *
- * @tessera unsupported severity=common category="Pre-charge / termination current"
- *   PCHRGCTRL (1.25–77.5 mA pre-charge) and TERMCTRL (1–31 % of
- *   ICHARGE termination) aren't exposed. Pre-charge prevents
- *   damage to deeply-discharged cells; termination current
- *   determines when CV phase ends.
- *
- * @tessera unsupported severity=common category="ADC channels (VIN / ICHG / TS / ADCIN)"
- *   12-bit ADC measures input voltage, charge current, NTC
- *   thermistor, and an optional ADCIN. Driver only reads VBAT —
- *   the rest are needed for proper power-path diagnostics.
- *
- * @tessera unsupported severity=common category="NTC thresholds (TS_COLD/COOL/WARM/HOT)"
- *   Programmable JEITA-style temperature thresholds gate charging
- *   based on battery temperature via the TS pin. Driver doesn't
- *   configure them — relevant for battery safety in any
- *   non-room-temperature application.
- *
- * @tessera unsupported severity=common category="Fault flag readout"
- *   FLAG0–FLAG3 registers report charge faults (BAT_OCP, VIN_OVP,
- *   UVLO, safety timer, watchdog, OTS, etc.). Driver has
- *   read_status as a register-level escape hatch but no
- *   structured fault API.
- *
- * @tessera unsupported severity=advanced category="Ship mode entry / exit"
- *   EN_SHIPMODE bit puts the chip into ~10 nA quiescent (battery
- *   physically disconnected via internal FET); waking requires MR
- *   press or VIN. Driver doesn't expose ship-mode toggling —
- *   relevant for long-term storage or end-of-line testing.
- *
- * @tessera unsupported severity=advanced category="LDO enable + voltage selection"
- *   LDO output (1.8 V default on this tile, programmable 0.6–3.7 V
- *   via LDOCTRL) and load-switch mode aren't controlled by the
- *   driver. EN_LS_LDO bit, soft-start, and current-limit reporting
- *   would help apps that gate downstream rails.
- *
  * @tessera unsupported severity=advanced category="MR button + INT pin handling"
- *   MR push-button input supports short / long press detection
- *   (configurable WAKE1/WAKE2 timers) and the INT pin pulses on
- *   any flag change (with maskable sources). Driver has no
- *   button / interrupt API.
- *
- * @tessera unsupported severity=advanced category="14 s HW watchdog control"
- *   Separate from the I²C watchdog: a 14 s VIN-stable HW watchdog
- *   triggers a Power-Cycle/Autowake reset if no I²C activity. Can
- *   be disabled via HWRESET_14S_WD bit. Driver doesn't expose the
- *   bit — the HW watchdog stays enabled by default.
+ *   The chip's MR (push-button) and INT (interrupt) pins aren't
+ *   routed to tile pads on the current revision — nothing for a
+ *   Core GPIO to attach to. Closing this gap requires a tile
+ *   hardware revision that routes at least INT to a connector
+ *   pad. Until then, MASK0–3 / MRCTRL register writes have no
+ *   external effect.
  */
 
 #ifndef INC_TILE_POWER_L_1T_H_
@@ -114,7 +54,7 @@
 /* Driver version                                                  */
 /* -------------------------------------------------------------- */
 
-#define TILE_POWER_L_1T_VERSION_MAJOR  2
+#define TILE_POWER_L_1T_VERSION_MAJOR  3
 #define TILE_POWER_L_1T_VERSION_MINOR  0
 #define TILE_POWER_L_1T_VERSION_PATCH  0
 
@@ -140,25 +80,75 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 /* BQ25150 register map (subset used by this driver)               */
 /* -------------------------------------------------------------- */
 
-#define BQ25150_REG_STAT0           0x00  /**< Charger status 0 */
-#define BQ25150_REG_STAT1           0x01  /**< Charger status 1 */
-#define BQ25150_REG_STAT2           0x02  /**< Charger status 2 */
-#define BQ25150_REG_FLAG0           0x03  /**< Flag register 0 */
-#define BQ25150_REG_FLAG1           0x04  /**< Flag register 1 */
-#define BQ25150_REG_FLAG2           0x05  /**< Flag register 2 */
-#define BQ25150_REG_FLAG3           0x06  /**< Flag register 3 */
-#define BQ25150_REG_ICHG_CTRL       0x13  /**< Fast charge current control */
-#define BQ25150_REG_PCHRGCTRL       0x14  /**< Precharge current control */
-#define BQ25150_REG_BUVLO           0x16  /**< Battery undervoltage lockout */
-#define BQ25150_REG_ICCTRL0         0x35  /**< IC control 0 (ship mode) */
-#define BQ25150_REG_ADCCTRL0        0x40  /**< ADC control 0 */
-#define BQ25150_REG_VBAT_MSB        0x42  /**< Battery voltage MSB */
-#define BQ25150_REG_VBAT_LSB        0x43  /**< Battery voltage LSB */
-#define BQ25150_REG_ADC_READ_EN     0x58  /**< ADC channel read enable */
+#define BQ25150_REG_STAT0           0x00  /**< Charger Status 0 */
+#define BQ25150_REG_STAT1           0x01  /**< Charger Status 1 */
+#define BQ25150_REG_STAT2           0x02  /**< ADC Status */
+#define BQ25150_REG_FLAG0           0x03  /**< Charger Flags 0 */
+#define BQ25150_REG_FLAG1           0x04  /**< Charger Flags 1 */
+#define BQ25150_REG_FLAG2           0x05  /**< ADC Flags */
+#define BQ25150_REG_FLAG3           0x06  /**< Timer Flags */
+#define BQ25150_REG_VBAT_CTRL       0x12  /**< Battery Voltage Control */
+#define BQ25150_REG_ICHG_CTRL       0x13  /**< Fast Charge Current Control */
+#define BQ25150_REG_PCHRGCTRL       0x14  /**< Pre-Charge Current Control */
+#define BQ25150_REG_TERMCTRL        0x15  /**< Termination Current Control */
+#define BQ25150_REG_BUVLO           0x16  /**< Battery UVLO and Current Limit */
+#define BQ25150_REG_CHARGERCTRL0    0x17  /**< Charger Control 0 (TS, watchdog) */
+#define BQ25150_REG_ILIMCTRL        0x19  /**< Input Current Limit Control */
+#define BQ25150_REG_LDOCTRL         0x1D  /**< LDO Control (enable, voltage, mode) */
+#define BQ25150_REG_ICCTRL0         0x35  /**< IC Control 0 (ship mode) */
+#define BQ25150_REG_ADCCTRL0        0x40  /**< ADC Control 0 */
+#define BQ25150_REG_ADC_DATA_VBAT_M 0x42  /**< ADC VBAT MSB */
+#define BQ25150_REG_ADC_DATA_VBAT_L 0x43  /**< ADC VBAT LSB */
+#define BQ25150_REG_ADC_DATA_TS_M   0x44  /**< ADC TS MSB */
+#define BQ25150_REG_ADC_DATA_ICHG_M 0x46  /**< ADC ICHG MSB */
+#define BQ25150_REG_ADC_DATA_ADCIN_M 0x48 /**< ADC ADCIN MSB */
+#define BQ25150_REG_ADC_DATA_VIN_M  0x4A  /**< ADC VIN MSB */
+#define BQ25150_REG_ADC_DATA_PMID_M 0x4C  /**< ADC PMID MSB */
+#define BQ25150_REG_ADC_DATA_IIN_M  0x4E  /**< ADC IIN MSB */
+#define BQ25150_REG_ADC_READ_EN     0x58  /**< ADC Channel Enable */
+#define BQ25150_REG_TS_FASTCHGCTRL  0x61  /**< TS Charge Control */
+#define BQ25150_REG_TS_COLD         0x62  /**< TS Cold Threshold */
+#define BQ25150_REG_TS_COOL         0x63  /**< TS Cool Threshold */
+#define BQ25150_REG_TS_WARM         0x64  /**< TS Warm Threshold */
+#define BQ25150_REG_TS_HOT          0x65  /**< TS Hot Threshold */
 #define BQ25150_REG_DEVICE_ID       0x6F  /**< Device identification */
 
 /** @brief  Expected DEVICE_ID register value. */
 #define BQ25150_DEVICE_ID_DEFAULT   0x20
+
+/* -------------------------------------------------------------- */
+/* Status struct                                                   */
+/* -------------------------------------------------------------- */
+
+/**
+ * @brief  Snapshot of the BQ25150's current state and latched faults.
+ *
+ * Populated by tile_power_l_1t_get_charge_status(). Mixes live state
+ * (vin_pgood, charging, *_active) and clear-on-read event flags
+ * (faults). Reading the flags clears them — call once per polling
+ * cycle, not multiple times.
+ */
+typedef struct {
+    /* Live state (from STAT0 / STAT1) */
+    uint16_t vin_pgood       : 1;  /**< 1 = VIN within valid range */
+    uint16_t charging        : 1;  /**< 1 = charging active */
+    uint16_t cv_mode         : 1;  /**< 1 = CV (taper) phase */
+    uint16_t charge_done     : 1;  /**< 1 = termination reached */
+    uint16_t iinlim_active   : 1;  /**< 1 = input current limit reducing charge */
+    uint16_t vindpm_active   : 1;  /**< 1 = VIN dynamic power management active */
+    uint16_t thermreg_active : 1;  /**< 1 = thermal regulation foldback active */
+    /* Faults (from FLAG1 / FLAG3 — clear on read) */
+    uint16_t vin_ovp         : 1;  /**< VIN above OVP threshold */
+    uint16_t bat_ocp         : 1;  /**< Battery over-current detected */
+    uint16_t bat_uvlo        : 1;  /**< Battery under-voltage lockout */
+    uint16_t safety_timer    : 1;  /**< Charge safety timer expired */
+    uint16_t watchdog        : 1;  /**< I²C watchdog expired (init disables WD, so should be 0) */
+    /* TS thresholds (from STAT1 / FLAG1) */
+    uint16_t ts_cold         : 1;  /**< NTC reads below TS_COLD (charging paused) */
+    uint16_t ts_cool         : 1;  /**< NTC in cool band (reduced charge current) */
+    uint16_t ts_warm         : 1;  /**< NTC in warm band (reduced charge voltage) */
+    uint16_t ts_hot          : 1;  /**< NTC reads above TS_HOT (charging stopped) */
+} power_l_1t_status_t;
 
 /* -------------------------------------------------------------- */
 /* Public API                                                      */
@@ -184,8 +174,10 @@ typedef struct {
 /**
  * @brief  Initialize the BQ25150 charge controller.
  *
- * Verifies the device ID and configures charge current, precharge,
- * undervoltage lockout, ADC, and disables ship mode. Pass cfg=NULL for defaults.
+ * Verifies the device ID, disables the I²C watchdog (the chip
+ * otherwise resets all charge parameters every 50 s), enables all
+ * 6 ADC channels, configures sane charge defaults, and exits ship
+ * mode. Pass cfg=NULL for defaults.
  *
  * @param  hal       Platform HAL handle
  * @param  instance  Instance index (0 = default, see mapping table)
@@ -195,40 +187,316 @@ typedef struct {
 void tile_power_l_1t_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
                           const power_l_1t_cfg_t *cfg);
 
-/**
- * @brief  Read the raw battery voltage from the ADC.
- *
- * @tessera expose category=tile name=get_vbat returns=int
- * @param  tile  Pointer to tile handle
- * @return 16-bit raw ADC value (MSB:LSB)
- */
-uint16_t tile_power_l_1t_get_vbat(tile_t* tile);
+/* ---- Charge configuration ---------------------------------------- */
 
 /**
- * @brief  Read the battery charge percentage.
+ * @brief  Set the fast-charge current.
+ *
+ * Programs ICHG_CTRL with the appropriate ICHARGE_RANGE bit so the
+ * resolution scales: ≤318 mA uses 1.25 mA steps, >318 mA uses
+ * 2.5 mA steps. Values clamp to 1.25–500 mA.
+ *
+ * @tessera expose category=tile name=set_charge_current_ma
+ * @param  tile  Initialised tile handle
+ * @param  ma    Target charge current in mA (1.25–500)
+ */
+void tile_power_l_1t_set_charge_current_ma(tile_t* tile, uint16_t ma);
+
+/**
+ * @brief  Set the battery regulation voltage.
+ *
+ * VBATREG = 3600 + code × 10 mV. Values outside 3600–4600 mV clamp
+ * to that range. Use 4200 for typical Li-Ion, 3650 for LFP, 4350+
+ * for high-voltage NMC variants.
+ *
+ * @tessera expose category=tile name=set_charge_voltage_mv
+ * @param  tile  Initialised tile handle
+ * @param  mv    Target battery voltage in mV (3600–4600)
+ */
+void tile_power_l_1t_set_charge_voltage_mv(tile_t* tile, uint16_t mv);
+
+/**
+ * @brief  Set the pre-charge current (used when VBAT < VLOW).
+ *
+ * Pre-charge applies to deeply-discharged cells; usually 10–20 % of
+ * the fast-charge rate. Values clamp to 1.25–77.5 mA.
+ *
+ * @tessera expose category=tile name=set_pre_charge_ma
+ * @param  tile  Initialised tile handle
+ * @param  ma   Target pre-charge current in mA (1.25–77.5)
+ */
+void tile_power_l_1t_set_pre_charge_ma(tile_t* tile, uint8_t ma);
+
+/**
+ * @brief  Set the termination current as a percentage of ICHG.
+ *
+ * Charging ends when the cell's current draw drops below this
+ * threshold during the CV phase. 0 disables termination (charges
+ * continuously until VBATREG is reached). Values clamp to 1–31 %.
+ *
+ * @tessera expose category=tile name=set_termination_percent
+ * @param  tile  Initialised tile handle
+ * @param  pct   Termination current as % of ICHG (0 = disabled, 1–31)
+ */
+void tile_power_l_1t_set_termination_percent(tile_t* tile, uint8_t pct);
+
+/**
+ * @brief  Set the input current limit (DPM threshold).
+ *
+ * When the adapter can't supply more than this, charge current
+ * folds back to keep VIN above the DPM threshold. Values clamp to
+ * 5–500 mA in 5 mA steps.
+ *
+ * @tessera expose category=tile name=set_input_current_limit_ma
+ * @param  tile  Initialised tile handle
+ * @param  ma   Input current limit in mA (5–500)
+ */
+void tile_power_l_1t_set_input_current_limit_ma(tile_t* tile, uint16_t ma);
+
+/* ---- ADC reads (milli-units) ------------------------------------- */
+
+/**
+ * @brief  Read battery voltage from the ADC.
+ *
+ * Replaces the deprecated raw-counts API; performs a 2-byte burst
+ * read to avoid torn samples.
+ *
+ * @tessera expose category=tile name=get_vbat_mv returns=int
+ * @param  tile  Initialised tile handle
+ * @return Battery voltage in mV (0–6000)
+ */
+uint16_t tile_power_l_1t_get_vbat_mv(tile_t* tile);
+
+/**
+ * @brief  Read input (VIN) voltage from the ADC.
+ * @tessera expose category=tile name=get_vin_mv returns=int
+ * @param  tile  Initialised tile handle
+ * @return VIN in mV (0–6000)
+ */
+uint16_t tile_power_l_1t_get_vin_mv(tile_t* tile);
+
+/**
+ * @brief  Read PMID (system rail) voltage from the ADC.
+ * @tessera expose category=tile name=get_pmid_mv returns=int
+ * @param  tile  Initialised tile handle
+ * @return PMID in mV (0–6000)
+ */
+uint16_t tile_power_l_1t_get_pmid_mv(tile_t* tile);
+
+/**
+ * @brief  Read charge current (into the battery) from the ADC.
+ *
+ * Scaled relative to the configured ICHG fast-charge limit; returns
+ * actual mA flowing into the cell.
+ *
+ * @tessera expose category=tile name=get_charge_current_ma returns=int
+ * @param  tile  Initialised tile handle
+ * @return Charge current in mA (0–500)
+ */
+uint16_t tile_power_l_1t_get_charge_current_ma(tile_t* tile);
+
+/**
+ * @brief  Read input current (from VIN) from the ADC.
+ *
+ * Range scales with ILIMCTRL: ≤150 mA range gives 0–375 mA full
+ * scale; >150 mA range gives 0–750 mA full scale.
+ *
+ * @tessera expose category=tile name=get_input_current_ma returns=int
+ * @param  tile  Initialised tile handle
+ * @return Input current in mA (0–750)
+ */
+uint16_t tile_power_l_1t_get_input_current_ma(tile_t* tile);
+
+/**
+ * @brief  Read raw TS pin voltage from the ADC.
+ *
+ * Returns the millivolt reading on the TS pin (0–1200 mV). Convert
+ * to °C using the NTC's resistance/temperature curve in firmware —
+ * the chip doesn't expose temperature directly.
+ *
+ * @tessera expose category=tile name=get_ts_mv returns=int
+ * @param  tile  Initialised tile handle
+ * @return TS voltage in mV (0–1200)
+ */
+uint16_t tile_power_l_1t_get_ts_mv(tile_t* tile);
+
+/**
+ * @brief  Read raw ADCIN pin voltage from the ADC.
+ *
+ * Optional auxiliary input (0–1.2 V range). Useful for monitoring
+ * an external sensor (e.g., separate NTC, voltage divider).
+ *
+ * @tessera expose category=tile name=get_adcin_mv returns=int
+ * @param  tile  Initialised tile handle
+ * @return ADCIN voltage in mV (0–1200)
+ */
+uint16_t tile_power_l_1t_get_adcin_mv(tile_t* tile);
+
+/* ---- Battery percent (derived) ---------------------------------- */
+
+/**
+ * @brief  Read battery state-of-charge as a percentage.
+ *
+ * Derived from VBAT using a linear curve (3000 mV = 0%, 4200 mV =
+ * 100%). Coarse — a real fuel gauge would integrate Coulombs.
  *
  * @tessera expose category=tile name=get_percent returns=int
- * @param  tile  Pointer to tile handle
+ * @param  tile  Initialised tile handle
  * @return Battery percentage (0–100)
  */
 uint8_t tile_power_l_1t_get_percent(tile_t* tile);
 
+/* ---- NTC (TS pin) thresholds ------------------------------------- */
+
 /**
- * @brief  Read a status register.
+ * @brief  Set the cold-temperature TS threshold (raw register value).
+ *
+ * The TS register codes are bit-positional (1, 2, 4, 8, 16, ...
+ * encode multiples of 4.688 mV up to 600 mV). Datasheet section
+ * 8.5.1.49–52 describes the exact mapping; users tuning JEITA
+ * thresholds should consult the chip's NTC profile guide.
+ *
+ * @tessera expose category=tile name=set_ts_cold
+ * @param  tile  Initialised tile handle
+ * @param  code  Raw 8-bit TS_COLD register value
+ */
+void tile_power_l_1t_set_ts_cold(tile_t* tile, uint8_t code);
+
+/**
+ * @brief  Set the cool-temperature TS threshold (raw register value).
+ * @tessera expose category=tile name=set_ts_cool
+ * @param  tile  Initialised tile handle
+ * @param  code  Raw 8-bit TS_COOL register value
+ */
+void tile_power_l_1t_set_ts_cool(tile_t* tile, uint8_t code);
+
+/**
+ * @brief  Set the warm-temperature TS threshold (raw register value).
+ * @tessera expose category=tile name=set_ts_warm
+ * @param  tile  Initialised tile handle
+ * @param  code  Raw 8-bit TS_WARM register value
+ */
+void tile_power_l_1t_set_ts_warm(tile_t* tile, uint8_t code);
+
+/**
+ * @brief  Set the hot-temperature TS threshold (raw register value).
+ * @tessera expose category=tile name=set_ts_hot
+ * @param  tile  Initialised tile handle
+ * @param  code  Raw 8-bit TS_HOT register value
+ */
+void tile_power_l_1t_set_ts_hot(tile_t* tile, uint8_t code);
+
+/**
+ * @brief  Enable or disable TS-based thermal protection.
+ *
+ * When disabled, the chip ignores the NTC entirely (charging
+ * proceeds regardless of battery temperature). Default at init: enabled.
+ *
+ * @tessera expose category=tile name=set_ts_enabled
+ * @param  tile     Initialised tile handle
+ * @param  enabled  1 = TS thermal protection on, 0 = off
+ */
+void tile_power_l_1t_set_ts_enabled(tile_t* tile, uint8_t enabled);
+
+/* ---- LDO output --------------------------------------------------- */
+
+/** LDO output mode — regulated voltage vs pass-through load switch. */
+typedef enum {
+    POWER_L_1T_LDO_MODE_LDO         = 0,  /**< Regulated LDO output */
+    POWER_L_1T_LDO_MODE_LOAD_SWITCH = 1,  /**< Pass-through load switch */
+} power_l_1t_ldo_mode_t;
+
+/**
+ * @brief  Set the LDO output voltage.
+ *
+ * VLDO = 600 + code × 100 mV. Values clamp to 600–3700 mV. Tile
+ * design gates this rail to a fixed 1.8 V at the connector — changing
+ * the LDO voltage breaks downstream peripherals expecting 1.8 V on
+ * pad 10. Useful for non-default tile variants or load-switch-mode
+ * pass-through use.
+ *
+ * @tessera expose category=tile name=set_ldo_voltage_mv
+ * @param  tile  Initialised tile handle
+ * @param  mv    Target LDO voltage in mV (600–3700)
+ */
+void tile_power_l_1t_set_ldo_voltage_mv(tile_t* tile, uint16_t mv);
+
+/**
+ * @brief  Set the LS/LDO output mode (regulated LDO vs load switch).
+ *
+ * In LDO mode the chip regulates pad 10 to the configured voltage
+ * (10 mA max). In load-switch mode it pass-through-connects PMID
+ * via a FET (up to 150 mA, but VINLS must be tied to the desired
+ * supply on the tile PCB).
+ *
+ * @tessera expose category=tile name=set_ldo_mode
+ * @param  tile  Initialised tile handle
+ * @param  mode  LDO mode (POWER_L_1T_LDO_MODE_LDO or _LOAD_SWITCH)
+ */
+void tile_power_l_1t_set_ldo_mode(tile_t* tile, power_l_1t_ldo_mode_t mode);
+
+/**
+ * @brief  Enable or disable the LS/LDO output.
+ *
+ * When disabled, pad 10 (V+) goes high-impedance — downstream rails
+ * expecting 1.8 V will drop. Default at init: enabled (chip default).
+ *
+ * @tessera expose category=tile name=set_ldo_enabled
+ * @param  tile     Initialised tile handle
+ * @param  enabled  1 = output on, 0 = output off (high-Z)
+ */
+void tile_power_l_1t_set_ldo_enabled(tile_t* tile, uint8_t enabled);
+
+/* ---- Status / fault read ----------------------------------------- */
+
+/**
+ * @brief  Snapshot the chip's current state + latched faults.
+ *
+ * Reads STAT0/STAT1 (live state) and FLAG0/FLAG1/FLAG3 (event flags
+ * which clear on read) into the supplied struct. Call once per
+ * polling cycle — multiple reads will lose flag transitions.
+ *
+ * @param  tile  Initialised tile handle
+ * @param  out   Caller-allocated status struct (zeroed on entry)
+ */
+void tile_power_l_1t_get_charge_status(tile_t* tile,
+                                       power_l_1t_status_t *out);
+
+/* ---- Power management -------------------------------------------- */
+
+/**
+ * @brief  Enter ship mode (~10 nA quiescent).
+ *
+ * Disconnects the battery internally; only an MR press or VIN
+ * insertion will wake the chip. Charge parameters reset to defaults
+ * on exit. Use only for long-term storage / end-of-line packaging.
+ *
+ * @param  tile  Initialised tile handle
+ */
+void tile_power_l_1t_enter_ship_mode(tile_t* tile);
+
+/* ---- Raw register access (escape hatches) ------------------------ */
+
+/**
+ * @brief  Read any 8-bit BQ25150 register.
  *
  * @tessera expose category=tile name=read_status returns=int
- * @param  tile  Pointer to tile handle
- * @param  reg   Status register address (BQ25150_REG_STAT0/1/2)
+ * @param  tile  Initialised tile handle
+ * @param  reg   Register address
  * @return 8-bit register value
  */
 uint8_t tile_power_l_1t_read_status(tile_t* tile, uint8_t reg);
 
 /**
- * @brief  Write a raw 8-bit value to any BQ25150 register.
+ * @brief  Write any 8-bit BQ25150 register.
  *
- * @param  tile   Pointer to tile handle
- * @param  reg    8-bit register address
- * @param  value  8-bit value to write
+ * Escape hatch for advanced users wanting to touch registers the
+ * driver doesn't expose. Caller is responsible for not bricking the
+ * chip — most useful registers have typed setters above.
+ *
+ * @param  tile   Initialised tile handle
+ * @param  reg    Register address
+ * @param  value  Value to write
  */
 void tile_power_l_1t_write_reg(tile_t* tile, uint8_t reg, uint8_t value);
 
