@@ -1,19 +1,19 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@7b590aa",
+  "source": "cores@3e1d488",
   "tile": "Display.RGBW",
   "palette": {
     "label": "Display.RGBW",
     "icon": "◑"
   },
   "driver": {
-    "prefix": "tile_disp_rgbw",
-    "header": "tile_disp_rgbw.h",
+    "prefix": "tile_display_rgbw",
+    "header": "tile_display_rgbw.h",
     "version": "1.0.0"
   },
   "handle": {
     "type": "tile_t",
-    "init": "tile_disp_rgbw_init"
+    "init": "tile_display_rgbw_init"
   },
   "hosts": [
     {
@@ -21,8 +21,8 @@
         "$slot",
         "set"
       ],
-      "symbol": "tile_disp_rgbw_set",
-      "header": "tile_disp_rgbw.h",
+      "symbol": "tile_display_rgbw_set",
+      "header": "tile_display_rgbw.h",
       "category": "tile",
       "description": "Set RGBW output levels.",
       "params": [
@@ -72,8 +72,8 @@
         "$slot",
         "off"
       ],
-      "symbol": "tile_disp_rgbw_off",
-      "header": "tile_disp_rgbw.h",
+      "symbol": "tile_display_rgbw_off",
+      "header": "tile_display_rgbw.h",
       "category": "tile",
       "description": "Turn all LEDs off (PWM = 0).",
       "params": [],
@@ -86,8 +86,8 @@
         "$slot",
         "set_current"
       ],
-      "symbol": "tile_disp_rgbw_set_current",
-      "header": "tile_disp_rgbw.h",
+      "symbol": "tile_display_rgbw_set_current",
+      "header": "tile_display_rgbw.h",
       "category": "tile",
       "description": "Set per-channel current limit.",
       "params": [
@@ -137,8 +137,8 @@
         "$slot",
         "sleep"
       ],
-      "symbol": "tile_disp_rgbw_sleep",
-      "header": "tile_disp_rgbw.h",
+      "symbol": "tile_display_rgbw_sleep",
+      "header": "tile_display_rgbw.h",
       "category": "tile",
       "description": "Enter sleep (disable chip).",
       "params": [],
@@ -151,8 +151,8 @@
         "$slot",
         "wake"
       ],
-      "symbol": "tile_disp_rgbw_wake",
-      "header": "tile_disp_rgbw.h",
+      "symbol": "tile_display_rgbw_wake",
+      "header": "tile_display_rgbw.h",
       "category": "tile",
       "description": "Wake (re-enable chip, LEDs retain previous state).",
       "params": [],
@@ -161,5 +161,12 @@
       "receiver": "tile_t *"
     }
   ],
-  "events": []
+  "events": [],
+  "bus_addresses": {
+    "I2C": [
+      {
+        "address": "0x50"
+      }
+    ]
+  }
 }

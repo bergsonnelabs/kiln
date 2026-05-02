@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@7b590aa",
+  "source": "cores@3e1d488",
   "tile": "Drive.DC.H",
   "palette": {
     "label": "Drive.DC.H",
@@ -228,11 +228,8 @@
   "bus_addresses": {
     "I2C": [
       {
-        "address": "0x34",
+        "address": "variant",
         "is_default": true
-      },
-      {
-        "address": "0x30-0x38"
       }
     ]
   }
