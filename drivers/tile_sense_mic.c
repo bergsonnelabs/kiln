@@ -417,3 +417,193 @@ uint16_t tile_sense_mic_amplitude_mv(tile_t *tile, uint16_t pp_raw)
     mic_state_t *s = state_for(tile);
     return (uint16_t)(((uint32_t)pp_raw * s->vref_mv) >> 12);
 }
+
+/* ================================================================
+ * Tier-2 — SPL conversion + event-detection helpers
+ *
+ * Math: The AMM-2742 has a typical sensitivity of −42 dBV/Pa (analog
+ * output in V_RMS for 1 Pa input pressure). Translating that:
+ *   -42 dBV  = 10^(-42/20) V_RMS = 7.943 mV_RMS per Pascal.
+ *   1 Pa SPL = 94 dB SPL (since 0 dB SPL = 20 µPa).
+ * Therefore for a measured signal mV_RMS at the ADC input:
+ *   dB SPL  = 94 + 20*log10(mV_RMS / 7.943)
+ *           = 20*log10(mV_RMS) + (94 − 20*log10(7.943))
+ *           = 20*log10(mV_RMS) + 76 (approx)
+ *
+ * We carry SPL in 0.1 dB units to keep integer precision tight
+ * without floats. The 20*log10(mV_RMS) term is tabulated for
+ * mV_RMS ∈ [1, 32] — small RMS values around the noise floor /
+ * mid-loudness regime — and saturates above 32 mV (~110 dB SPL)
+ * for the rare clipping-loud case.
+ * ================================================================ */
+
+/* Sample window for tier-2 ops. ~5 ms at 12.5 ksps (400 kHz I2C). */
+#define MIC_TIER2_BUF_LEN  64
+
+/* SPL polling interval used by wait_for_sound / detect_clap. */
+#define MIC_TIER2_POLL_MS  5
+
+/* 20*log10(n) in 0.1 dB units, indexed by integer n.
+ * Index 0 is unused (log10(0) is −∞ — handled by the caller).
+ * Indexes 1..32 covered; saturates at n≥32 (~30.1 dB above 1 mV). */
+static const int16_t k_log10_x20_table[33] = {
+       0,    0,   60,   95,  120,  140,  156,  169,  /* idx 0..7 */
+     181,  191,  200,  208,  216,  223,  229,  235,  /* idx 8..15 */
+     241,  246,  251,  256,  260,  264,  268,  272,  /* idx 16..23 */
+     276,  280,  283,  286,  289,  292,  295,  298,  /* idx 24..31 */
+     301,                                            /* idx 32 */
+};
+
+/* Convert RMS mV to SPL in 0.1 dB units. Integer-only, table-LUT. */
+static int16_t mv_rms_to_spl_dx10(uint16_t mv_rms)
+{
+    /* Floor: below 1 mV the lookup saturates at 0 → 76*10 = 760
+     * (~76 dB SPL). For "no signal" we'd rather report an honest
+     * low-SPL floor; clamp to 30 dB minimum. */
+    if (mv_rms == 0) {
+        return 300;  /* 30.0 dB SPL — below noise floor */
+    }
+    uint8_t idx = (mv_rms > 32) ? 32 : (uint8_t)mv_rms;
+    int16_t log_term = k_log10_x20_table[idx];     /* 20*log10(mV) in 0.1 dB */
+    /* dB SPL = 20*log10(mV) + 76, in 0.1 dB units that's +760. */
+    return (int16_t)(log_term + 760);
+}
+
+/* Capture a sample buffer + compute RMS in mV. Used by all SPL hosts. */
+static uint16_t mic_capture_rms_mv(tile_t *tile)
+{
+    uint16_t buf[MIC_TIER2_BUF_LEN];
+    mic_state_t *s = state_for(tile);
+    for (uint16_t i = 0; i < MIC_TIER2_BUF_LEN; i++) {
+        buf[i] = mic_read_sample(tile);
+    }
+    uint16_t rms_raw = tile_sense_mic_rms(buf, MIC_TIER2_BUF_LEN, s->dc_offset);
+    /* mV = raw * vref_mv / 4096 */
+    return (uint16_t)(((uint32_t)rms_raw * s->vref_mv) >> 12);
+}
+
+/** @brief Quick "is the room loud right now?" check. */
+uint8_t tile_sense_mic_is_loud(tile_t *tile, int16_t threshold_db)
+{
+    int16_t spl = tile_sense_mic_read_spl_db(tile);
+    return (spl > threshold_db) ? 1 : 0;
+}
+
+/** @brief Read instantaneous SPL in 0.1 dB units.
+ *
+ * TODO HW: SPL accuracy is rough (±5 dB in the 50–100 dB range, no
+ * A-weighting). The mV→dB LUT is units-only from the AMM-2742 typical
+ * −42 dBV/Pa sensitivity; calibration vs. a reference SPL meter has
+ * not been done. Also, DC offset is captured once at init() and any
+ * supply drift after that shifts SPL — call tile_sense_mic_calibrate()
+ * to re-zero. Good enough for clap/voice/event detection, not for
+ * studio metering. */
+int16_t tile_sense_mic_read_spl_db(tile_t *tile)
+{
+    uint16_t mv_rms = mic_capture_rms_mv(tile);
+    return mv_rms_to_spl_dx10(mv_rms);
+}
+
+/** @brief Block until ambient SPL crosses threshold (or timeout). */
+uint8_t tile_sense_mic_wait_for_sound(tile_t *tile, int16_t threshold_db,
+                                      uint32_t timeout_ms)
+{
+    uint32_t elapsed = 0;
+    while (elapsed < timeout_ms) {
+        int16_t spl = tile_sense_mic_read_spl_db(tile);
+        if (spl > threshold_db) return 1;
+        tile->hal->delay_ms(MIC_TIER2_POLL_MS);
+        elapsed += MIC_TIER2_POLL_MS;
+    }
+    return 0;
+}
+
+/** @brief Detect a clap pattern (two peaks bracketed by quiet).
+ *
+ * TODO HW: coarse two-peaks-in-window pattern detector. Door slams,
+ * drawer slams, hand-against-thigh, double-knocks, and percussive
+ * impacts will all trigger this. The signature of a real human clap
+ * is broadband with a fast attack — distinguishing one from a slam
+ * needs a trained classifier, which won't fit the integer-only
+ * constraint. Tune `peak_thr`/`quiet_thr`/gap window at the bench
+ * for the target environment. */
+uint8_t tile_sense_mic_detect_clap(tile_t *tile, uint32_t timeout_ms)
+{
+    /* Pattern thresholds (0.1 dB units):
+     *   peak  >= 700 (70.0 dB SPL)
+     *   quiet <  500 (50.0 dB SPL)
+     * Time windows (ms):
+     *   pre-quiet:   >= 100  (need a calm baseline)
+     *   gap:         50..500 (between peaks)
+     *   post-quiet:  >= 100
+     *   peak width:  any single sample crossing
+     */
+    const int16_t peak_thr  = 700;
+    const int16_t quiet_thr = 500;
+    const uint32_t pre_quiet_ms  = 100;
+    const uint32_t post_quiet_ms = 100;
+    const uint32_t gap_min_ms = 50;
+    const uint32_t gap_max_ms = 500;
+
+    /* State machine:
+     *   0: waiting for pre-quiet bracket
+     *   1: pre-quiet seen, waiting for first peak
+     *   2: first peak seen, waiting for quiet gap
+     *   3: in gap, waiting for second peak (bounded by gap_max_ms)
+     *   4: second peak seen, waiting for post-quiet bracket
+     */
+    uint8_t  st = 0;
+    uint32_t state_ms = 0;        /* time spent in current state */
+    uint32_t elapsed = 0;
+
+    while (elapsed < timeout_ms) {
+        int16_t spl = tile_sense_mic_read_spl_db(tile);
+        switch (st) {
+            case 0:
+                if (spl < quiet_thr) {
+                    state_ms += MIC_TIER2_POLL_MS;
+                    if (state_ms >= pre_quiet_ms) { st = 1; state_ms = 0; }
+                } else {
+                    state_ms = 0;  /* not quiet — restart */
+                }
+                break;
+            case 1:
+                if (spl > peak_thr) { st = 2; state_ms = 0; }
+                break;
+            case 2:
+                if (spl < quiet_thr) { st = 3; state_ms = MIC_TIER2_POLL_MS; }
+                else { state_ms += MIC_TIER2_POLL_MS;
+                       if (state_ms > 100) { st = 1; state_ms = 0; } /* peak too long */ }
+                break;
+            case 3:
+                state_ms += MIC_TIER2_POLL_MS;
+                if (spl > peak_thr) {
+                    if (state_ms >= gap_min_ms && state_ms <= gap_max_ms) {
+                        st = 4; state_ms = 0;
+                    } else {
+                        /* peak in wrong window — treat as a fresh first peak */
+                        st = 2; state_ms = 0;
+                    }
+                } else if (state_ms > gap_max_ms) {
+                    /* gap too long, abandon — restart from pre-quiet. */
+                    st = 0; state_ms = 0;
+                }
+                break;
+            case 4:
+                if (spl < quiet_thr) {
+                    state_ms += MIC_TIER2_POLL_MS;
+                    if (state_ms >= post_quiet_ms) return 1;  /* clap! */
+                } else {
+                    /* second peak echoed by more sound — not a clean clap. */
+                    st = 0; state_ms = 0;
+                }
+                break;
+            default:
+                st = 0; state_ms = 0;
+                break;
+        }
+        tile->hal->delay_ms(MIC_TIER2_POLL_MS);
+        elapsed += MIC_TIER2_POLL_MS;
+    }
+    return 0;
+}
