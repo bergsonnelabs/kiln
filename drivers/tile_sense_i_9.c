@@ -751,7 +751,14 @@ void tile_sense_i_9_read_heading_centi_degrees(tile_t* tile,
     int16_t m[3];
     tile_sense_i_9_get_raw_mags(tile, m);
 
-    /* atan2(-my, mx) gives heading where +X = 0°, increasing clockwise
+    /* TODO HW: per ICM-20948 datasheet §5.3 the AK09916 magnetometer axes
+     * don't align with the gyro/accel frame on the same die — the mag
+     * needs an axis remap before this atan2 will produce a sane heading.
+     * Without the remap, expect the reading to be ~90° off (and possibly
+     * sign-inverted). Calibrate at the bench by rotating the tile through
+     * a known heading and adjusting the (sign, axis) pair below.
+     *
+     * atan2(-my, mx) gives heading where +X = 0°, increasing clockwise
      * when viewed from above (NED-style heading). */
     int32_t centi = atan2_centi(-(int32_t)m[1], (int32_t)m[0]);
 
