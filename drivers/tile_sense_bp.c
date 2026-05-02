@@ -442,3 +442,68 @@ int16_t tile_sense_bp_get_ref_pressure(tile_t *tile)
     bp_read_regs(tile, ILPS22QS_REG_REF_P_L, buf, 2);
     return (int16_t)(((uint16_t)buf[1] << 8) | (uint16_t)buf[0]);
 }
+
+/* ---- Tier-2 helpers ---- */
+
+/* Convert cached ODR field to a poll period in milliseconds.
+ * Returns 0 for power-down (caller should fall back to a default). */
+static uint16_t odr_period_ms(uint8_t odr_field)
+{
+    switch (odr_field) {
+    case SENSE_BP_ODR_1HZ:   return 1000;
+    case SENSE_BP_ODR_4HZ:   return 250;
+    case SENSE_BP_ODR_10HZ:  return 100;
+    case SENSE_BP_ODR_25HZ:  return 40;
+    case SENSE_BP_ODR_50HZ:  return 20;
+    case SENSE_BP_ODR_75HZ:  return 14;  /* ~13.3, round up */
+    case SENSE_BP_ODR_100HZ: return 10;
+    case SENSE_BP_ODR_200HZ: return 5;
+    default:                 return 0;
+    }
+}
+
+int32_t tile_sense_bp_read_altitude_mm(tile_t *tile, uint32_t sea_level_pa)
+{
+    /* Live pressure in mhPa → convert to pascals (1 hPa = 100 Pa,
+     * so Pa = mhPa / 10). Use signed 32-bit math throughout. */
+    int32_t mhpa = tile_sense_bp_get_pressure_mhpa(tile);
+    int32_t pressure_pa = mhpa / 10;
+
+    /* Linear approximation around the reference: 8.43 mm per Pa of
+     * pressure decrease. h_mm = 8430 * (P0 - P) / 100. Bounded easily
+     * by int32 for any sane ILPS22QS reading. */
+    int32_t delta_pa = (int32_t)sea_level_pa - pressure_pa;
+    return (8430 * delta_pa) / 100;
+}
+
+uint8_t tile_sense_bp_wait_for_pressure_change(tile_t *tile,
+                                               uint16_t threshold_hpa,
+                                               uint32_t timeout_ms)
+{
+    bp_state_t *s = state_for(tile);
+
+    /* Capture the baseline at call time. */
+    int32_t baseline_mhpa = tile_sense_bp_get_pressure_mhpa(tile);
+
+    /* Threshold in mhPa (16-bit hPa * 1000 fits comfortably in int32). */
+    int32_t threshold_mhpa = (int32_t)threshold_hpa * 1000;
+
+    /* Derive a polling cadence from the cached ODR. Fall back to 10 ms
+     * if the device is in power-down or the field is unrecognised. */
+    uint8_t odr_field = (s->ctrl_reg1 >> 3) & 0x0F;
+    uint16_t period_ms = odr_period_ms(odr_field);
+    if (period_ms == 0) period_ms = 10;
+
+    uint32_t elapsed = 0;
+    while (elapsed < timeout_ms) {
+        int32_t live = tile_sense_bp_get_pressure_mhpa(tile);
+        int32_t diff = live - baseline_mhpa;
+        if (diff < 0) diff = -diff;
+        if (diff >= threshold_mhpa) return 1;
+
+        tile->hal->delay_ms(period_ms);
+        elapsed += period_ms;
+    }
+
+    return 0;
+}
