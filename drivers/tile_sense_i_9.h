@@ -1,7 +1,7 @@
 /**
  * @file   tile_sense_i_9.h
  * @brief  9-DOF IMU driver for the Sense.I.9 tile (rev c).
- * @version 3.0.0
+ * @version 3.1.0
  *
  * Embeds the TDK InvenSense ICM-20948: 6-DOF IMU (accel + gyro)
  * with co-packaged AK09916 3-DOF magnetometer (accessed via the
@@ -47,7 +47,7 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="DMP3 (Digital Motion Processor)"
+ * @tessera unsupported severity=common category="DMP3 (Digital Motion Processor)" section=advanced
  *   ICM-20948 ships with a full DMP3 firmware blob in ROM
  *   (quaternion fusion, gesture detection, pedometer, BAC
  *   classifier, tap / double-tap, significant motion). DMP3 firmware
@@ -64,7 +64,7 @@
  *   correctly returns raw counts at that scale; no per-axis correction
  *   is needed or possible. Annotation kept to document the verification.
  *
- * @tessera unsupported severity=advanced category="Sensor hub for external aux sensors"
+ * @tessera unsupported severity=advanced category="Sensor hub for external aux sensors" section=advanced
  *   Architecturally gated. Driver currently uses INT_PIN_CFG.BYPASS_EN
  *   to expose the AK09916 directly on the host I2C bus, which is
  *   simpler and faster than routing reads through the ICM's I2C master.
@@ -100,7 +100,7 @@
 /* -------------------------------------------------------------- */
 
 #define TILE_SENSE_I_9_VERSION_MAJOR  3
-#define TILE_SENSE_I_9_VERSION_MINOR  0
+#define TILE_SENSE_I_9_VERSION_MINOR  1
 #define TILE_SENSE_I_9_VERSION_PATCH  0
 
 TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
@@ -355,7 +355,7 @@ void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
 
 /**
  * @brief  Check if new IMU data is available.
- * @tessera expose category=tile name=data_ready returns=bool
+ * @tessera expose category=tile name=data_ready returns=bool section=runtime
  *
  * Reads the ICM-20948 interrupt status register.
  *
@@ -366,7 +366,7 @@ uint8_t tile_sense_i_9_data_ready(tile_t* tile);
 
 /**
  * @brief  Set the accelerometer full-scale range.
- * @tessera expose category=tile name=set_accel_range
+ * @tessera expose category=tile name=set_accel_range section=runtime
  *
  * @param  tile   Pointer to tile handle
  * @param  range  One of the sense_i_9_accel_range_t values
@@ -375,7 +375,7 @@ void tile_sense_i_9_set_accel_range(tile_t* tile, sense_i_9_accel_range_t range)
 
 /**
  * @brief  Set the gyroscope full-scale range.
- * @tessera expose category=tile name=set_gyro_range
+ * @tessera expose category=tile name=set_gyro_range section=runtime
  *
  * @param  tile   Pointer to tile handle
  * @param  range  One of the sense_i_9_gyro_range_t values
@@ -384,7 +384,7 @@ void tile_sense_i_9_set_gyro_range(tile_t* tile, sense_i_9_gyro_range_t range);
 
 /**
  * @brief  Set the magnetometer operating mode.
- * @tessera expose category=tile name=set_mag_mode
+ * @tessera expose category=tile name=set_mag_mode section=runtime
  *
  * @param  tile  Pointer to tile handle
  * @param  mode  One of the sense_i_9_mag_mode_t values
@@ -395,7 +395,7 @@ void tile_sense_i_9_set_mag_mode(tile_t* tile, sense_i_9_mag_mode_t mode);
 
 /**
  * @brief  Set the accelerometer output data rate.
- * @tessera expose category=tile name=set_accel_odr
+ * @tessera expose category=tile name=set_accel_odr section=runtime
  *
  * ODR = 1125 / (1 + divider) Hz.  Examples:
  *   divider = 0   → 1125 Hz
@@ -410,7 +410,7 @@ void tile_sense_i_9_set_accel_odr(tile_t* tile, uint16_t divider);
 
 /**
  * @brief  Set the gyroscope output data rate.
- * @tessera expose category=tile name=set_gyro_odr
+ * @tessera expose category=tile name=set_gyro_odr section=runtime
  *
  * ODR = 1100 / (1 + divider) Hz.
  *
@@ -421,7 +421,7 @@ void tile_sense_i_9_set_gyro_odr(tile_t* tile, uint8_t divider);
 
 /**
  * @brief  Read raw accelerometer data (3-axis).
- * @tessera expose category=tile name=get_raw_accels returns=int[3]
+ * @tessera expose category=tile name=get_raw_accels returns=int[3] section=runtime
  * @tessera out_buffer buffer type=int16_t length=3
  *
  * Returns signed 16-bit ADC counts. Convert to milli-g using the
@@ -434,7 +434,7 @@ void tile_sense_i_9_get_raw_accels(tile_t* tile, int16_t* buffer);
 
 /**
  * @brief  Read raw gyroscope data (3-axis).
- * @tessera expose category=tile name=get_raw_gyros returns=int[3]
+ * @tessera expose category=tile name=get_raw_gyros returns=int[3] section=runtime
  * @tessera out_buffer buffer type=int16_t length=3
  *
  * Returns signed 16-bit ADC counts. Convert to °/s using the
@@ -447,7 +447,7 @@ void tile_sense_i_9_get_raw_gyros(tile_t* tile, int16_t* buffer);
 
 /**
  * @brief  Read raw accelerometer + gyroscope data in a single burst.
- * @tessera expose category=tile name=get_raw_6dof returns=int[6]
+ * @tessera expose category=tile name=get_raw_6dof returns=int[6] section=runtime
  * @tessera out_buffer buffer type=int16_t length=6
  *
  * More efficient than calling get_raw_accels + get_raw_gyros separately
@@ -465,7 +465,7 @@ void tile_sense_i_9_get_raw_6dof(tile_t* tile, int16_t* buffer);
  * Sensitivity: 0.15 µT/LSB on all axes (factory-trimmed; the AK09916
  * has no per-axis ASA / FUSE ROM correction — see datasheet §11).
  *
- * @tessera expose category=tile name=get_raw_mags returns=int[3]
+ * @tessera expose category=tile name=get_raw_mags returns=int[3] section=runtime
  * @tessera out_buffer buffer type=int16_t length=3
  * @param  tile    Pointer to tile handle
  * @param  buffer  Output array, minimum 3 × int16_t [X, Y, Z]
@@ -477,7 +477,7 @@ void tile_sense_i_9_get_raw_mags(tile_t* tile, int16_t* buffer);
 
 /**
  * @brief  Check whether the most recent magnetometer reading overflowed.
- * @tessera expose category=tile name=mag_overflowed returns=bool
+ * @tessera expose category=tile name=mag_overflowed returns=bool section=runtime
  *
  * The AK09916 raises HOFL in ST2 when the sum |HX|+|HY|+|HZ| exceeds
  * 4912 µT (the chip's measurement range). Readings during overflow
@@ -495,7 +495,7 @@ uint8_t tile_sense_i_9_mag_overflowed(tile_t* tile);
 
 /**
  * @brief  Read the on-chip temperature sensor.
- * @tessera expose category=tile name=get_temperature returns=int
+ * @tessera expose category=tile name=get_temperature returns=int section=runtime
  *
  * Convert raw value to °C:  temp_degC = (raw / 333.87) + 21.0
  *
@@ -506,7 +506,7 @@ int16_t tile_sense_i_9_get_temperature(tile_t* tile);
 
 /**
  * @brief  Enter low-power sleep mode.
- * @tessera expose category=tile name=sleep
+ * @tessera expose category=tile name=sleep section=lifecycle
  *
  * Stops all sensor sampling. Current draw drops to ~8 µA.
  * Call tile_sense_i_9_wake() to resume.
@@ -517,7 +517,7 @@ void tile_sense_i_9_sleep(tile_t* tile);
 
 /**
  * @brief  Wake from sleep mode and resume sampling.
- * @tessera expose category=tile name=wake
+ * @tessera expose category=tile name=wake section=lifecycle
  *
  * Restores auto clock selection. Previously configured ranges
  * and ODRs are preserved across sleep/wake cycles.
@@ -532,7 +532,7 @@ void tile_sense_i_9_wake(tile_t* tile);
  * Resets all registers to defaults. Blocks for ~50 ms.
  * You must call tile_sense_i_9_init() again after reset.
  *
- * @tessera expose category=tile name=reset
+ * @tessera expose category=tile name=reset section=lifecycle
  * @param  tile  Pointer to tile handle
  */
 void tile_sense_i_9_reset(tile_t* tile);
@@ -544,7 +544,7 @@ void tile_sense_i_9_reset(tile_t* tile);
 /**
  * @brief  Configure the INT pin electrical behaviour.
  *
- * @tessera expose category=tile name=int_config
+ * @tessera expose category=tile name=int_config section=interrupts
  *
  * Sets polarity (active low/high), drive (push-pull/open-drain),
  * mode (pulsed/latched), and the auto-clear-on-any-read bit.
@@ -561,7 +561,7 @@ void tile_sense_i_9_int_config(tile_t* tile, uint8_t flags);
 /**
  * @brief  Route the data-ready interrupt to the INT pin.
  *
- * @tessera expose category=tile name=int_data_ready
+ * @tessera expose category=tile name=int_data_ready section=interrupts
  * @param  tile     Initialized tile handle
  * @param  enabled  1 to enable, 0 to disable
  */
@@ -570,7 +570,7 @@ void tile_sense_i_9_int_data_ready(tile_t* tile, uint8_t enabled);
 /**
  * @brief  Route the wake-on-motion interrupt to the INT pin.
  *
- * @tessera expose category=tile name=int_wom
+ * @tessera expose category=tile name=int_wom section=interrupts
  * @param  tile     Initialized tile handle
  * @param  enabled  1 to enable, 0 to disable
  */
@@ -579,7 +579,7 @@ void tile_sense_i_9_int_wom(tile_t* tile, uint8_t enabled);
 /**
  * @brief  Route the FIFO overflow interrupt to the INT pin.
  *
- * @tessera expose category=tile name=int_fifo_overflow
+ * @tessera expose category=tile name=int_fifo_overflow section=interrupts
  * @param  tile     Initialized tile handle
  * @param  enabled  1 to enable for any sensor, 0 to disable all
  */
@@ -588,7 +588,7 @@ void tile_sense_i_9_int_fifo_overflow(tile_t* tile, uint8_t enabled);
 /**
  * @brief  Route the FIFO watermark interrupt to the INT pin.
  *
- * @tessera expose category=tile name=int_fifo_watermark
+ * @tessera expose category=tile name=int_fifo_watermark section=interrupts
  * @param  tile     Initialized tile handle
  * @param  enabled  1 to enable for any sensor, 0 to disable all
  */
@@ -597,7 +597,7 @@ void tile_sense_i_9_int_fifo_watermark(tile_t* tile, uint8_t enabled);
 /**
  * @brief  Read INT_STATUS (WoM / DMP / I2C-master / PLL-ready) and clear it.
  *
- * @tessera expose category=tile name=get_int_status returns=int
+ * @tessera expose category=tile name=get_int_status returns=int section=interrupts
  * @return 8-bit raw register value (use ICM20948_INT_WOM etc. masks)
  */
 uint8_t tile_sense_i_9_get_int_status(tile_t* tile);
@@ -605,7 +605,7 @@ uint8_t tile_sense_i_9_get_int_status(tile_t* tile);
 /**
  * @brief  Read INT_STATUS_2 (FIFO overflow per sensor) and clear it.
  *
- * @tessera expose category=tile name=get_int_status_fifo_ovf returns=int
+ * @tessera expose category=tile name=get_int_status_fifo_ovf returns=int section=interrupts
  * @return 5-bit FIFO_OVERFLOW_INT[4:0]; non-zero means overflow occurred
  */
 uint8_t tile_sense_i_9_get_int_status_fifo_overflow(tile_t* tile);
@@ -613,7 +613,7 @@ uint8_t tile_sense_i_9_get_int_status_fifo_overflow(tile_t* tile);
 /**
  * @brief  Read INT_STATUS_3 (FIFO watermark per sensor) and clear it.
  *
- * @tessera expose category=tile name=get_int_status_fifo_wm returns=int
+ * @tessera expose category=tile name=get_int_status_fifo_wm returns=int section=interrupts
  * @return 5-bit FIFO_WM_INT[4:0]; non-zero means watermark crossed
  */
 uint8_t tile_sense_i_9_get_int_status_fifo_watermark(tile_t* tile);
@@ -625,7 +625,7 @@ uint8_t tile_sense_i_9_get_int_status_fifo_watermark(tile_t* tile);
 /**
  * @brief  Configure Wake-on-Motion threshold and compare mode.
  *
- * @tessera expose category=tile name=wom_config
+ * @tessera expose category=tile name=wom_config section=wom
  *
  * The chip-wide threshold is one 8-bit value at 4 mg/LSB (range
  * 0–1020 mg). Compared independently against |X|, |Y|, |Z|; any
@@ -643,7 +643,7 @@ void tile_sense_i_9_wom_config(tile_t* tile, uint16_t thr_mg,
 /**
  * @brief  Enable Wake-on-Motion logic.
  *
- * @tessera expose category=tile name=wom_enable
+ * @tessera expose category=tile name=wom_enable section=wom
  *
  * Call after wom_config(). Routes to the INT pin only if int_wom()
  * was also enabled.
@@ -655,7 +655,7 @@ void tile_sense_i_9_wom_enable(tile_t* tile);
 /**
  * @brief  Disable Wake-on-Motion logic.
  *
- * @tessera expose category=tile name=wom_disable
+ * @tessera expose category=tile name=wom_disable section=wom
  * @param  tile  Initialized tile handle
  */
 void tile_sense_i_9_wom_disable(tile_t* tile);
@@ -667,7 +667,7 @@ void tile_sense_i_9_wom_disable(tile_t* tile);
 /**
  * @brief  Configure which sensor streams write into the FIFO.
  *
- * @tessera expose category=tile name=fifo_config
+ * @tessera expose category=tile name=fifo_config section=fifo
  *
  * Enables FIFO operation in USER_CTRL and selects the data sources.
  * Always sets FIFO_MODE = stream when enabling. Disables FIFO entirely
@@ -685,7 +685,7 @@ void tile_sense_i_9_fifo_config(tile_t* tile, sense_i_9_fifo_mode_t mode,
 /**
  * @brief  Reset the FIFO contents (clears all queued samples).
  *
- * @tessera expose category=tile name=fifo_flush
+ * @tessera expose category=tile name=fifo_flush section=fifo
  * @param  tile  Initialized tile handle
  */
 void tile_sense_i_9_fifo_flush(tile_t* tile);
@@ -693,7 +693,7 @@ void tile_sense_i_9_fifo_flush(tile_t* tile);
 /**
  * @brief  Read the current FIFO byte count.
  *
- * @tessera expose category=tile name=fifo_count returns=int
+ * @tessera expose category=tile name=fifo_count returns=int section=fifo
  *
  * Note this is bytes, not packets. A standard accel+gyro packet is
  * 12 bytes. Read FIFO_COUNTL first to latch both bytes (handled
@@ -721,7 +721,7 @@ uint8_t tile_sense_i_9_fifo_read_packet(tile_t* tile,
 /**
  * @brief  Run the built-in mechanical self-test for accel and gyro.
  *
- * @tessera expose category=tile name=self_test returns=bool
+ * @tessera expose category=tile name=self_test returns=bool section=advanced
  *
  * Drives the accel and gyro through their factory-stored
  * self-excitation routine and compares the response to the
@@ -745,7 +745,7 @@ uint8_t tile_sense_i_9_self_test(tile_t* tile,
 /**
  * @brief  Run the AK09916 self-test (mag).
  *
- * @tessera expose category=tile name=mag_self_test returns=bool
+ * @tessera expose category=tile name=mag_self_test returns=bool section=advanced
  *
  * Triggers the AK09916's internal magnetic-source self-excitation.
  * The pass criterion is the per-axis range table from the AK09916
@@ -759,5 +759,157 @@ uint8_t tile_sense_i_9_self_test(tile_t* tile,
  * @return 1 if all three axes were within spec, 0 otherwise
  */
 uint8_t tile_sense_i_9_mag_self_test(tile_t* tile);
+
+/* ============================================================== */
+/* Runtime — tier-2 idiomatic helpers                              */
+/*                                                                  */
+/* These compose the tier-1 surface above into "do the thing the   */
+/* user wants to do" calls. They handle range/scale conversion and */
+/* coordinate-frame interpretation so callers don't need to read   */
+/* the ICM-20948 datasheet to detect a flip or read a heading.     */
+/*                                                                  */
+/* All conversions are integer-only so they run cheaply on the     */
+/* Cortex-M0+ in Core.U / Core.W without pulling in the soft-FP    */
+/* library.                                                         */
+/* ============================================================== */
+
+/**
+ * @brief  Check whether the tile is lying flat, face up.
+ *
+ * @tessera expose category=tile name=is_face_up returns=bool section=runtime
+ *
+ * Reads the accelerometer and returns 1 when the Z-axis is close
+ * to +1 g (i.e. gravity is pulling down through the back of the
+ * tile). The acceptance band is roughly ±30° of true face-up; the
+ * X/Y axes must each read below ~0.5 g for the test to pass, so
+ * tilted-but-mostly-up orientations also count as face-up.
+ *
+ * @note  Assumes the accel range is the default ±2 g configured by
+ *        @ref tile_sense_i_9_init. If the range was changed, the
+ *        thresholds remain proportional (band is in fractions of
+ *        full-scale) so behaviour is unaffected.
+ *
+ * @param  tile  Initialized tile handle
+ * @return 1 if face-up, 0 otherwise
+ */
+uint8_t tile_sense_i_9_is_face_up(tile_t* tile);
+
+/**
+ * @brief  Check whether the tile is lying flat, face down.
+ *
+ * @tessera expose category=tile name=is_face_down returns=bool section=runtime
+ *
+ * Mirror of @ref tile_sense_i_9_is_face_up — Z-axis close to −1 g.
+ *
+ * @param  tile  Initialized tile handle
+ * @return 1 if face-down, 0 otherwise
+ */
+uint8_t tile_sense_i_9_is_face_down(tile_t* tile);
+
+/**
+ * @brief  Check whether the tile is currently moving.
+ *
+ * @tessera expose category=tile name=is_moving returns=bool section=runtime
+ *
+ * Reads the accelerometer and reports whether |‖a‖ − 1 g| exceeds
+ * `threshold_mg`. At rest in any orientation the magnitude is ≈ 1 g,
+ * so this captures linear acceleration regardless of which face is
+ * up. Use ~50–100 mg for "is being handled" and ~300–500 mg for
+ * "is being shaken".
+ *
+ * Implementation uses an integer approximation of the magnitude
+ * comparison: it checks the squared deviation against the squared
+ * threshold to avoid a square root.
+ *
+ * @note  Assumes ±2 g range (init default). Other ranges still work
+ *        but the noise floor scales with full-scale.
+ *
+ * @param  tile          Initialized tile handle
+ * @param  threshold_mg  Deviation from 1 g, in milli-g
+ * @return 1 if moving, 0 if at rest
+ */
+uint8_t tile_sense_i_9_is_moving(tile_t* tile, uint16_t threshold_mg);
+
+/**
+ * @brief  Read the tilt of one accel axis vs gravity, in centi-degrees.
+ *
+ * @tessera expose category=tile name=read_tilt_centi_degrees section=runtime
+ *
+ * Returns the angle (in 0.01° units) between the requested axis and
+ * the gravity vector. Range is −18000..+18000 centi-degrees
+ * (−180.00°..+180.00°). Computed from `atan2(other_components,
+ * axis)` using an integer approximation; absolute accuracy is
+ * roughly ±1° in the noise-free case.
+ *
+ * Axis selector:
+ *   0 = X axis (pitch around Y, with the chip lying on its back)
+ *   1 = Y axis (roll around X)
+ *   2 = Z axis (deviation from horizontal — 0 = face-up, 180 = face-down)
+ *
+ * @param  tile           Initialized tile handle
+ * @param  axis           0/1/2 selecting X, Y, or Z
+ * @param  out_centi_deg  Output tilt in 0.01° units (signed)
+ */
+void tile_sense_i_9_read_tilt_centi_degrees(tile_t* tile, uint8_t axis,
+                                            int16_t* out_centi_deg);
+
+/**
+ * @brief  Read a compass heading from the magnetometer, in centi-degrees.
+ *
+ * @tessera expose category=tile name=read_heading_centi_degrees section=runtime
+ *
+ * Returns the bearing of the +X axis relative to magnetic north in
+ * 0.01° units, range 0..35999 (0.00°..359.99°). 0° means +X is
+ * pointing along magnetic north; angle increases clockwise viewed
+ * from above. Computed as `atan2(−mag_y, mag_x)` from the AK09916
+ * raw counts (no per-axis trim is needed — the AK09916 has no FUSE
+ * ROM and is factory-trimmed at 0.15 µT/LSB).
+ *
+ * @warning  This is a tilt-uncompensated heading. It is only
+ *           accurate when the tile is held roughly level (within a
+ *           few degrees of horizontal). When tilted, the heading
+ *           drifts because the horizontal projection of the
+ *           magnetic field changes with orientation. A
+ *           tilt-compensated heading needs both accel data (to
+ *           recover the gravity-aligned frame) and a 3D rotation —
+ *           that is left to a later tier-3 helper or the Tessera
+ *           DSL.
+ *
+ * @warning  Local magnetic distortions (steel, motors, speakers)
+ *           skew the result. For best accuracy, calibrate the
+ *           sensor in its final enclosure before relying on the
+ *           heading.
+ *
+ * @param  tile           Initialized tile handle
+ * @param  out_centi_deg  Output heading in 0.01° units (0..35999)
+ */
+void tile_sense_i_9_read_heading_centi_degrees(tile_t* tile,
+                                               uint16_t* out_centi_deg);
+
+/**
+ * @brief  Block until a Wake-on-Motion event fires, or timeout.
+ *
+ * @tessera expose category=tile name=wait_for_motion returns=bool section=runtime
+ *
+ * Polls @ref tile_sense_i_9_get_int_status every ~5 ms and returns
+ * 1 as soon as the WoM bit is observed. Returns 0 if `timeout_ms`
+ * elapses without an event. The poll cadence is chosen as a
+ * compromise: low enough to keep wake latency under ~5 ms but slow
+ * enough that the I2C bus isn't saturated by status reads.
+ *
+ * @note  Wake-on-Motion must be configured (@ref
+ *        tile_sense_i_9_wom_config) and enabled (@ref
+ *        tile_sense_i_9_wom_enable) before this call. INT-pin
+ *        routing (@ref tile_sense_i_9_int_wom) is optional — this
+ *        function reads the status register directly.
+ *
+ * @note  This call blocks. For non-blocking use, drive @ref
+ *        tile_sense_i_9_get_int_status from your own loop.
+ *
+ * @param  tile        Initialized tile handle
+ * @param  timeout_ms  Maximum time to wait, in milliseconds
+ * @return 1 if motion was detected, 0 on timeout
+ */
+uint8_t tile_sense_i_9_wait_for_motion(tile_t* tile, uint32_t timeout_ms);
 
 #endif /* INC_TILE_SENSE_I_9_H_ */

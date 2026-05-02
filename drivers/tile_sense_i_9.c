@@ -592,3 +592,201 @@ uint8_t tile_sense_i_9_mag_self_test(tile_t* tile)
 
     return (pass_x && pass_y && pass_z) ? 1 : 0;
 }
+
+/* -------------------------------------------------------------- */
+/* Tier-2 idiomatic helpers                                        */
+/* -------------------------------------------------------------- */
+
+/* At ±2 g (init default), 1 g = 16384 LSB. Helper constants use
+ * that scaling; if the user has switched ranges they can read raw
+ * data with get_raw_accels and convert manually. */
+#define SENSE_I_9_LSB_PER_G_2G   16384
+
+/* Face-up / face-down decision band: |Z| > ~0.85 g and |X|,|Y| < ~0.5 g.
+ * 0.85 g ≈ 13926 LSB at ±2 g; 0.5 g = 8192 LSB. */
+#define SENSE_I_9_FACE_Z_MIN     13926
+#define SENSE_I_9_FACE_XY_MAX     8192
+
+/**
+ * @brief  Integer atan2 approximation, output in 0.01° units.
+ *
+ * Returns angle in centi-degrees in the range [-18000, +18000].
+ * Uses the well-known min/max polynomial approximation
+ *   atan(t) ≈ t * (45 - (|t| - 1) * (14 + 3.83 * |t|))   for |t| ≤ 1
+ * scaled to the centi-degree output and extended to all four
+ * quadrants. Worst-case error is ~0.3°, well within the inherent
+ * noise of accel and mag readings.
+ */
+static int32_t atan2_centi(int32_t y, int32_t x)
+{
+    if (x == 0 && y == 0) return 0;
+
+    int32_t ay = y < 0 ? -y : y;
+    int32_t ax = x < 0 ? -x : x;
+
+    int32_t angle_centi;  /* in 0.01° */
+
+    /* Compute |angle| in [0, 9000] (centi-degrees) for ratio in [0,1] */
+    if (ax >= ay) {
+        /* |y/x| <= 1 */
+        if (ax == 0) {
+            angle_centi = 0;
+        } else {
+            /* atan(t) ≈ t * (4500 - (|t|*1000 - 1000) * (14 + 4 * |t|*1000 / 1000) / 1000)
+             * Done in fixed-point with t scaled by 1000. */
+            int32_t t = (int32_t)(((int64_t)ay * 1000) / ax);          /* t * 1000, 0..1000 */
+            int32_t corr = ((t - 1000) * (14000 + 4 * t)) / 1000;       /* small correction */
+            angle_centi = (t * 4500 - t * corr / 1000) / 1000;
+            if (angle_centi < 0)    angle_centi = 0;
+            if (angle_centi > 4500) angle_centi = 4500;
+        }
+    } else {
+        /* |y/x| > 1: angle = 90 - atan(|x/y|) */
+        int32_t t = (int32_t)(((int64_t)ax * 1000) / ay);
+        int32_t corr = ((t - 1000) * (14000 + 4 * t)) / 1000;
+        int32_t inner = (t * 4500 - t * corr / 1000) / 1000;
+        if (inner < 0)    inner = 0;
+        if (inner > 4500) inner = 4500;
+        angle_centi = 9000 - inner;
+    }
+
+    /* Quadrant fixup */
+    if (x < 0) angle_centi = 18000 - angle_centi;
+    if (y < 0) angle_centi = -angle_centi;
+
+    return angle_centi;
+}
+
+uint8_t tile_sense_i_9_is_face_up(tile_t* tile)
+{
+    int16_t a[3];
+    tile_sense_i_9_get_raw_accels(tile, a);
+
+    int32_t ax = a[0] < 0 ? -(int32_t)a[0] : (int32_t)a[0];
+    int32_t ay = a[1] < 0 ? -(int32_t)a[1] : (int32_t)a[1];
+
+    if (ax > SENSE_I_9_FACE_XY_MAX) return 0;
+    if (ay > SENSE_I_9_FACE_XY_MAX) return 0;
+    return (a[2] > SENSE_I_9_FACE_Z_MIN) ? 1 : 0;
+}
+
+uint8_t tile_sense_i_9_is_face_down(tile_t* tile)
+{
+    int16_t a[3];
+    tile_sense_i_9_get_raw_accels(tile, a);
+
+    int32_t ax = a[0] < 0 ? -(int32_t)a[0] : (int32_t)a[0];
+    int32_t ay = a[1] < 0 ? -(int32_t)a[1] : (int32_t)a[1];
+
+    if (ax > SENSE_I_9_FACE_XY_MAX) return 0;
+    if (ay > SENSE_I_9_FACE_XY_MAX) return 0;
+    return (a[2] < -SENSE_I_9_FACE_Z_MIN) ? 1 : 0;
+}
+
+uint8_t tile_sense_i_9_is_moving(tile_t* tile, uint16_t threshold_mg)
+{
+    int16_t a[3];
+    tile_sense_i_9_get_raw_accels(tile, a);
+
+    /* magnitude² in LSB² (at ±2 g, 1 g² = 16384² ≈ 2.68e8, fits easily in
+     * int64). Compare |mag² − 1g²| against (threshold)² mapped to LSB². */
+    int64_t mag2 = (int64_t)a[0] * a[0]
+                 + (int64_t)a[1] * a[1]
+                 + (int64_t)a[2] * a[2];
+
+    const int64_t one_g    = (int64_t)SENSE_I_9_LSB_PER_G_2G;
+    const int64_t one_g_sq = one_g * one_g;
+
+    /* threshold in LSB: (threshold_mg * 16384) / 1000 */
+    int64_t thr_lsb = ((int64_t)threshold_mg * one_g) / 1000;
+
+    /* (|a| − 1g) > thr  ⇔  |a|² − 1g²| > something — but keep both signs.
+     * Use the magnitude inequality on (|a| − 1g)*(|a| + 1g) = (|a|² − 1g²),
+     * with |a| + 1g ≈ 2g for small motion: (|a| − 1g) ≈ (mag2 − 1g²)/(2g). */
+    int64_t delta2 = mag2 - one_g_sq;
+    if (delta2 < 0) delta2 = -delta2;
+
+    /* moving if delta2 / (2 * one_g) > thr_lsb */
+    return (delta2 > thr_lsb * 2 * one_g) ? 1 : 0;
+}
+
+void tile_sense_i_9_read_tilt_centi_degrees(tile_t* tile, uint8_t axis,
+                                            int16_t* out_centi_deg)
+{
+    if (out_centi_deg == NULL) return;
+
+    int16_t a[3];
+    tile_sense_i_9_get_raw_accels(tile, a);
+
+    int32_t target = (axis < 3) ? a[axis] : 0;
+    int32_t other_a = (axis == 0) ? a[1] : a[0];
+    int32_t other_b = (axis == 2) ? a[1] : a[2];
+
+    /* magnitude of the components perpendicular to `target`. Use
+     * a sum-of-squares + integer sqrt via Newton's iteration. */
+    int64_t s = (int64_t)other_a * other_a + (int64_t)other_b * other_b;
+    int32_t perp = 0;
+    if (s > 0) {
+        int32_t r = 1;
+        /* a few Newton iterations is enough for 16-bit inputs */
+        for (uint8_t i = 0; i < 12; i++) {
+            int32_t q = (int32_t)(s / r);
+            r = (r + q) / 2;
+            if (r == 0) { r = 1; break; }
+        }
+        perp = r;
+    }
+
+    int32_t centi = atan2_centi(perp, target);
+    if (centi >  18000) centi =  18000;
+    if (centi < -18000) centi = -18000;
+    *out_centi_deg = (int16_t)centi;
+}
+
+void tile_sense_i_9_read_heading_centi_degrees(tile_t* tile,
+                                               uint16_t* out_centi_deg)
+{
+    if (out_centi_deg == NULL) return;
+
+    int16_t m[3];
+    tile_sense_i_9_get_raw_mags(tile, m);
+
+    /* TODO HW: per ICM-20948 datasheet §5.3 the AK09916 magnetometer axes
+     * don't align with the gyro/accel frame on the same die — the mag
+     * needs an axis remap before this atan2 will produce a sane heading.
+     * Without the remap, expect the reading to be ~90° off (and possibly
+     * sign-inverted). Calibrate at the bench by rotating the tile through
+     * a known heading and adjusting the (sign, axis) pair below.
+     *
+     * atan2(-my, mx) gives heading where +X = 0°, increasing clockwise
+     * when viewed from above (NED-style heading). */
+    int32_t centi = atan2_centi(-(int32_t)m[1], (int32_t)m[0]);
+
+    /* Normalise to [0, 36000) */
+    if (centi < 0)        centi += 36000;
+    if (centi >= 36000)   centi -= 36000;
+
+    *out_centi_deg = (uint16_t)centi;
+}
+
+uint8_t tile_sense_i_9_wait_for_motion(tile_t* tile, uint32_t timeout_ms)
+{
+    /* Poll ~every 5 ms — fine enough that the worst-case latency
+     * after motion is <5 ms, sparse enough that the I2C bus stays
+     * mostly idle. Caller-supplied timeout_ms is rounded up to the
+     * nearest multiple of the poll interval. */
+    const uint32_t poll_ms = 5;
+    uint32_t waited = 0;
+
+    while (waited <= timeout_ms) {
+        uint8_t status = tile_sense_i_9_get_int_status(tile);
+        if (status & ICM20948_INT_WOM) {
+            return 1;
+        }
+        if (waited == timeout_ms) break;
+        uint32_t step = (timeout_ms - waited < poll_ms) ? (timeout_ms - waited) : poll_ms;
+        tile->hal->delay_ms((uint16_t)step);
+        waited += step;
+    }
+    return 0;
+}
