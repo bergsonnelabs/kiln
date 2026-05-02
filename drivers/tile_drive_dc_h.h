@@ -52,7 +52,7 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="nSLEEP pin (hardware-gated)"
+ * @tessera unsupported severity=advanced category="nSLEEP pin (hardware-gated)" section=advanced
  *   Chip's nSLEEP pin (~100 nA quiescent in sleep, ~1.3 mA active)
  *   is not routed to any tile pad in the Drive.DC.H rev-a layout
  *   (verify in kiln/definitions/Drive-DC-H-a.json — pads 1–10 are
@@ -83,7 +83,7 @@
 /* -------------------------------------------------------------- */
 
 #define TILE_DRIVE_DC_H_VERSION_MAJOR  4
-#define TILE_DRIVE_DC_H_VERSION_MINOR  0
+#define TILE_DRIVE_DC_H_VERSION_MINOR  1
 #define TILE_DRIVE_DC_H_VERSION_PATCH  0
 
 TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
@@ -310,7 +310,7 @@ void tile_drive_dc_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
 
 /**
  * @brief  Drive motor forward (OUT1=H, OUT2=L).
- * @tessera expose category=tile name=forward
+ * @tessera expose category=tile name=forward section=runtime
  *
  * @param  tile  Pointer to tile handle
  */
@@ -318,7 +318,7 @@ void tile_drive_dc_h_forward(tile_t* tile);
 
 /**
  * @brief  Drive motor in reverse (OUT1=L, OUT2=H).
- * @tessera expose category=tile name=reverse
+ * @tessera expose category=tile name=reverse section=runtime
  *
  * @param  tile  Pointer to tile handle
  */
@@ -326,7 +326,7 @@ void tile_drive_dc_h_reverse(tile_t* tile);
 
 /**
  * @brief  Active brake (slow-decay, both low-side FETs on).
- * @tessera expose category=tile name=brake
+ * @tessera expose category=tile name=brake section=runtime
  *
  * Motor is actively held. Current recirculates through the
  * low-side FETs, providing strong braking force.
@@ -337,7 +337,7 @@ void tile_drive_dc_h_brake(tile_t* tile);
 
 /**
  * @brief  Coast (Hi-Z, all FETs off).
- * @tessera expose category=tile name=coast
+ * @tessera expose category=tile name=coast section=runtime
  *
  * Motor freewheels. No braking force is applied. This is the
  * initial state after init().
@@ -351,7 +351,7 @@ void tile_drive_dc_h_coast(tile_t* tile);
 /**
  * @brief  Switch the bridge control source between I²C and the EN/PH
  *         or IN1/IN2 tile pads.
- * @tessera expose category=tile name=set_control_mode
+ * @tessera expose category=tile name=set_control_mode section=config
  *
  * In I²C mode (default after init), forward/reverse/brake/coast control
  * the bridge. In either pad-control mode, the chip ignores I²C bridge
@@ -372,7 +372,7 @@ void tile_drive_dc_h_set_control_mode(tile_t* tile,
 
 /**
  * @brief  Set the regulation target (WSET_VSET).
- * @tessera expose category=tile name=set_target
+ * @tessera expose category=tile name=set_target section=runtime
  *
  * In voltage mode: sets target motor terminal voltage.
  *   With VM_GAIN_SEL=0: value * 15700/255 mV (61.6 mV/bit)
@@ -388,7 +388,7 @@ void tile_drive_dc_h_set_target(tile_t* tile, uint8_t value);
 
 /**
  * @brief  Select the regulation loop (open-loop / current / voltage / speed).
- * @tessera expose category=tile name=set_regulation_mode
+ * @tessera expose category=tile name=set_regulation_mode section=config
  *
  * Writes REG_CTRL bits in REG_CTRL0. After switching, set_target() is
  * interpreted in the new loop's units (voltage code, speed code, etc.).
@@ -405,7 +405,7 @@ void tile_drive_dc_h_set_regulation_mode(tile_t* tile,
 
 /**
  * @brief  Set the current-regulation mode (IMODE in CONFIG3).
- * @tessera expose category=tile name=set_current_regulation_mode
+ * @tessera expose category=tile name=set_current_regulation_mode section=config
  *
  * Selects when the chip's internal current loop folds back to keep
  * motor current under the ITRIP threshold. ITRIP itself is set by
@@ -421,7 +421,7 @@ void tile_drive_dc_h_set_current_regulation_mode(tile_t* tile,
 
 /**
  * @brief  Set the current-sense gain / max-current range.
- * @tessera expose category=tile name=set_current_sense_gain
+ * @tessera expose category=tile name=set_current_sense_gain section=config
  *
  * Programs CS_GAIN_SEL[2:0] in RC_CTRL0. Lower max-current ranges
  * give finer current resolution but lower R_DS(on) headroom; higher
@@ -440,7 +440,7 @@ void tile_drive_dc_h_set_current_sense_gain(tile_t* tile, uint8_t code);
 
 /**
  * @brief  Enable or disable hardware stall detection.
- * @tessera expose category=tile name=set_stall_enabled
+ * @tessera expose category=tile name=set_stall_enabled section=config
  *
  * Toggles EN_STALL in CONFIG0. When disabled, the STALL bit in the
  * fault register won't latch and is_stalled() always returns 0.
@@ -453,7 +453,7 @@ void tile_drive_dc_h_set_stall_enabled(tile_t* tile, uint8_t enabled);
 
 /**
  * @brief  Set the inrush blanking time (TINRUSH).
- * @tessera expose category=tile name=set_inrush_time_ms
+ * @tessera expose category=tile name=set_inrush_time_ms section=config
  *
  * Programs CONFIG1/CONFIG2 with a 16-bit count of 102.4 µs ticks,
  * giving up to ~6.7 s. During the blanking window after a drive
@@ -468,7 +468,7 @@ void tile_drive_dc_h_set_inrush_time_ms(tile_t* tile, uint16_t ms);
 
 /**
  * @brief  Set the stall-detection recovery behavior (SMODE in CONFIG3).
- * @tessera expose category=tile name=set_stall_recovery
+ * @tessera expose category=tile name=set_stall_recovery section=config
  *
  * In LATCH mode, hitting a stall turns the bridge off until either
  * clear_fault() is called or the chip is power-cycled. In REPORT mode
@@ -485,7 +485,7 @@ void tile_drive_dc_h_set_stall_recovery(tile_t* tile,
 
 /**
  * @brief  Set the ripple-count threshold that fires CNT_DONE.
- * @tessera expose category=tile name=set_ripple_threshold
+ * @tessera expose category=tile name=set_ripple_threshold section=config
  *
  * The chip raises CNT_DONE when the running ripple count reaches
  * (count × scale). Useful for "rotate N counts then stop" patterns:
@@ -500,7 +500,7 @@ void tile_drive_dc_h_set_ripple_threshold(tile_t* tile, uint16_t count);
 
 /**
  * @brief  Set the ripple filter input scaling factor.
- * @tessera expose category=tile name=set_ripple_filter_gain
+ * @tessera expose category=tile name=set_ripple_filter_gain section=config
  *
  * Programs FLT_GAIN_SEL[1:0] in RC_CTRL0. Scales the magnitude of
  * detected ripples before the counter — increase if get_ripple_count()
@@ -516,7 +516,7 @@ void tile_drive_dc_h_set_ripple_filter_gain(tile_t* tile, uint8_t code);
 
 /**
  * @brief  Read the raw FAULT register (0x00).
- * @tessera expose category=tile name=get_fault returns=int
+ * @tessera expose category=tile name=get_fault returns=int section=runtime
  *
  * Contains FAULT[7], STALL[5], OCP[4], OVP[3], TSD[2],
  * NPOR[1], CNT_DONE[0]. Use the DRV8214_FAULT_* masks to
@@ -529,7 +529,7 @@ uint8_t tile_drive_dc_h_get_fault(tile_t* tile);
 
 /**
  * @brief  Clear all latched faults.
- * @tessera expose category=tile name=clear_fault
+ * @tessera expose category=tile name=clear_fault section=runtime
  *
  * Sets CLR_FLT in CONFIG0. Clears FAULT, OCP, OVP, TSD,
  * and NPOR bits. The CLR_FLT bit is self-clearing.
@@ -540,7 +540,7 @@ void tile_drive_dc_h_clear_fault(tile_t* tile);
 
 /**
  * @brief  Check if a motor stall condition is active.
- * @tessera expose category=tile name=is_stalled returns=bool
+ * @tessera expose category=tile name=is_stalled returns=bool section=runtime
  *
  * @param  tile  Pointer to tile handle
  * @return 1 if STALL bit is set, 0 otherwise
@@ -549,7 +549,7 @@ uint8_t tile_drive_dc_h_is_stalled(tile_t* tile);
 
 /**
  * @brief  Read motor terminal voltage in millivolts.
- * @tessera expose category=tile name=get_voltage_mv returns=int
+ * @tessera expose category=tile name=get_voltage_mv returns=int section=runtime
  *
  * Reads the VMTR register. The reading is proportional to the
  * voltage across OUT1-OUT2 terminals. Valid while driving.
@@ -561,7 +561,7 @@ uint16_t tile_drive_dc_h_get_voltage_mv(tile_t* tile);
 
 /**
  * @brief  Read motor current in milliamps.
- * @tessera expose category=tile name=get_current_ma returns=int
+ * @tessera expose category=tile name=get_current_ma returns=int section=runtime
  *
  * Reads the IMTR register and converts using the current
  * CS_GAIN_SEL setting. The reading reflects the current
@@ -574,7 +574,7 @@ uint16_t tile_drive_dc_h_get_current_ma(tile_t* tile);
 
 /**
  * @brief  Read the ripple speed estimate.
- * @tessera expose category=tile name=get_speed returns=int
+ * @tessera expose category=tile name=get_speed returns=int section=runtime
  *
  * Returns the raw SPEED register from the ripple counting
  * algorithm. Value is proportional to motor speed but requires
@@ -587,7 +587,7 @@ uint8_t tile_drive_dc_h_get_speed(tile_t* tile);
 
 /**
  * @brief  Read the 16-bit ripple count.
- * @tessera expose category=tile name=get_ripple_count returns=int
+ * @tessera expose category=tile name=get_ripple_count returns=int section=runtime
  *
  * Returns the total number of commutation ripples counted
  * since the last clear. Proportional to rotor position.
@@ -599,7 +599,7 @@ uint16_t tile_drive_dc_h_get_ripple_count(tile_t* tile);
 
 /**
  * @brief  Reset the ripple counter to zero.
- * @tessera expose category=tile name=clear_ripple_count
+ * @tessera expose category=tile name=clear_ripple_count section=runtime
  *
  * Sets CLR_CNT in CONFIG0. Also clears CNT_DONE flag.
  * The CLR_CNT bit is self-clearing.
@@ -612,7 +612,7 @@ void tile_drive_dc_h_clear_ripple_count(tile_t* tile);
 
 /**
  * @brief  Disable the output stage (all FETs Hi-Z).
- * @tessera expose category=tile name=sleep
+ * @tessera expose category=tile name=sleep section=lifecycle
  *
  * Clears EN_OUT in CONFIG0. The device remains on the I2C bus
  * and registers are accessible, but no current flows through
@@ -624,7 +624,7 @@ void tile_drive_dc_h_sleep(tile_t* tile);
 
 /**
  * @brief  Re-enable the output stage.
- * @tessera expose category=tile name=wake
+ * @tessera expose category=tile name=wake section=lifecycle
  *
  * Sets EN_OUT in CONFIG0. The bridge returns to the last
  * commanded state (coast/brake/forward/reverse).
@@ -632,5 +632,127 @@ void tile_drive_dc_h_sleep(tile_t* tile);
  * @param  tile  Pointer to tile handle
  */
 void tile_drive_dc_h_wake(tile_t* tile);
+
+/* ============================================================== */
+/* Runtime — tier-2 idiomatic helpers                              */
+/*                                                                  */
+/* These compose the tier-1 surface above into "do the thing the   */
+/* user wants to do" calls. Direction-aware drive helpers, closed- */
+/* loop ripple-counted moves, and run/stop status checks — so      */
+/* callers don't need to juggle CONFIG4 bridge bits + RC_STATUS    */
+/* polling to do the obvious things.                               */
+/* ============================================================== */
+
+/**
+ * @brief  Drive direction for the tier-2 helpers.
+ *
+ * The chip's bridge bits encode forward as IN1=1/IN2=0 and reverse
+ * as IN1=0/IN2=1. The enum is symbolic so callers don't need to
+ * remember the polarity — see @ref tile_drive_dc_h_set_speed_rpm
+ * and @ref tile_drive_dc_h_move_distance.
+ */
+typedef enum {
+    DRIVE_DC_H_DIR_FORWARD = 0,  /**< OUT1=H, OUT2=L (matches forward()). */
+    DRIVE_DC_H_DIR_REVERSE = 1,  /**< OUT1=L, OUT2=H (matches reverse()). */
+} drive_dc_h_direction_t;
+
+/**
+ * @brief  Drive at a target speed (RPM) with closed-loop regulation.
+ *
+ * @tessera expose category=tile name=set_speed_rpm section=runtime
+ *
+ * Switches the chip into speed-regulation mode (REG_CTRL=10b),
+ * writes WSET_VSET so the internal PI loop targets `rpm` for the
+ * given motor, and engages the bridge in `direction`. Returns
+ * immediately — the chip ramps the motor to the target speed
+ * autonomously and is_running() / get_speed() report progress.
+ *
+ * @note  The conversion `WSET = (rpm × ripples_per_rev) / (60 × W_SCALE)`
+ *        depends on the ripples-per-rev value supplied at init via the
+ *        `drive_dc_h_cfg_t.ripples_per_rev` field, and on the chip's
+ *        ripple-counter calibration (INV_R, KMC) also computed at init
+ *        from `motor_mohm` and `kv_uv_per_rpm`. If those aren't set,
+ *        speed regulation falls back to chip defaults and the RPM
+ *        target is approximate. Provide a full motor profile in the
+ *        init config for accurate closed-loop speed control.
+ *
+ * @note  WSET_VSET is 8-bit, so the largest representable RPM at
+ *        ripples_per_rev=12 / W_SCALE=128 is ~163 200. The driver
+ *        clamps WSET at 0xFF for higher targets.
+ *
+ * @param  tile       Initialised tile handle
+ * @param  rpm        Target shaft speed in revolutions per minute
+ * @param  direction  DRIVE_DC_H_DIR_FORWARD or DRIVE_DC_H_DIR_REVERSE
+ */
+void tile_drive_dc_h_set_speed_rpm(tile_t* tile, uint32_t rpm,
+                                   drive_dc_h_direction_t direction);
+
+/**
+ * @brief  Drive `ripples` commutation ripples in `direction`, then brake.
+ *
+ * @tessera expose category=tile name=move_distance section=runtime
+ *
+ * Closed-loop step: programs RC_THR for the requested ripple count,
+ * clears the ripple counter, engages the bridge in `direction`,
+ * then polls until either CNT_DONE fires or the motor stalls. On
+ * completion the bridge is put into slow-decay brake — the motor
+ * is actively held at the new position, not coasting.
+ *
+ * @note  This call BLOCKS until the move completes or the motor
+ *        stalls. Worst-case wall-time depends on motor speed +
+ *        load; budget accordingly. There is no built-in timeout
+ *        beyond the chip's own stall detector — use a separate
+ *        watchdog or @ref tile_drive_dc_h_wait_for_stop with a
+ *        timeout if you need a hard upper bound.
+ *
+ * @note  On completion the bridge is left in BRAKE (slow decay,
+ *        both low-side FETs on). Call @ref tile_drive_dc_h_coast
+ *        afterwards if you'd rather let the motor freewheel.
+ *
+ * @note  Ripple counts are coarse (integer commutation ticks, not
+ *        encoder counts). Resolution = 1/ripples_per_rev of a
+ *        revolution — typically 1/12 turn. Don't expect sub-degree
+ *        positioning.
+ *
+ * @param  tile       Initialised tile handle
+ * @param  ripples    Number of ripples to advance (0–65472)
+ * @param  direction  DRIVE_DC_H_DIR_FORWARD or DRIVE_DC_H_DIR_REVERSE
+ */
+void tile_drive_dc_h_move_distance(tile_t* tile, uint16_t ripples,
+                                   drive_dc_h_direction_t direction);
+
+/**
+ * @brief  Check whether the bridge is actively driving the motor.
+ *
+ * @tessera expose category=tile name=is_running returns=bool section=runtime
+ *
+ * Returns 1 when the bridge is in forward or reverse drive (any
+ * non-zero, non-brake combination of IN1/IN2 in I²C bridge mode).
+ * Returns 0 when braking, coasting, sleeping, in pad-control mode,
+ * or not yet ready.
+ *
+ * @param  tile  Initialised tile handle
+ * @return 1 if driving, 0 otherwise
+ */
+uint8_t tile_drive_dc_h_is_running(tile_t* tile);
+
+/**
+ * @brief  Block until the ripple counter stops advancing or `timeout_ms` elapses.
+ *
+ * @tessera expose category=tile name=wait_for_stop returns=bool section=runtime
+ *
+ * Polls the 16-bit ripple counter at ~10 ms cadence. Returns 1
+ * when two successive samples (≥30 ms apart) report the same
+ * count — i.e., the rotor is mechanically stationary. Returns 0
+ * if `timeout_ms` elapses first. Useful after @ref
+ * tile_drive_dc_h_brake when you want to know the motor has
+ * actually settled rather than just "the bridge has been
+ * commanded to brake".
+ *
+ * @param  tile        Initialised tile handle
+ * @param  timeout_ms  Maximum time to wait, in milliseconds
+ * @return 1 if the rotor settled before timeout, 0 on timeout
+ */
+uint8_t tile_drive_dc_h_wait_for_stop(tile_t* tile, uint32_t timeout_ms);
 
 #endif /* INC_TILE_DRIVE_DC_H_H_ */
