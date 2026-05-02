@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@3e1d488",
+  "source": "cores@ad1485f",
   "tile": "Display.RGBW",
   "palette": {
     "label": "Display.RGBW",
@@ -155,6 +155,20 @@
       "header": "tile_display_rgbw.h",
       "category": "tile",
       "description": "Wake (re-enable chip, LEDs retain previous state).",
+      "params": [],
+      "returns": "void",
+      "icon": "◑",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "reset"
+      ],
+      "symbol": "tile_display_rgbw_reset",
+      "header": "tile_display_rgbw.h",
+      "category": "tile",
+      "description": "Software reset. Must call init() again after.",
       "params": [],
       "returns": "void",
       "icon": "◑",

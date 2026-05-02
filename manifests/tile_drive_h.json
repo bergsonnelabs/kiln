@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@3e1d488",
+  "source": "cores@ad1485f",
   "tile": "Drive.H",
   "palette": {
     "label": "Drive.H",
@@ -68,8 +68,8 @@
       "c_in_buffer": {
         "name": "effects",
         "type": "uint8_t",
-        "length": 8,
-        "length_param": "count"
+        "length_param": "count",
+        "length": 8
       },
       "receiver": "tile_t*"
     },
@@ -93,8 +93,8 @@
       "c_in_buffer": {
         "name": "effects",
         "type": "uint8_t",
-        "length": 8,
-        "length_param": "count"
+        "length_param": "count",
+        "length": 8
       },
       "receiver": "tile_t*"
     },

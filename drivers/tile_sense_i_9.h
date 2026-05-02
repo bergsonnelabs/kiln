@@ -319,6 +319,8 @@ void tile_sense_i_9_get_raw_6dof(tile_t* tile, int16_t* buffer);
  * Returns signed 16-bit ADC counts from the AK09916.
  * Sensitivity: 0.15 µT/LSB (all axes).
  *
+ * @tessera expose category=tile name=get_raw_mags returns=int[3]
+ * @tessera out_buffer buffer type=int16_t length=3
  * @param  tile    Pointer to tile handle
  * @param  buffer  Output array, minimum 3 × int16_t [X, Y, Z]
  *
@@ -366,6 +368,7 @@ void tile_sense_i_9_wake(tile_t* tile);
  * Resets all registers to defaults. Blocks for ~50 ms.
  * You must call tile_sense_i_9_init() again after reset.
  *
+ * @tessera expose category=tile name=reset
  * @param  tile  Pointer to tile handle
  */
 void tile_sense_i_9_reset(tile_t* tile);

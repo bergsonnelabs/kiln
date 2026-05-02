@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@3e1d488",
+  "source": "cores@ad1485f",
   "tile": "Sense.I.9",
   "palette": {
     "label": "Sense.I.9",
@@ -182,6 +182,24 @@
     {
       "qname": [
         "$slot",
+        "get_raw_mags"
+      ],
+      "symbol": "tile_sense_i_9_get_raw_mags",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Read raw magnetometer data (3-axis).",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[3]",
+      "c_out_buffer": {
+        "type": "int16_t",
+        "length": 3
+      },
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
         "get_temperature"
       ],
       "symbol": "tile_sense_i_9_get_temperature",
@@ -215,6 +233,19 @@
       "header": "tile_sense_i_9.h",
       "category": "tile",
       "description": "Wake from sleep mode and resume sampling.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "reset"
+      ],
+      "symbol": "tile_sense_i_9_reset",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Perform a software reset.",
       "params": [],
       "returns": "void",
       "receiver": "tile_t*"
