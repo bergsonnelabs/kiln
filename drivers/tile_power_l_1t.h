@@ -29,6 +29,79 @@
  *       uint8_t  pct  = tile_power_l_1t_get_percent(&battery);
  *   }
  * @endcode
+ *
+ * Driver gaps (chip capabilities not exposed by this driver):
+ *
+ * The current driver is intentionally minimal (vbat read + state-of-
+ * charge derivation) and surfaces only a fraction of the BQ25150's
+ * capability surface. The gaps below are slated for the next driver
+ * pass; the watchdog gap in particular is a correctness issue, not
+ * just a feature deferral.
+ *
+ * @tessera unsupported severity=common category="I²C watchdog feed"
+ *   BQ25150 has a 50-second I²C watchdog that resets ALL charge
+ *   parameters (ICHG, VBATREG, ITERM, ILIM, etc.) to defaults if
+ *   the host doesn't periodically write to a charger register.
+ *   Driver doesn't kick the watchdog — meaning any custom charge
+ *   configuration is silently lost every 50 s. Correctness bug,
+ *   not just a missing feature.
+ *
+ * @tessera unsupported severity=common category="Charge current programming (ICHG_CTRL)"
+ *   Programmable 1.25–500 mA in 10 mA steps via ICHG_CTRL. Driver
+ *   uses chip default (typically 200 mA) — required for matching
+ *   battery's 0.5C–1C charge spec.
+ *
+ * @tessera unsupported severity=common category="Charge voltage programming (VBATREG)"
+ *   Programmable 3.6–4.6 V in 10 mV steps via VBAT_CTRL. Driver
+ *   uses chip default (4.2 V) — relevant for LFP cells (3.65 V)
+ *   or high-voltage NMC variants.
+ *
+ * @tessera unsupported severity=common category="Pre-charge / termination current"
+ *   PCHRGCTRL (1.25–77.5 mA pre-charge) and TERMCTRL (1–31 % of
+ *   ICHARGE termination) aren't exposed. Pre-charge prevents
+ *   damage to deeply-discharged cells; termination current
+ *   determines when CV phase ends.
+ *
+ * @tessera unsupported severity=common category="ADC channels (VIN / ICHG / TS / ADCIN)"
+ *   12-bit ADC measures input voltage, charge current, NTC
+ *   thermistor, and an optional ADCIN. Driver only reads VBAT —
+ *   the rest are needed for proper power-path diagnostics.
+ *
+ * @tessera unsupported severity=common category="NTC thresholds (TS_COLD/COOL/WARM/HOT)"
+ *   Programmable JEITA-style temperature thresholds gate charging
+ *   based on battery temperature via the TS pin. Driver doesn't
+ *   configure them — relevant for battery safety in any
+ *   non-room-temperature application.
+ *
+ * @tessera unsupported severity=common category="Fault flag readout"
+ *   FLAG0–FLAG3 registers report charge faults (BAT_OCP, VIN_OVP,
+ *   UVLO, safety timer, watchdog, OTS, etc.). Driver has
+ *   read_status as a register-level escape hatch but no
+ *   structured fault API.
+ *
+ * @tessera unsupported severity=advanced category="Ship mode entry / exit"
+ *   EN_SHIPMODE bit puts the chip into ~10 nA quiescent (battery
+ *   physically disconnected via internal FET); waking requires MR
+ *   press or VIN. Driver doesn't expose ship-mode toggling —
+ *   relevant for long-term storage or end-of-line testing.
+ *
+ * @tessera unsupported severity=advanced category="LDO enable + voltage selection"
+ *   LDO output (1.8 V default on this tile, programmable 0.6–3.7 V
+ *   via LDOCTRL) and load-switch mode aren't controlled by the
+ *   driver. EN_LS_LDO bit, soft-start, and current-limit reporting
+ *   would help apps that gate downstream rails.
+ *
+ * @tessera unsupported severity=advanced category="MR button + INT pin handling"
+ *   MR push-button input supports short / long press detection
+ *   (configurable WAKE1/WAKE2 timers) and the INT pin pulses on
+ *   any flag change (with maskable sources). Driver has no
+ *   button / interrupt API.
+ *
+ * @tessera unsupported severity=advanced category="14 s HW watchdog control"
+ *   Separate from the I²C watchdog: a 14 s VIN-stable HW watchdog
+ *   triggers a Power-Cycle/Autowake reset if no I²C activity. Can
+ *   be disabled via HWRESET_14S_WD bit. Driver doesn't expose the
+ *   bit — the HW watchdog stays enabled by default.
  */
 
 #ifndef INC_TILE_POWER_L_1T_H_
