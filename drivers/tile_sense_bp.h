@@ -413,9 +413,14 @@ int32_t tile_sense_bp_read_fifo_raw(tile_t *tile);
 
 /**
  * @brief  Read multiple raw pressure samples from the FIFO.
+ *
+ * @tessera expose category=tile name=read_fifo_batch returns=int
+ * @tessera out_buffer buf type=int32_t cap_param=count
  * @param  tile   Initialised tile handle.
- * @param  buf    Output buffer for raw 24-bit values.
- * @param  count  Number of samples to read.
+ * @param  buf    Caller-allocated buffer the driver fills with raw
+ *                24-bit signed values (sign-extended to int32_t).
+ * @param  count  Capacity of `buf` — the driver fills up to this
+ *                many samples and returns the actual count.
  * @return Number of samples actually read.
  */
 uint8_t tile_sense_bp_read_fifo_batch(tile_t *tile, int32_t *buf,

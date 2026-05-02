@@ -564,40 +564,74 @@ void tile_sense_i_6p6_reset(tile_t *tile);
  * Public API — Configuration
  * ================================================================ */
 
-/** @brief  Set accelerometer full-scale range. */
+/**
+ * @brief  Set accelerometer full-scale range.
+ *
+ * @tessera expose category=tile name=set_accel_range
+ */
 void tile_sense_i_6p6_set_accel_range(tile_t *tile, sense_i_6p6_accel_range_t range);
 
-/** @brief  Set gyroscope full-scale range. */
+/**
+ * @brief  Set gyroscope full-scale range.
+ *
+ * @tessera expose category=tile name=set_gyro_range
+ */
 void tile_sense_i_6p6_set_gyro_range(tile_t *tile, sense_i_6p6_gyro_range_t range);
 
-/** @brief  Set accelerometer output data rate. */
+/**
+ * @brief  Set accelerometer output data rate.
+ *
+ * @tessera expose category=tile name=set_accel_odr
+ */
 void tile_sense_i_6p6_set_accel_odr(tile_t *tile, sense_i_6p6_odr_t odr);
 
-/** @brief  Set gyroscope output data rate. */
+/**
+ * @brief  Set gyroscope output data rate.
+ *
+ * @tessera expose category=tile name=set_gyro_odr
+ */
 void tile_sense_i_6p6_set_gyro_odr(tile_t *tile, sense_i_6p6_odr_t odr);
 
 /**
  * @brief  Set power mode independently for accel and gyro.
+ *
+ * @tessera expose category=tile name=set_power_mode
  * @note   Wait 200 µs after changing mode before accessing other registers.
  */
 void tile_sense_i_6p6_set_power_mode(tile_t *tile,
                                       sense_i_6p6_power_mode_t accel,
                                       sense_i_6p6_power_mode_t gyro);
 
-/** @brief  Set UI filter bandwidth for both accel and gyro. */
+/**
+ * @brief  Set UI filter bandwidth for both accel and gyro.
+ *
+ * @tessera expose category=tile name=set_filter_bw
+ */
 void tile_sense_i_6p6_set_filter_bw(tile_t *tile,
                                      sense_i_6p6_filter_bw_t accel_bw,
                                      sense_i_6p6_filter_bw_t gyro_bw);
 
-/** @brief  Set UI filter order for accel and gyro (1st, 2nd, or 3rd). */
+/**
+ * @brief  Set UI filter order for accel and gyro (1st, 2nd, or 3rd).
+ *
+ * @tessera expose category=tile name=set_filter_order
+ */
 void tile_sense_i_6p6_set_filter_order(tile_t *tile,
                                         sense_i_6p6_filter_order_t accel_order,
                                         sense_i_6p6_filter_order_t gyro_order);
 
-/** @brief  Set temperature sensor filter bandwidth. */
+/**
+ * @brief  Set temperature sensor filter bandwidth.
+ *
+ * @tessera expose category=tile name=set_temp_filter
+ */
 void tile_sense_i_6p6_set_temp_filter(tile_t *tile, sense_i_6p6_temp_filter_t bw);
 
-/** @brief  Enable or disable the temperature sensor. */
+/**
+ * @brief  Enable or disable the temperature sensor.
+ *
+ * @tessera expose category=tile name=set_temp_enabled
+ */
 void tile_sense_i_6p6_set_temp_enabled(tile_t *tile, uint8_t enabled);
 
 /* ================================================================
@@ -657,6 +691,7 @@ void tile_sense_i_6p6_get_raw_all(tile_t *tile, int16_t *buffer);
 /**
  * @brief  Configure the FIFO.
  *
+ * @tessera expose category=tile name=fifo_config
  * @param  mode       FIFO operating mode (bypass/stream/stop-on-full)
  * @param  accel      Include accel data in FIFO packets
  * @param  gyro       Include gyro data in FIFO packets
@@ -667,7 +702,11 @@ void tile_sense_i_6p6_fifo_config(tile_t *tile, sense_i_6p6_fifo_mode_t mode,
                                    uint8_t accel, uint8_t gyro,
                                    uint8_t temp, uint8_t hires);
 
-/** @brief  Set the FIFO watermark threshold in records (1–4095). */
+/**
+ * @brief  Set the FIFO watermark threshold in records (1–4095).
+ *
+ * @tessera expose category=tile name=fifo_set_watermark
+ */
 void tile_sense_i_6p6_fifo_set_watermark(tile_t *tile, uint16_t records);
 
 /**
@@ -676,9 +715,6 @@ void tile_sense_i_6p6_fifo_set_watermark(tile_t *tile, uint16_t records);
  * @tessera expose category=tile name=flush_fifo
  */
 void tile_sense_i_6p6_fifo_flush(tile_t *tile);
-
-/** @brief  Read the FIFO record count. */
-uint16_t tile_sense_i_6p6_fifo_count(tile_t *tile);
 
 /**
  * @brief  Read one standard FIFO packet (16 bytes: accel + gyro + temp + timestamp).
@@ -696,7 +732,18 @@ uint16_t tile_sense_i_6p6_fifo_read_packets(tile_t *tile,
                                               sense_i_6p6_fifo_packet_t *packets,
                                               uint16_t max_count);
 
-/** @brief  Get the number of lost FIFO packets since last check. */
+/**
+ * @brief  Read the FIFO record count.
+ *
+ * @tessera expose category=tile name=fifo_count returns=int
+ */
+uint16_t tile_sense_i_6p6_fifo_count(tile_t *tile);
+
+/**
+ * @brief  Get the number of lost FIFO packets since last check.
+ *
+ * @tessera expose category=tile name=fifo_lost_count returns=int
+ */
 uint16_t tile_sense_i_6p6_fifo_lost_count(tile_t *tile);
 
 /* ================================================================
@@ -705,6 +752,8 @@ uint16_t tile_sense_i_6p6_fifo_lost_count(tile_t *tile);
 
 /**
  * @brief  Configure INT1 pin behavior.
+ *
+ * @tessera expose category=tile name=int1_config
  * @param  config  OR'd flags: ACTIVE_HIGH|PUSH_PULL|LATCHED etc.
  */
 void tile_sense_i_6p6_int1_config(tile_t *tile, uint8_t config);
@@ -747,7 +796,11 @@ uint8_t tile_sense_i_6p6_get_int_status(tile_t *tile);
  */
 uint8_t tile_sense_i_6p6_get_int_status2(tile_t *tile);
 
-/** @brief  Read and clear INT_STATUS3 (APEX: step/tilt/tap flags). */
+/**
+ * @brief  Read and clear INT_STATUS3 (APEX: step/tilt/tap flags).
+ *
+ * @tessera expose category=tile name=get_int_status3 returns=int
+ */
 uint8_t tile_sense_i_6p6_get_int_status3(tile_t *tile);
 
 /* ================================================================
@@ -787,7 +840,11 @@ void tile_sense_i_6p6_wom_disable(tile_t *tile);
  * Public API — Significant Motion Detection (SMD)
  * ================================================================ */
 
-/** @brief  Configure and enable SMD. WOM thresholds must be set first. */
+/**
+ * @brief  Configure and enable SMD. WOM thresholds must be set first.
+ *
+ * @tessera expose category=tile name=smd_config
+ */
 void tile_sense_i_6p6_smd_config(tile_t *tile, sense_i_6p6_smd_mode_t mode);
 
 /* ================================================================
@@ -799,11 +856,16 @@ void tile_sense_i_6p6_smd_config(tile_t *tile, sense_i_6p6_smd_mode_t mode);
  *
  * Requires accel at ≥25 Hz. Initializes the DMP if not already running.
  *
+ * @tessera expose category=tile name=pedometer_enable
  * @param  dmp_odr  DMP processing rate (25 or 50 Hz)
  */
 void tile_sense_i_6p6_pedometer_enable(tile_t *tile, sense_i_6p6_dmp_odr_t dmp_odr);
 
-/** @brief  Disable the pedometer. */
+/**
+ * @brief  Disable the pedometer.
+ *
+ * @tessera expose category=tile name=pedometer_disable
+ */
 void tile_sense_i_6p6_pedometer_disable(tile_t *tile);
 
 /**
@@ -816,12 +878,16 @@ uint16_t tile_sense_i_6p6_get_step_count(tile_t *tile);
 
 /**
  * @brief  Read the step cadence.
+ *
+ * @tessera expose category=tile name=get_step_cadence returns=int
  * @return Steps per second in u6.2 fixed-point (divide by 4.0 for float)
  */
 uint8_t tile_sense_i_6p6_get_step_cadence(tile_t *tile);
 
 /**
  * @brief  Read the activity classification.
+ *
+ * @tessera expose category=tile name=get_activity returns=int
  * @return 0=unknown, 1=walk, 2=run
  */
 sense_i_6p6_activity_t tile_sense_i_6p6_get_activity(tile_t *tile);
