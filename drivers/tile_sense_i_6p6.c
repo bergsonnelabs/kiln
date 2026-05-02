@@ -936,3 +936,180 @@ void tile_sense_i_6p6_write_reg(tile_t *tile, uint8_t bank, uint8_t reg, uint8_t
     icm_write(tile, reg, val);
     if (bank != ICM42686P_BANK_0) icm_set_bank(tile, ICM42686P_BANK_0);
 }
+
+/* ================================================================
+ * Tier-2 idiomatic helpers
+ * ================================================================ */
+
+/* Map current ACCEL_CONFIG0[7:5] to LSB-per-g sensitivity. */
+static int32_t accel_lsb_per_g(tile_t *tile)
+{
+    uint8_t cfg = icm_read(tile, ICM42686P_REG_ACCEL_CONFIG0);
+    switch ((cfg >> 5) & 0x07) {
+        case SENSE_I_6P6_ACCEL_32G: return 1024;
+        case SENSE_I_6P6_ACCEL_16G: return 2048;
+        case SENSE_I_6P6_ACCEL_8G:  return 4096;
+        case SENSE_I_6P6_ACCEL_4G:  return 8192;
+        case SENSE_I_6P6_ACCEL_2G:  return 16384;
+        default:                    return 4096;  /* fall back to ±8g */
+    }
+}
+
+/** @brief Detect face-up orientation (Z ≈ +1g). */
+uint8_t tile_sense_i_6p6_is_face_up(tile_t *tile)
+{
+    int16_t a[3];
+    tile_sense_i_6p6_get_raw_accels(tile, a);
+    int32_t lsb = accel_lsb_per_g(tile);
+    int32_t one_g = lsb;
+    int32_t tol_z = (lsb * 200) / 1000;   /* ±200 mg */
+    int32_t tol_xy = (lsb * 300) / 1000;  /* ±300 mg */
+    if (a[2] < (one_g - tol_z) || a[2] > (one_g + tol_z)) return 0;
+    if (a[0] < -tol_xy || a[0] > tol_xy) return 0;
+    if (a[1] < -tol_xy || a[1] > tol_xy) return 0;
+    return 1;
+}
+
+/** @brief Detect face-down orientation (Z ≈ −1g). */
+uint8_t tile_sense_i_6p6_is_face_down(tile_t *tile)
+{
+    int16_t a[3];
+    tile_sense_i_6p6_get_raw_accels(tile, a);
+    int32_t lsb = accel_lsb_per_g(tile);
+    int32_t one_g = lsb;
+    int32_t tol_z = (lsb * 200) / 1000;
+    int32_t tol_xy = (lsb * 300) / 1000;
+    if (a[2] < (-one_g - tol_z) || a[2] > (-one_g + tol_z)) return 0;
+    if (a[0] < -tol_xy || a[0] > tol_xy) return 0;
+    if (a[1] < -tol_xy || a[1] > tol_xy) return 0;
+    return 1;
+}
+
+/** @brief Detect motion: |‖a‖ − 1g| > threshold (squared comparison). */
+uint8_t tile_sense_i_6p6_is_moving(tile_t *tile, uint16_t threshold_mg)
+{
+    int16_t a[3];
+    tile_sense_i_6p6_get_raw_accels(tile, a);
+    int32_t lsb = accel_lsb_per_g(tile);
+    /* Squared magnitude of measured vector, in LSB^2. */
+    int32_t mag2 = (int32_t)a[0]*a[0] + (int32_t)a[1]*a[1] + (int32_t)a[2]*a[2];
+    /* Squared 1-g reference, also LSB^2. */
+    int32_t one_g_lsb = lsb;
+    int32_t one_g_sq = one_g_lsb * one_g_lsb;
+    /* Squared bands: (1g + thr)^2 and (1g - thr)^2 for symmetric trigger.
+     * thr_lsb = lsb * threshold_mg / 1000 */
+    int32_t thr_lsb = ((int32_t)lsb * (int32_t)threshold_mg) / 1000;
+    int32_t hi = one_g_lsb + thr_lsb;
+    int32_t lo = one_g_lsb - thr_lsb;
+    if (lo < 0) lo = 0;
+    int32_t hi_sq = hi * hi;
+    int32_t lo_sq = lo * lo;
+    return (mag2 > hi_sq || mag2 < lo_sq) ? 1 : 0;
+}
+
+/* atan(k/16) in centi-degrees, k=0..16. Used by tilt helper. */
+static const uint16_t atan_lut_cdeg[17] = {
+    0, 358, 712, 1062, 1404, 1735, 2056, 2363,
+    2657, 2936, 3200, 3451, 3687, 3909, 4119, 4315, 4500
+};
+
+/* Integer atan2 → centi-degrees, range [-18000, +18000]. */
+static int32_t atan2_cdeg(int32_t y, int32_t x)
+{
+    int32_t ay = y < 0 ? -y : y;
+    int32_t ax = x < 0 ? -x : x;
+    int32_t result;
+
+    if (ax == 0 && ay == 0) return 0;
+
+    if (ay <= ax) {
+        /* atan(|y|/|x|), result in [0,4500] */
+        /* idx = |y| * 16 / |x|, fractional remainder for linear interp */
+        int32_t scaled = ay * 16;
+        int32_t idx = scaled / ax;
+        int32_t rem = scaled - idx * ax;
+        if (idx >= 16) result = atan_lut_cdeg[16];
+        else result = atan_lut_cdeg[idx]
+                      + ((atan_lut_cdeg[idx+1] - atan_lut_cdeg[idx]) * rem) / ax;
+    } else {
+        /* atan(|x|/|y|), then 90 - that */
+        int32_t scaled = ax * 16;
+        int32_t idx = scaled / ay;
+        int32_t rem = scaled - idx * ay;
+        int32_t inner;
+        if (idx >= 16) inner = atan_lut_cdeg[16];
+        else inner = atan_lut_cdeg[idx]
+                     + ((atan_lut_cdeg[idx+1] - atan_lut_cdeg[idx]) * rem) / ay;
+        result = 9000 - inner;
+    }
+
+    /* Quadrant fix-up. */
+    if (x < 0) result = 18000 - result;
+    if (y < 0) result = -result;
+    return result;
+}
+
+/** @brief Tilt of one axis vs gravity, in 0.01°. */
+uint8_t tile_sense_i_6p6_read_tilt_centi_degrees(tile_t *tile,
+                                                  uint8_t axis,
+                                                  int16_t *out_centi_deg)
+{
+    if (!out_centi_deg || axis > 2) return 0;
+    int16_t a[3];
+    tile_sense_i_6p6_get_raw_accels(tile, a);
+    int32_t target = a[axis];
+    int32_t o0 = a[(axis + 1) % 3];
+    int32_t o1 = a[(axis + 2) % 3];
+    /* perpendicular-magnitude squared, then take sqrt via Newton's method. */
+    int32_t perp_sq = o0 * o0 + o1 * o1;
+    if (perp_sq == 0 && target == 0) {
+        *out_centi_deg = 0;
+        return 0;
+    }
+    /* Integer sqrt (Newton). perp_sq fits in int32 for int16 inputs. */
+    int32_t r = perp_sq;
+    if (r > 0) {
+        int32_t guess = r >> 8;
+        if (guess == 0) guess = 1;
+        for (int i = 0; i < 16; i++) {
+            int32_t next = (guess + r / guess) >> 1;
+            if (next == guess) break;
+            guess = next;
+        }
+        r = guess;
+    }
+    int32_t cdeg = atan2_cdeg(target, r);
+    if (cdeg > 18000) cdeg = 18000;
+    if (cdeg < -18000) cdeg = -18000;
+    *out_centi_deg = (int16_t)cdeg;
+    return 1;
+}
+
+/** @brief Block until a tap interrupt fires or timeout. Polls at ~1 ms. */
+uint8_t tile_sense_i_6p6_wait_for_tap(tile_t *tile, uint32_t timeout_ms)
+{
+    /* Single-shot when timeout_ms == 0. */
+    if (icm_read(tile, ICM42686P_REG_INT_STATUS3) & ICM42686P_INT_STATUS3_TAP_DET)
+        return 1;
+    while (timeout_ms > 0) {
+        tile->hal->delay_ms(1);
+        if (icm_read(tile, ICM42686P_REG_INT_STATUS3) & ICM42686P_INT_STATUS3_TAP_DET)
+            return 1;
+        timeout_ms--;
+    }
+    return 0;
+}
+
+/** @brief Block until a wake-on-motion interrupt fires or timeout. Polls at ~1 ms. */
+uint8_t tile_sense_i_6p6_wait_for_motion(tile_t *tile, uint32_t timeout_ms)
+{
+    if (icm_read(tile, ICM42686P_REG_INT_STATUS2) & ICM42686P_INT_STATUS2_WOM_ANY)
+        return 1;
+    while (timeout_ms > 0) {
+        tile->hal->delay_ms(1);
+        if (icm_read(tile, ICM42686P_REG_INT_STATUS2) & ICM42686P_INT_STATUS2_WOM_ANY)
+            return 1;
+        timeout_ms--;
+    }
+    return 0;
+}

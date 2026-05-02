@@ -2,7 +2,7 @@
  * @file   tile_sense_i_6p6.h
  * @brief  Complete driver for the Sense.I.6P6 tile (ICM-42686-P).
  *         Supports both I2C and SPI bus access via tiles_pal_t.
- * @version 1.0.0
+ * @version 1.2.0
  *
  * 6-axis IMU with extended measurement range:
  *   - Accelerometer:  16-bit, ±2/4/8/16/32 G, up to 32 kHz ODR
@@ -89,7 +89,7 @@
  * ================================================================ */
 
 #define TILE_SENSE_I_6P6_VERSION_MAJOR  1
-#define TILE_SENSE_I_6P6_VERSION_MINOR  1
+#define TILE_SENSE_I_6P6_VERSION_MINOR  2
 #define TILE_SENSE_I_6P6_VERSION_PATCH  0
 
 TILES_CHECK_VERSION(1, 0);
@@ -273,6 +273,22 @@ TILES_CHECK_VERSION(1, 0);
 #define ICM42686P_INT_FIFO_THS      (1 << 2)
 #define ICM42686P_INT_FIFO_FULL     (1 << 1)
 #define ICM42686P_INT_RESET_DONE    (1 << 4)
+
+/* INT_STATUS2 (0x37) — WOM / SMD flags */
+#define ICM42686P_INT_STATUS2_WOM_X     (1 << 0)
+#define ICM42686P_INT_STATUS2_WOM_Y     (1 << 1)
+#define ICM42686P_INT_STATUS2_WOM_Z     (1 << 2)
+#define ICM42686P_INT_STATUS2_SMD       (1 << 3)
+/** Any-axis WOM: OR of the three per-axis bits. */
+#define ICM42686P_INT_STATUS2_WOM_ANY \
+    (ICM42686P_INT_STATUS2_WOM_X | ICM42686P_INT_STATUS2_WOM_Y | ICM42686P_INT_STATUS2_WOM_Z)
+
+/* INT_STATUS3 (0x38) — APEX (DMP) flags */
+#define ICM42686P_INT_STATUS3_TAP_DET     (1 << 5)
+#define ICM42686P_INT_STATUS3_WAKE        (1 << 4)
+#define ICM42686P_INT_STATUS3_TILT_DET    (1 << 3)
+#define ICM42686P_INT_STATUS3_STEP_CNT_OVF (1 << 2)
+#define ICM42686P_INT_STATUS3_STEP_DET    (1 << 1)
 
 /* ================================================================
  * SIGNAL_PATH_RESET bits
@@ -556,30 +572,38 @@ void tile_sense_i_6p6_init(tiles_pal_t *hal, uint8_t instance,
  * In interrupt mode: returns immediately if no INT1 interrupt fired;
  * reads INT_STATUS and fires callback only when events are pending.
  * In polled mode: reads INT_STATUS every call, fires callback if set.
+ *
+ * @tessera expose category=tile name=process section=events
  */
 void tile_sense_i_6p6_process(tile_t *tile);
 
-/** @brief  Register or change the event callback. */
+/**
+ * @brief  Register or change the event callback.
+ *
+ * @tessera expose category=tile name=on_event section=events
+ * @param  cb   Callback to fire on interrupt events. NULL to clear.
+ * @param  ctx  Opaque user pointer passed to the callback.
+ */
 void tile_sense_i_6p6_on_event(tile_t *tile, sense_i_6p6_event_cb_t cb, void *ctx);
 
 /**
  * @brief  Enter sleep mode (accel + gyro off). ~7.5 µA.
  *
- * @tessera expose category=tile name=sleep
+ * @tessera expose category=tile name=sleep section=lifecycle
  */
 void tile_sense_i_6p6_sleep(tile_t *tile);
 
 /**
  * @brief  Wake from sleep, restore low-noise mode. Range/ODR preserved.
  *
- * @tessera expose category=tile name=wake
+ * @tessera expose category=tile name=wake section=lifecycle
  */
 void tile_sense_i_6p6_wake(tile_t *tile);
 
 /**
  * @brief  Software reset. Blocks ~2 ms. Must call init() again after.
  *
- * @tessera expose category=tile name=reset
+ * @tessera expose category=tile name=reset section=lifecycle
  */
 void tile_sense_i_6p6_reset(tile_t *tile);
 
@@ -590,35 +614,35 @@ void tile_sense_i_6p6_reset(tile_t *tile);
 /**
  * @brief  Set accelerometer full-scale range.
  *
- * @tessera expose category=tile name=set_accel_range
+ * @tessera expose category=tile name=set_accel_range section=runtime
  */
 void tile_sense_i_6p6_set_accel_range(tile_t *tile, sense_i_6p6_accel_range_t range);
 
 /**
  * @brief  Set gyroscope full-scale range.
  *
- * @tessera expose category=tile name=set_gyro_range
+ * @tessera expose category=tile name=set_gyro_range section=runtime
  */
 void tile_sense_i_6p6_set_gyro_range(tile_t *tile, sense_i_6p6_gyro_range_t range);
 
 /**
  * @brief  Set accelerometer output data rate.
  *
- * @tessera expose category=tile name=set_accel_odr
+ * @tessera expose category=tile name=set_accel_odr section=runtime
  */
 void tile_sense_i_6p6_set_accel_odr(tile_t *tile, sense_i_6p6_odr_t odr);
 
 /**
  * @brief  Set gyroscope output data rate.
  *
- * @tessera expose category=tile name=set_gyro_odr
+ * @tessera expose category=tile name=set_gyro_odr section=runtime
  */
 void tile_sense_i_6p6_set_gyro_odr(tile_t *tile, sense_i_6p6_odr_t odr);
 
 /**
  * @brief  Set power mode independently for accel and gyro.
  *
- * @tessera expose category=tile name=set_power_mode
+ * @tessera expose category=tile name=set_power_mode section=runtime
  * @note   Wait 200 µs after changing mode before accessing other registers.
  */
 void tile_sense_i_6p6_set_power_mode(tile_t *tile,
@@ -628,7 +652,7 @@ void tile_sense_i_6p6_set_power_mode(tile_t *tile,
 /**
  * @brief  Set UI filter bandwidth for both accel and gyro.
  *
- * @tessera expose category=tile name=set_filter_bw
+ * @tessera expose category=tile name=set_filter_bw section=config
  */
 void tile_sense_i_6p6_set_filter_bw(tile_t *tile,
                                      sense_i_6p6_filter_bw_t accel_bw,
@@ -637,7 +661,7 @@ void tile_sense_i_6p6_set_filter_bw(tile_t *tile,
 /**
  * @brief  Set UI filter order for accel and gyro (1st, 2nd, or 3rd).
  *
- * @tessera expose category=tile name=set_filter_order
+ * @tessera expose category=tile name=set_filter_order section=config
  */
 void tile_sense_i_6p6_set_filter_order(tile_t *tile,
                                         sense_i_6p6_filter_order_t accel_order,
@@ -646,14 +670,14 @@ void tile_sense_i_6p6_set_filter_order(tile_t *tile,
 /**
  * @brief  Set temperature sensor filter bandwidth.
  *
- * @tessera expose category=tile name=set_temp_filter
+ * @tessera expose category=tile name=set_temp_filter section=config
  */
 void tile_sense_i_6p6_set_temp_filter(tile_t *tile, sense_i_6p6_temp_filter_t bw);
 
 /**
  * @brief  Enable or disable the temperature sensor.
  *
- * @tessera expose category=tile name=set_temp_enabled
+ * @tessera expose category=tile name=set_temp_enabled section=config
  */
 void tile_sense_i_6p6_set_temp_enabled(tile_t *tile, uint8_t enabled);
 
@@ -664,14 +688,14 @@ void tile_sense_i_6p6_set_temp_enabled(tile_t *tile, uint8_t enabled);
 /**
  * @brief  Check if new sensor data is available.
  *
- * @tessera expose category=tile name=data_ready returns=bool
+ * @tessera expose category=tile name=data_ready returns=bool section=runtime
  */
 uint8_t tile_sense_i_6p6_data_ready(tile_t *tile);
 
 /**
  * @brief  Read raw accelerometer [X, Y, Z]. Convert: g = raw / sensitivity.
  *
- * @tessera expose category=tile name=get_raw_accels returns=int[3]
+ * @tessera expose category=tile name=get_raw_accels returns=int[3] section=runtime
  * @tessera out_buffer buffer type=int16_t length=3
  */
 void tile_sense_i_6p6_get_raw_accels(tile_t *tile, int16_t *buffer);
@@ -679,7 +703,7 @@ void tile_sense_i_6p6_get_raw_accels(tile_t *tile, int16_t *buffer);
 /**
  * @brief  Read raw gyroscope [X, Y, Z]. Convert: dps = raw / sensitivity.
  *
- * @tessera expose category=tile name=get_raw_gyros returns=int[3]
+ * @tessera expose category=tile name=get_raw_gyros returns=int[3] section=runtime
  * @tessera out_buffer buffer type=int16_t length=3
  */
 void tile_sense_i_6p6_get_raw_gyros(tile_t *tile, int16_t *buffer);
@@ -687,7 +711,7 @@ void tile_sense_i_6p6_get_raw_gyros(tile_t *tile, int16_t *buffer);
 /**
  * @brief  Burst read accel + gyro [AX, AY, AZ, GX, GY, GZ]. One transaction.
  *
- * @tessera expose category=tile name=get_raw_6dof returns=int[6]
+ * @tessera expose category=tile name=get_raw_6dof returns=int[6] section=runtime
  * @tessera out_buffer buffer type=int16_t length=6
  */
 void tile_sense_i_6p6_get_raw_6dof(tile_t *tile, int16_t *buffer);
@@ -695,17 +719,104 @@ void tile_sense_i_6p6_get_raw_6dof(tile_t *tile, int16_t *buffer);
 /**
  * @brief  Read temperature. Convert: degC = raw / 132.48 + 25.0
  *
- * @tessera expose category=tile name=get_temperature returns=int
+ * @tessera expose category=tile name=get_temperature returns=int section=runtime
  */
 int16_t tile_sense_i_6p6_get_temperature(tile_t *tile);
 
 /**
  * @brief  Read all 7 channels [Temp, AX, AY, AZ, GX, GY, GZ] in one burst.
  *
- * @tessera expose category=tile name=get_raw_all returns=int[7]
+ * @tessera expose category=tile name=get_raw_all returns=int[7] section=runtime
  * @tessera out_buffer buffer type=int16_t length=7
  */
 void tile_sense_i_6p6_get_raw_all(tile_t *tile, int16_t *buffer);
+
+/* ================================================================
+ * Public API — Tier-2 idiomatic helpers
+ * ================================================================ */
+
+/**
+ * @brief  Detect whether the device is approximately face-up (Z ≈ +1g).
+ *
+ * Reads the accelerometer once and returns 1 when Z is within ±200 mg of
+ * +1 g and X/Y are within ±300 mg of 0. Uses the current ACCEL_CONFIG0
+ * full-scale range to compute thresholds at runtime, so the helper stays
+ * correct after `set_accel_range`. Integer math only.
+ *
+ * @tessera expose category=tile name=is_face_up returns=bool section=runtime
+ * @return 1 if face-up, 0 otherwise.
+ */
+uint8_t tile_sense_i_6p6_is_face_up(tile_t *tile);
+
+/**
+ * @brief  Detect whether the device is approximately face-down (Z ≈ −1g).
+ *
+ * Mirror of `is_face_up` with an inverted Z target. Same ±200 mg /
+ * ±300 mg tolerance bands; same range-aware thresholding.
+ *
+ * @tessera expose category=tile name=is_face_down returns=bool section=runtime
+ * @return 1 if face-down, 0 otherwise.
+ */
+uint8_t tile_sense_i_6p6_is_face_down(tile_t *tile);
+
+/**
+ * @brief  Detect motion: |‖a‖ − 1g| > threshold.
+ *
+ * Reads the accelerometer, computes the squared magnitude in raw counts,
+ * and compares against the squared 1-g + threshold band. Squared-form
+ * keeps the math integer (no sqrt). Threshold is symmetric around 1 g
+ * so the helper triggers on both lift and drop. Range-aware.
+ *
+ * @tessera expose category=tile name=is_moving returns=bool section=runtime
+ * @param  threshold_mg  Deviation threshold in milli-g (typical: 50–200).
+ * @return 1 if moving, 0 otherwise.
+ */
+uint8_t tile_sense_i_6p6_is_moving(tile_t *tile, uint16_t threshold_mg);
+
+/**
+ * @brief  Tilt angle of one axis vs gravity, in 0.01°.
+ *
+ * Computes `atan2(axis, sqrt(other_a^2 + other_b^2))` for the requested
+ * axis using a small integer atan2 approximation. Output range:
+ * −18000..+18000 (i.e. −180.00°..+180.00°). Returns 0 and writes
+ * 0 to `*out_centi_deg` if the device is in free-fall or the
+ * accelerometer is off. Range-aware.
+ *
+ * @tessera expose category=tile name=read_tilt_centi_degrees returns=bool section=runtime
+ * @param  axis           0 = X, 1 = Y, 2 = Z.
+ * @param  out_centi_deg  Output tilt in 0.01° (signed, −18000..+18000).
+ * @return 1 on success, 0 on bad axis or zero vector.
+ */
+uint8_t tile_sense_i_6p6_read_tilt_centi_degrees(tile_t *tile,
+                                                  uint8_t axis,
+                                                  int16_t *out_centi_deg);
+
+/**
+ * @brief  Block until a tap interrupt fires or the timeout expires.
+ *
+ * Polls INT_STATUS3 at ~1 ms cadence (delay_ms(1)). Tap detection must be
+ * enabled first via `tile_sense_i_6p6_tap_enable`. The status read is
+ * destructive (clear-on-read), so call `get_tap_result` immediately after
+ * a positive return to retrieve count/axis/direction.
+ *
+ * @tessera expose category=tile name=wait_for_tap returns=bool section=tap
+ * @param  timeout_ms  Max time to wait, in ms. Use 0 for a single-shot poll.
+ * @return 1 if a tap was detected, 0 on timeout.
+ */
+uint8_t tile_sense_i_6p6_wait_for_tap(tile_t *tile, uint32_t timeout_ms);
+
+/**
+ * @brief  Block until a wake-on-motion interrupt fires or the timeout expires.
+ *
+ * Polls INT_STATUS2 at ~1 ms cadence. WOM must be configured (thresholds
+ * + enable) first. Returns on any-axis WOM. The status read clears the
+ * latch.
+ *
+ * @tessera expose category=tile name=wait_for_motion returns=bool section=wom
+ * @param  timeout_ms  Max time to wait, in ms. Use 0 for a single-shot poll.
+ * @return 1 if motion was detected, 0 on timeout.
+ */
+uint8_t tile_sense_i_6p6_wait_for_motion(tile_t *tile, uint32_t timeout_ms);
 
 /* ================================================================
  * Public API — FIFO
@@ -714,7 +825,7 @@ void tile_sense_i_6p6_get_raw_all(tile_t *tile, int16_t *buffer);
 /**
  * @brief  Configure the FIFO.
  *
- * @tessera expose category=tile name=fifo_config
+ * @tessera expose category=tile name=fifo_config section=fifo
  * @param  mode       FIFO operating mode (bypass/stream/stop-on-full)
  * @param  accel      Include accel data in FIFO packets
  * @param  gyro       Include gyro data in FIFO packets
@@ -728,14 +839,14 @@ void tile_sense_i_6p6_fifo_config(tile_t *tile, sense_i_6p6_fifo_mode_t mode,
 /**
  * @brief  Set the FIFO watermark threshold in records (1–4095).
  *
- * @tessera expose category=tile name=fifo_set_watermark
+ * @tessera expose category=tile name=fifo_set_watermark section=fifo
  */
 void tile_sense_i_6p6_fifo_set_watermark(tile_t *tile, uint16_t records);
 
 /**
  * @brief  Flush the FIFO (discard all data).
  *
- * @tessera expose category=tile name=flush_fifo
+ * @tessera expose category=tile name=flush_fifo section=fifo
  */
 void tile_sense_i_6p6_fifo_flush(tile_t *tile);
 
@@ -758,14 +869,14 @@ uint16_t tile_sense_i_6p6_fifo_read_packets(tile_t *tile,
 /**
  * @brief  Read the FIFO record count.
  *
- * @tessera expose category=tile name=fifo_count returns=int
+ * @tessera expose category=tile name=fifo_count returns=int section=fifo
  */
 uint16_t tile_sense_i_6p6_fifo_count(tile_t *tile);
 
 /**
  * @brief  Get the number of lost FIFO packets since last check.
  *
- * @tessera expose category=tile name=fifo_lost_count returns=int
+ * @tessera expose category=tile name=fifo_lost_count returns=int section=fifo
  */
 uint16_t tile_sense_i_6p6_fifo_lost_count(tile_t *tile);
 
@@ -776,7 +887,7 @@ uint16_t tile_sense_i_6p6_fifo_lost_count(tile_t *tile);
 /**
  * @brief  Configure INT1 pin behavior.
  *
- * @tessera expose category=tile name=int1_config
+ * @tessera expose category=tile name=int1_config section=interrupts
  * @param  config  OR'd flags: ACTIVE_HIGH|PUSH_PULL|LATCHED etc.
  */
 void tile_sense_i_6p6_int1_config(tile_t *tile, uint8_t config);
@@ -784,7 +895,7 @@ void tile_sense_i_6p6_int1_config(tile_t *tile, uint8_t config);
 /**
  * @brief  Route data-ready interrupt to INT1.
  *
- * @tessera expose category=tile name=int1_data_ready
+ * @tessera expose category=tile name=int1_data_ready section=interrupts
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int1_data_ready(tile_t *tile, uint8_t enabled);
@@ -792,7 +903,7 @@ void tile_sense_i_6p6_int1_data_ready(tile_t *tile, uint8_t enabled);
 /**
  * @brief  Route FIFO watermark interrupt to INT1.
  *
- * @tessera expose category=tile name=int1_fifo_ths
+ * @tessera expose category=tile name=int1_fifo_ths section=interrupts
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int1_fifo_ths(tile_t *tile, uint8_t enabled);
@@ -800,7 +911,7 @@ void tile_sense_i_6p6_int1_fifo_ths(tile_t *tile, uint8_t enabled);
 /**
  * @brief  Route WOM (wake-on-motion) interrupt to INT1.
  *
- * @tessera expose category=tile name=int1_wom
+ * @tessera expose category=tile name=int1_wom section=interrupts
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int1_wom(tile_t *tile, uint8_t enabled);
@@ -811,7 +922,7 @@ void tile_sense_i_6p6_int1_wom(tile_t *tile, uint8_t enabled);
  * Mirrors int1_config for the chip's second interrupt pin (tile pad 8).
  * INT_CONFIG bits [5:3] hold INT2's polarity / drive / mode bits.
  *
- * @tessera expose category=tile name=int2_config
+ * @tessera expose category=tile name=int2_config section=interrupts
  * @param  config  OR'd flags: ACTIVE_HIGH|PUSH_PULL|LATCHED etc. (same
  *                 layout as int1_config; the driver shifts the bits
  *                 into the INT2 positions internally).
@@ -821,7 +932,7 @@ void tile_sense_i_6p6_int2_config(tile_t *tile, uint8_t config);
 /**
  * @brief  Route data-ready interrupt to INT2.
  *
- * @tessera expose category=tile name=int2_data_ready
+ * @tessera expose category=tile name=int2_data_ready section=interrupts
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int2_data_ready(tile_t *tile, uint8_t enabled);
@@ -829,7 +940,7 @@ void tile_sense_i_6p6_int2_data_ready(tile_t *tile, uint8_t enabled);
 /**
  * @brief  Route FIFO watermark interrupt to INT2.
  *
- * @tessera expose category=tile name=int2_fifo_ths
+ * @tessera expose category=tile name=int2_fifo_ths section=interrupts
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int2_fifo_ths(tile_t *tile, uint8_t enabled);
@@ -837,7 +948,7 @@ void tile_sense_i_6p6_int2_fifo_ths(tile_t *tile, uint8_t enabled);
 /**
  * @brief  Route WOM (wake-on-motion) interrupt to INT2.
  *
- * @tessera expose category=tile name=int2_wom
+ * @tessera expose category=tile name=int2_wom section=interrupts
  * @param  enabled  1 to enable, 0 to disable
  */
 void tile_sense_i_6p6_int2_wom(tile_t *tile, uint8_t enabled);
@@ -851,7 +962,7 @@ typedef enum {
 /**
  * @brief  Set the INT pin pulse-width when configured for pulse mode.
  *
- * @tessera expose category=tile name=set_int_pulse_duration
+ * @tessera expose category=tile name=set_int_pulse_duration section=interrupts
  *
  * Applies to both INT1 and INT2 (it's a chip-wide setting in
  * INT_CONFIG1 bit 6). Only affects pulse-mode interrupts; in latched
@@ -872,7 +983,7 @@ typedef enum {
 /**
  * @brief  Reset a single chip subsystem without touching the others.
  *
- * @tessera expose category=tile name=subsystem_reset
+ * @tessera expose category=tile name=subsystem_reset section=advanced
  *
  * Issues the relevant SIGNAL_PATH_RESET bit. Distinct from the
  * driver's full `reset()` (which re-initialises the whole chip) and
@@ -893,21 +1004,21 @@ void tile_sense_i_6p6_subsystem_reset(tile_t *tile,
 /**
  * @brief  Read and clear INT_STATUS register.
  *
- * @tessera expose category=tile name=get_int_status returns=int
+ * @tessera expose category=tile name=get_int_status returns=int section=interrupts
  */
 uint8_t tile_sense_i_6p6_get_int_status(tile_t *tile);
 
 /**
  * @brief  Read and clear INT_STATUS2 (WOM/SMD flags).
  *
- * @tessera expose category=tile name=get_int_status2 returns=int
+ * @tessera expose category=tile name=get_int_status2 returns=int section=interrupts
  */
 uint8_t tile_sense_i_6p6_get_int_status2(tile_t *tile);
 
 /**
  * @brief  Read and clear INT_STATUS3 (APEX: step/tilt/tap flags).
  *
- * @tessera expose category=tile name=get_int_status3 returns=int
+ * @tessera expose category=tile name=get_int_status3 returns=int section=interrupts
  */
 uint8_t tile_sense_i_6p6_get_int_status3(tile_t *tile);
 
@@ -918,7 +1029,7 @@ uint8_t tile_sense_i_6p6_get_int_status3(tile_t *tile);
 /**
  * @brief  Configure Wake-on-Motion thresholds.
  *
- * @tessera expose category=tile name=wom_config
+ * @tessera expose category=tile name=wom_config section=wom
  * @param  x_mg  X-axis threshold in mg (0–1000, resolution ~3.9 mg)
  * @param  y_mg  Y-axis threshold in mg
  * @param  z_mg  Z-axis threshold in mg
@@ -933,14 +1044,14 @@ void tile_sense_i_6p6_wom_config(tile_t *tile,
 /**
  * @brief  Enable WOM. Must configure thresholds first.
  *
- * @tessera expose category=tile name=wom_enable
+ * @tessera expose category=tile name=wom_enable section=wom
  */
 void tile_sense_i_6p6_wom_enable(tile_t *tile);
 
 /**
  * @brief  Disable WOM.
  *
- * @tessera expose category=tile name=wom_disable
+ * @tessera expose category=tile name=wom_disable section=wom
  */
 void tile_sense_i_6p6_wom_disable(tile_t *tile);
 
@@ -951,7 +1062,7 @@ void tile_sense_i_6p6_wom_disable(tile_t *tile);
 /**
  * @brief  Configure and enable SMD. WOM thresholds must be set first.
  *
- * @tessera expose category=tile name=smd_config
+ * @tessera expose category=tile name=smd_config section=smd
  */
 void tile_sense_i_6p6_smd_config(tile_t *tile, sense_i_6p6_smd_mode_t mode);
 
@@ -964,7 +1075,7 @@ void tile_sense_i_6p6_smd_config(tile_t *tile, sense_i_6p6_smd_mode_t mode);
  *
  * Requires accel at ≥25 Hz. Initializes the DMP if not already running.
  *
- * @tessera expose category=tile name=pedometer_enable
+ * @tessera expose category=tile name=pedometer_enable section=pedometer
  * @param  dmp_odr  DMP processing rate (25 or 50 Hz)
  */
 void tile_sense_i_6p6_pedometer_enable(tile_t *tile, sense_i_6p6_dmp_odr_t dmp_odr);
@@ -972,14 +1083,14 @@ void tile_sense_i_6p6_pedometer_enable(tile_t *tile, sense_i_6p6_dmp_odr_t dmp_o
 /**
  * @brief  Disable the pedometer.
  *
- * @tessera expose category=tile name=pedometer_disable
+ * @tessera expose category=tile name=pedometer_disable section=pedometer
  */
 void tile_sense_i_6p6_pedometer_disable(tile_t *tile);
 
 /**
  * @brief  Read the step count.
  *
- * @tessera expose category=tile name=get_step_count returns=int
+ * @tessera expose category=tile name=get_step_count returns=int section=pedometer
  * @return 16-bit step count (resets on power cycle or DMP reset)
  */
 uint16_t tile_sense_i_6p6_get_step_count(tile_t *tile);
@@ -987,7 +1098,7 @@ uint16_t tile_sense_i_6p6_get_step_count(tile_t *tile);
 /**
  * @brief  Read the step cadence.
  *
- * @tessera expose category=tile name=get_step_cadence returns=int
+ * @tessera expose category=tile name=get_step_cadence returns=int section=pedometer
  * @return Steps per second in u6.2 fixed-point (divide by 4.0 for float)
  */
 uint8_t tile_sense_i_6p6_get_step_cadence(tile_t *tile);
@@ -995,7 +1106,7 @@ uint8_t tile_sense_i_6p6_get_step_cadence(tile_t *tile);
 /**
  * @brief  Read the activity classification.
  *
- * @tessera expose category=tile name=get_activity returns=int
+ * @tessera expose category=tile name=get_activity returns=int section=pedometer
  * @return 0=unknown, 1=walk, 2=run
  */
 sense_i_6p6_activity_t tile_sense_i_6p6_get_activity(tile_t *tile);
@@ -1010,7 +1121,7 @@ sense_i_6p6_activity_t tile_sense_i_6p6_get_activity(tile_t *tile);
  * Triggers when device tilts >35° for the configured wait time.
  * Requires accel at ≥25 Hz. Initializes DMP if needed.
  *
- * @tessera expose category=tile name=enable_tilt
+ * @tessera expose category=tile name=enable_tilt section=tilt
  * @param wait_seconds [0..6] s Time the tilt must be sustained (0, 2, 4, or 6).
  */
 void tile_sense_i_6p6_tilt_enable(tile_t *tile, uint8_t wait_seconds);
@@ -1018,7 +1129,7 @@ void tile_sense_i_6p6_tilt_enable(tile_t *tile, uint8_t wait_seconds);
 /**
  * @brief  Disable tilt detection.
  *
- * @tessera expose category=tile name=disable_tilt
+ * @tessera expose category=tile name=disable_tilt section=tilt
  */
 void tile_sense_i_6p6_tilt_disable(tile_t *tile);
 
@@ -1032,14 +1143,14 @@ void tile_sense_i_6p6_tilt_disable(tile_t *tile);
  * Requires accel in LN mode at 200 Hz, 500 Hz, or 1 kHz.
  * Initializes DMP if needed.
  *
- * @tessera expose category=tile name=enable_tap
+ * @tessera expose category=tile name=enable_tap section=tap
  */
 void tile_sense_i_6p6_tap_enable(tile_t *tile);
 
 /**
  * @brief  Disable tap detection.
  *
- * @tessera expose category=tile name=disable_tap
+ * @tessera expose category=tile name=disable_tap section=tap
  */
 void tile_sense_i_6p6_tap_disable(tile_t *tile);
 
@@ -1056,6 +1167,7 @@ void tile_sense_i_6p6_get_tap_result(tile_t *tile, sense_i_6p6_tap_result_t *res
 /**
  * @brief  Set user-programmable gyro offset.
  *
+ * @tessera expose category=tile name=set_gyro_offset section=advanced
  * @param  x_dps  X offset in dps × 16 (12-bit signed, ±128 dps max, 0.0625 dps resolution)
  * @param  y_dps  Y offset
  * @param  z_dps  Z offset
@@ -1066,6 +1178,7 @@ void tile_sense_i_6p6_set_gyro_offset(tile_t *tile,
 /**
  * @brief  Set user-programmable accel offset.
  *
+ * @tessera expose category=tile name=set_accel_offset section=advanced
  * @param  x_mg  X offset in mg (12-bit signed, ±2000 mg max, 1 mg resolution)
  * @param  y_mg  Y offset
  * @param  z_mg  Z offset
@@ -1089,6 +1202,10 @@ uint8_t tile_sense_i_6p6_self_test(tile_t *tile, uint8_t *accel_pass, uint8_t *g
  *
  * Automatically switches to the specified bank and back to bank 0.
  * For advanced/debug use.
+ *
+ * @tessera expose category=tile name=read_reg returns=int section=advanced
+ * @param  bank  Bank index (0, 1, 2, or 4).
+ * @param  reg   Register address within the bank.
  */
 uint8_t tile_sense_i_6p6_read_reg(tile_t *tile, uint8_t bank, uint8_t reg);
 
@@ -1097,6 +1214,11 @@ uint8_t tile_sense_i_6p6_read_reg(tile_t *tile, uint8_t bank, uint8_t reg);
  *
  * Automatically switches to the specified bank and back to bank 0.
  * For advanced/debug use.
+ *
+ * @tessera expose category=tile name=write_reg section=advanced
+ * @param  bank  Bank index (0, 1, 2, or 4).
+ * @param  reg   Register address within the bank.
+ * @param  val   Byte to write.
  */
 void tile_sense_i_6p6_write_reg(tile_t *tile, uint8_t bank, uint8_t reg, uint8_t val);
 
