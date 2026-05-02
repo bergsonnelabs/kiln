@@ -38,9 +38,10 @@
         {
           "af": 6,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI3.CLK",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI3"
         },
         {
           "note": "",
@@ -104,9 +105,10 @@
         {
           "af": 6,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI3.CS",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI3"
         },
         {
           "note": "",
@@ -131,9 +133,10 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SAI1.D2",
-          "direction": ""
+          "direction": "",
+          "interface": "SAI1"
         },
         {
           "af": 9,
@@ -163,9 +166,10 @@
         {
           "af": 4,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C3.CLK",
-          "direction": ""
+          "direction": "",
+          "interface": "I2C3"
         },
         {
           "note": "",
@@ -183,16 +187,18 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SAI1.CK2",
-          "direction": ""
+          "direction": "",
+          "interface": "SAI1"
         },
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SAI1.MCLK_A",
-          "direction": ""
+          "direction": "",
+          "interface": "SAI1"
         },
         {
           "af": 9,
@@ -222,9 +228,10 @@
         {
           "af": 4,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C3.DAT",
-          "direction": ""
+          "direction": "",
+          "interface": "I2C3"
         },
         {
           "note": "",
@@ -242,9 +249,10 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SAI1.SCK_A",
-          "direction": ""
+          "direction": "",
+          "interface": "SAI1"
         },
         {
           "af": 9,
@@ -274,9 +282,10 @@
         {
           "af": 6,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI3.MOSI",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI3"
         },
         {
           "af": 1,
@@ -309,9 +318,10 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "USART2.RX",
-          "direction": ""
+          "direction": "",
+          "interface": "USART2"
         },
         {
           "af": 9,
@@ -341,9 +351,10 @@
         {
           "af": 6,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI3.MISO",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI3"
         },
         {
           "note": "",
@@ -389,7 +400,7 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "IR_OUT",
           "direction": ""
         }
@@ -414,9 +425,10 @@
         {
           "af": 5,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI1.CS",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI1"
         },
         {
           "af": 1,
@@ -428,9 +440,10 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "USART2.TX",
-          "direction": ""
+          "direction": "",
+          "interface": "USART2"
         },
         {
           "af": 9,
@@ -460,9 +473,10 @@
         {
           "af": 5,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI1.CLK",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI1"
         },
         {
           "af": 1,
@@ -488,16 +502,18 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "USART2.RX",
-          "direction": ""
+          "direction": "",
+          "interface": "USART2"
         },
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SAI1.MCLK_B",
-          "direction": ""
+          "direction": "",
+          "interface": "SAI1"
         },
         {
           "af": 9,
@@ -527,16 +543,18 @@
         {
           "af": 4,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C1.CLK",
-          "direction": ""
+          "direction": "",
+          "interface": "I2C1"
         },
         {
           "af": 5,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI1.MOSI",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI1"
         },
         {
           "af": 1,
@@ -555,9 +573,10 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "USART2.RTS_DE",
-          "direction": ""
+          "direction": "",
+          "interface": "USART2"
         },
         {
           "af": 14,
@@ -587,16 +606,18 @@
         {
           "af": 4,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C1.DAT",
-          "direction": ""
+          "direction": "",
+          "interface": "I2C1"
         },
         {
           "af": 5,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI1.MISO",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI1"
         },
         {
           "af": 1,
@@ -622,9 +643,10 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "USART2.CK",
-          "direction": ""
+          "direction": "",
+          "interface": "USART2"
         },
         {
           "af": 9,
@@ -700,9 +722,10 @@
         {
           "af": 3,
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "USART2.TX",
-          "direction": ""
+          "direction": "",
+          "interface": "USART2"
         }
       ]
     },
@@ -764,45 +787,6 @@
       ]
     }
   ],
-  "clock": {
-    "default": "hsi16",
-    "sources": [
-      {
-        "type": "hsi16",
-        "description": "16MHz internal RC",
-        "frequency_mhz": 16
-      },
-      {
-        "type": "hse",
-        "description": "32MHz crystal (on-board)",
-        "frequency_mhz": 32
-      }
-    ],
-    "configurations": [
-      {
-        "name": "low",
-        "source": "hsi16",
-        "sysclk_mhz": 16
-      },
-      {
-        "name": "default",
-        "source": "hse",
-        "sysclk_mhz": 32
-      },
-      {
-        "pll": true,
-        "name": "high",
-        "source": "hse",
-        "sysclk_mhz": 64
-      },
-      {
-        "pll": true,
-        "name": "max",
-        "source": "hse",
-        "sysclk_mhz": 100
-      }
-    ]
-  },
   "power": [
     {
       "max": 3.6,
@@ -821,6 +805,959 @@
       ]
     }
   ],
+  "config": {
+    "gpio": {
+      "kind": "padconfig",
+      "group": "Pinmux",
+      "label": "GPIO pad configuration",
+      "perPad": {
+        "fields": {
+          "exti": {
+            "kind": "select",
+            "when": {
+              "direction": "in"
+            },
+            "default": "none",
+            "options": [
+              {
+                "value": "none"
+              },
+              {
+                "value": "rising"
+              },
+              {
+                "value": "falling"
+              },
+              {
+                "value": "both"
+              }
+            ]
+          },
+          "pull": {
+            "kind": "select",
+            "default": "none",
+            "options": [
+              {
+                "value": "none"
+              },
+              {
+                "value": "up"
+              },
+              {
+                "value": "down"
+              }
+            ]
+          },
+          "speed": {
+            "kind": "select",
+            "default": "medium",
+            "options": [
+              {
+                "value": "low"
+              },
+              {
+                "value": "medium"
+              },
+              {
+                "value": "high"
+              },
+              {
+                "value": "very-high"
+              }
+            ]
+          },
+          "direction": {
+            "kind": "select",
+            "default": "in",
+            "options": [
+              {
+                "value": "in"
+              },
+              {
+                "value": "out"
+              }
+            ]
+          },
+          "output_default": {
+            "kind": "select",
+            "when": {
+              "direction": "out"
+            },
+            "default": "low",
+            "options": [
+              {
+                "value": "low"
+              },
+              {
+                "value": "high"
+              }
+            ]
+          }
+        }
+      },
+      "appliesTo": {
+        "selector": "pads.<padNum>",
+        "whereValueDerived": {
+          "role": "gpio"
+        }
+      }
+    },
+    "pads": {
+      "kind": "padmux",
+      "group": "Pinmux",
+      "label": "Pad function assignments",
+      "perPad": {
+        "2": {
+          "label": "Pad 2",
+          "default": "A0",
+          "options": [
+            {
+              "value": "A0",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 6,
+              "value": "SPI3.CLK",
+              "interface": "SPI3"
+            },
+            {
+              "value": "ADC9",
+              "derived": {
+                "role": "analog"
+              }
+            },
+            {
+              "af": 1,
+              "value": "TIM1.2N",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 2,
+              "value": "TIM3.3",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 14,
+              "value": "TIM3.ETR",
+              "derived": {
+                "role": "timer-input"
+              }
+            },
+            {
+              "af": 0,
+              "value": "LPTIM1.IN1",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 9,
+              "value": "G2.IO2"
+            }
+          ]
+        },
+        "3": {
+          "label": "Pad 3",
+          "default": "A5",
+          "options": [
+            {
+              "value": "A5",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 6,
+              "value": "SPI3.CS",
+              "interface": "SPI3"
+            },
+            {
+              "value": "ADC4",
+              "derived": {
+                "role": "analog"
+              }
+            },
+            {
+              "af": 1,
+              "value": "TIM2.1",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 14,
+              "value": "LPTIM2.ETR",
+              "derived": {
+                "role": "timer-input"
+              }
+            },
+            {
+              "af": 3,
+              "value": "SAI1.D2",
+              "interface": "SAI1"
+            },
+            {
+              "af": 9,
+              "value": "G1.IO4"
+            }
+          ]
+        },
+        "4": {
+          "label": "Pad 4",
+          "default": "A6",
+          "options": [
+            {
+              "value": "A6",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 4,
+              "value": "I2C3.CLK",
+              "interface": "I2C3"
+            },
+            {
+              "value": "ADC3",
+              "derived": {
+                "role": "analog"
+              }
+            },
+            {
+              "af": 1,
+              "value": "TIM2.4",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 3,
+              "value": "SAI1.CK2",
+              "interface": "SAI1"
+            },
+            {
+              "af": 3,
+              "value": "SAI1.MCLK_A",
+              "interface": "SAI1"
+            },
+            {
+              "af": 9,
+              "value": "G1.IO3"
+            }
+          ]
+        },
+        "5": {
+          "label": "Pad 5",
+          "default": "A7",
+          "options": [
+            {
+              "value": "A7",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 4,
+              "value": "I2C3.DAT",
+              "interface": "I2C3"
+            },
+            {
+              "value": "ADC2",
+              "derived": {
+                "role": "analog"
+              }
+            },
+            {
+              "af": 1,
+              "value": "TIM2.3",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 3,
+              "value": "SAI1.SCK_A",
+              "interface": "SAI1"
+            },
+            {
+              "af": 9,
+              "value": "G1.IO2"
+            }
+          ]
+        },
+        "6": {
+          "label": "Pad 6",
+          "default": "B8",
+          "options": [
+            {
+              "value": "B8",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 6,
+              "value": "SPI3.MOSI",
+              "interface": "SPI3"
+            },
+            {
+              "af": 1,
+              "value": "TIM1.1",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 2,
+              "value": "TIM3.ETR",
+              "derived": {
+                "role": "timer-input"
+              }
+            },
+            {
+              "af": 14,
+              "value": "TIM16.1N",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 0,
+              "value": "LPTIM1.ETR",
+              "derived": {
+                "role": "timer-input"
+              }
+            },
+            {
+              "af": 3,
+              "value": "USART2.RX",
+              "interface": "USART2"
+            },
+            {
+              "af": 9,
+              "value": "G2.IO4"
+            }
+          ]
+        },
+        "7": {
+          "label": "Pad 7",
+          "default": "B9",
+          "options": [
+            {
+              "value": "B9",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 6,
+              "value": "SPI3.MISO",
+              "interface": "SPI3"
+            },
+            {
+              "value": "ADC10",
+              "derived": {
+                "role": "analog"
+              }
+            },
+            {
+              "af": 1,
+              "value": "TIM1.3N",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 2,
+              "value": "TIM3.4",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 14,
+              "value": "TIM16.1",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 13,
+              "value": "LPTIM2.IN1",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 9,
+              "value": "G2.IO3"
+            },
+            {
+              "af": 3,
+              "value": "IR_OUT",
+              "derived": {
+                "role": "gpio"
+              }
+            }
+          ]
+        },
+        "8": {
+          "label": "Pad 8",
+          "default": "A12",
+          "options": [
+            {
+              "value": "A12",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 5,
+              "value": "SPI1.CS",
+              "interface": "SPI1"
+            },
+            {
+              "af": 1,
+              "value": "TIM1.2",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 3,
+              "value": "USART2.TX",
+              "interface": "USART2"
+            },
+            {
+              "af": 9,
+              "value": "G3.IO4"
+            }
+          ]
+        },
+        "9": {
+          "label": "Pad 9",
+          "default": "B4",
+          "options": [
+            {
+              "value": "B4",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 5,
+              "value": "SPI1.CLK",
+              "interface": "SPI1"
+            },
+            {
+              "af": 1,
+              "value": "TIM1.3",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 14,
+              "value": "TIM17.1",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 2,
+              "value": "LPTIM2.IN2",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 3,
+              "value": "USART2.RX",
+              "interface": "USART2"
+            },
+            {
+              "af": 3,
+              "value": "SAI1.MCLK_B",
+              "interface": "SAI1"
+            },
+            {
+              "af": 9,
+              "value": "G3.IO1"
+            }
+          ]
+        },
+        "10": {
+          "label": "Pad 10",
+          "default": "A15",
+          "options": [
+            {
+              "value": "A15",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 4,
+              "value": "I2C1.CLK",
+              "interface": "I2C1"
+            },
+            {
+              "af": 5,
+              "value": "SPI1.MOSI",
+              "interface": "SPI1"
+            },
+            {
+              "af": 1,
+              "value": "TIM1.ETR",
+              "derived": {
+                "role": "timer-input"
+              }
+            },
+            {
+              "af": 2,
+              "value": "LPTIM1.2",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 3,
+              "value": "USART2.RTS_DE",
+              "interface": "USART2"
+            },
+            {
+              "af": 14,
+              "value": "TIM17.BKIN",
+              "derived": {
+                "role": "timer-input"
+              }
+            }
+          ]
+        },
+        "11": {
+          "label": "Pad 11",
+          "default": "B3",
+          "options": [
+            {
+              "value": "B3",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 4,
+              "value": "I2C1.DAT",
+              "interface": "I2C1"
+            },
+            {
+              "af": 5,
+              "value": "SPI1.MISO",
+              "interface": "SPI1"
+            },
+            {
+              "af": 1,
+              "value": "TIM1.4",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 14,
+              "value": "TIM17.1N",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 2,
+              "value": "LPTIM1.IN2",
+              "derived": {
+                "role": "timer-output"
+              }
+            },
+            {
+              "af": 3,
+              "value": "USART2.CK",
+              "interface": "USART2"
+            },
+            {
+              "af": 9,
+              "value": "G3.IO2"
+            }
+          ]
+        },
+        "12": {
+          "label": "Pad 12",
+          "default": "A13",
+          "options": [
+            {
+              "value": "A13",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 0,
+              "value": "SWDIO",
+              "derived": {
+                "role": "system"
+              }
+            },
+            {
+              "af": 14,
+              "value": "TIM17.BKIN",
+              "derived": {
+                "role": "timer-input"
+              }
+            },
+            {
+              "af": 9,
+              "value": "G3.IO3"
+            }
+          ]
+        },
+        "13": {
+          "label": "Pad 13",
+          "default": "A14",
+          "options": [
+            {
+              "value": "A14",
+              "derived": {
+                "role": "gpio"
+              }
+            },
+            {
+              "af": 0,
+              "value": "SWCLK",
+              "derived": {
+                "role": "system"
+              }
+            },
+            {
+              "af": 3,
+              "value": "USART2.TX",
+              "interface": "USART2"
+            }
+          ]
+        },
+        "15": {
+          "label": "Pad 15",
+          "default": "BOOT0",
+          "options": [
+            {
+              "value": "BOOT0",
+              "derived": {
+                "role": "system"
+              }
+            },
+            {
+              "value": "H3",
+              "derived": {
+                "role": "gpio"
+              }
+            }
+          ]
+        }
+      },
+      "derives": "catalog.pads"
+    },
+    "clock": {
+      "kind": "select",
+      "group": "Clock",
+      "label": "Clock configuration",
+      "default": "medium",
+      "options": [
+        {
+          "label": "Low (16MHz, HSI16)",
+          "value": "low",
+          "firmware_contract": [
+            {
+              "type": "clock",
+              "source": "hsi16",
+              "sysclk_mhz": 16
+            }
+          ]
+        },
+        {
+          "label": "Medium (32MHz, HSE)",
+          "value": "medium",
+          "firmware_contract": [
+            {
+              "type": "clock",
+              "source": "hse",
+              "sysclk_mhz": 32
+            }
+          ]
+        },
+        {
+          "label": "High (64MHz, HSE + PLL)",
+          "value": "high",
+          "firmware_contract": [
+            {
+              "pll": true,
+              "type": "clock",
+              "source": "hse",
+              "sysclk_mhz": 64
+            }
+          ]
+        },
+        {
+          "label": "Max (100MHz, HSE + PLL)",
+          "value": "max",
+          "firmware_contract": [
+            {
+              "pll": true,
+              "type": "clock",
+              "source": "hse",
+              "sysclk_mhz": 100
+            }
+          ]
+        }
+      ]
+    },
+    "bootloader": {
+      "kind": "multiselect",
+      "group": "Bootloader",
+      "label": "Programming methods",
+      "default": [],
+      "options": [
+        {
+          "value": "USART1"
+        },
+        {
+          "value": "I2C3"
+        },
+        {
+          "value": "SPI3"
+        }
+      ]
+    },
+    "interfaces": {
+      "kind": "instances",
+      "group": "Interfaces",
+      "label": "Interfaces",
+      "derives": "catalog.interfaces",
+      "defaults": {
+        "role": {
+          "kind": "select",
+          "when": {
+            "enabled": true
+          },
+          "default": "master",
+          "options": [
+            {
+              "value": "master"
+            },
+            {
+              "value": "slave"
+            }
+          ]
+        },
+        "speed": {
+          "max": 1000000,
+          "min": 100000,
+          "kind": "number",
+          "unit": "Hz",
+          "when": {
+            "enabled": true
+          },
+          "default": 400000
+        },
+        "enabled": {
+          "kind": "boolean",
+          "default": false
+        }
+      },
+      "perInstance": {
+        "I2C1": {
+          "fields": {
+            "address": {
+              "max": 119,
+              "min": 8,
+              "kind": "number",
+              "unit": "7-bit",
+              "when": {
+                "role": "slave"
+              },
+              "default": 66
+            }
+          },
+          "netlist": {
+            "when": {
+              "enabled": true
+            },
+            "buses": [
+              {
+                "bus": "i2c",
+                "tag": "I2C1.bus",
+                "signalsFrom": "interfaces.I2C1.pad_assignments"
+              }
+            ]
+          },
+          "requires": {
+            "predicates": {
+              "pads.10": "I2C1.CLK",
+              "pads.11": "I2C1.DAT"
+            }
+          },
+          "firmware_contract": {
+            "entries": [
+              {
+                "via": "register",
+                "type": "register",
+                "value": 1,
+                "register": "RCC.CLK_EN.I2C1"
+              }
+            ]
+          }
+        },
+        "I2C3": {
+          "fields": {
+            "address": {
+              "max": 119,
+              "min": 8,
+              "kind": "number",
+              "unit": "7-bit",
+              "when": {
+                "role": "slave"
+              },
+              "default": 66
+            }
+          },
+          "netlist": {
+            "when": {
+              "enabled": true
+            },
+            "buses": [
+              {
+                "bus": "i2c",
+                "tag": "I2C3.bus",
+                "signalsFrom": "interfaces.I2C3.pad_assignments"
+              }
+            ]
+          },
+          "requires": {
+            "predicates": {
+              "pads.4": "I2C3.CLK",
+              "pads.5": "I2C3.DAT"
+            }
+          },
+          "firmware_contract": {
+            "entries": [
+              {
+                "via": "register",
+                "type": "register",
+                "value": 1,
+                "register": "RCC.CLK_EN.I2C3"
+              }
+            ]
+          }
+        },
+        "SAI1": {
+          "netlist": {
+            "when": {
+              "enabled": true
+            },
+            "buses": [
+              {
+                "bus": "i2s",
+                "tag": "SAI1.bus",
+                "signalsFrom": "interfaces.SAI1.pad_assignments"
+              }
+            ]
+          },
+          "firmware_contract": {
+            "entries": [
+              {
+                "via": "register",
+                "type": "register",
+                "value": 1,
+                "register": "RCC.CLK_EN.SAI1"
+              }
+            ]
+          }
+        },
+        "SPI1": {
+          "netlist": {
+            "when": {
+              "enabled": true
+            },
+            "buses": [
+              {
+                "bus": "spi",
+                "tag": "SPI1.bus",
+                "signalsFrom": "interfaces.SPI1.pad_assignments"
+              }
+            ]
+          },
+          "firmware_contract": {
+            "entries": [
+              {
+                "via": "register",
+                "type": "register",
+                "value": 1,
+                "register": "RCC.CLK_EN.SPI1"
+              }
+            ]
+          }
+        },
+        "SPI3": {
+          "netlist": {
+            "when": {
+              "enabled": true
+            },
+            "buses": [
+              {
+                "bus": "spi",
+                "tag": "SPI3.bus",
+                "signalsFrom": "interfaces.SPI3.pad_assignments"
+              }
+            ]
+          },
+          "firmware_contract": {
+            "entries": [
+              {
+                "via": "register",
+                "type": "register",
+                "value": 1,
+                "register": "RCC.CLK_EN.SPI3"
+              }
+            ]
+          }
+        },
+        "USART2": {
+          "netlist": {
+            "when": {
+              "enabled": true
+            },
+            "buses": [
+              {
+                "bus": "uart",
+                "tag": "USART2.bus",
+                "signalsFrom": "interfaces.USART2.pad_assignments"
+              }
+            ]
+          },
+          "firmware_contract": {
+            "entries": [
+              {
+                "via": "register",
+                "type": "register",
+                "value": 1,
+                "register": "RCC.CLK_EN.USART2"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
   "family": "Core",
   "package": {
     "pads": 16,
@@ -830,6 +1767,48 @@
     "size_z": 0
   },
   "tile_id": 8,
+  "features": {
+    "led": {
+      "kind": "led",
+      "color": "red",
+      "label": "Status LED",
+      "control": {
+        "pin": "PB12",
+        "via": "gpio",
+        "polarity": "active-high"
+      },
+      "center_x": -1600,
+      "center_y": -2350,
+      "rotation": 90
+    },
+    "clock": {
+      "kind": "clock",
+      "sources": [
+        {
+          "type": "hsi16",
+          "description": "16MHz internal RC",
+          "frequency_mhz": 16
+        },
+        {
+          "type": "hse",
+          "description": "32MHz crystal (on-board)",
+          "frequency_mhz": 32
+        }
+      ],
+      "boot_source": "hsi16"
+    },
+    "antenna": {
+      "kind": "antenna",
+      "type": "integrated",
+      "label": "Integrated 2.4GHz antenna",
+      "location": "tile end opposite the pads",
+      "protocols": [
+        "BLE"
+      ],
+      "keepout_note": "no copper traces or planes above or below the antenna end of the tile",
+      "frequency_band": "2.4GHz"
+    }
+  },
   "headline": "BLE-enabled 100MHz Cortex M33",
   "components": [
     {
@@ -858,14 +1837,20 @@
       "pad_assignments": [
         {
           "pad": "10",
+          "role": "bus",
           "function": "I2C1.CLK",
           "is_required": true
         },
         {
           "pad": "11",
+          "role": "bus",
           "function": "I2C1.DAT",
           "is_required": true
         }
+      ],
+      "mutually_exclusive": [
+        "SPI1",
+        "USART2"
       ]
     },
     {
@@ -886,14 +1871,19 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C3.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C3.DAT",
           "is_required": true
         }
+      ],
+      "mutually_exclusive": [
+        "SAI1"
       ]
     },
     {
@@ -907,20 +1897,29 @@
       "pad_assignments": [
         {
           "pad": "8",
+          "role": "other",
           "function": "SPI1.CS"
         },
         {
           "pad": "9",
+          "role": "bus",
           "function": "SPI1.CLK"
         },
         {
           "pad": "10",
+          "role": "bus",
           "function": "SPI1.MOSI"
         },
         {
           "pad": "11",
+          "role": "bus",
           "function": "SPI1.MISO"
         }
+      ],
+      "mutually_exclusive": [
+        "I2C1",
+        "SAI1",
+        "USART2"
       ]
     },
     {
@@ -934,20 +1933,27 @@
       "pad_assignments": [
         {
           "pad": "2",
+          "role": "bus",
           "function": "SPI3.CLK"
         },
         {
           "pad": "3",
+          "role": "other",
           "function": "SPI3.CS"
         },
         {
           "pad": "6",
+          "role": "bus",
           "function": "SPI3.MOSI"
         },
         {
           "pad": "7",
+          "role": "bus",
           "function": "SPI3.MISO"
         }
+      ],
+      "mutually_exclusive": [
+        "SAI1"
       ]
     },
     {
@@ -959,28 +1965,38 @@
       "pad_assignments": [
         {
           "pad": "6",
+          "role": "bus",
           "function": "USART2.RX"
         },
         {
           "pad": "8",
+          "role": "bus",
           "function": "USART2.TX"
         },
         {
           "pad": "9",
+          "role": "bus",
           "function": "USART2.RX"
         },
         {
           "pad": "10",
+          "role": "bus",
           "function": "USART2.RTS_DE"
         },
         {
           "pad": "11",
+          "role": "bus",
           "function": "USART2.CK"
         },
         {
           "pad": "13",
+          "role": "bus",
           "function": "USART2.TX"
         }
+      ],
+      "mutually_exclusive": [
+        "I2C1",
+        "SPI1"
       ]
     },
     {
@@ -992,35 +2008,40 @@
       "pad_assignments": [
         {
           "pad": "3",
+          "role": "bus",
           "function": "SAI1.D2"
         },
         {
           "pad": "4",
+          "role": "bus",
           "function": "SAI1.CK2"
         },
         {
           "pad": "4",
+          "role": "bus",
           "function": "SAI1.MCLK_A"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "SAI1.SCK_A"
         },
         {
           "pad": "9",
+          "role": "bus",
           "function": "SAI1.MCLK_B"
         }
+      ],
+      "mutually_exclusive": [
+        "I2C3",
+        "SPI1",
+        "SPI3"
       ]
     }
   ],
-  "updated_at": "2026-03-30T04:19:35.991Z",
-  "bootloaders": [
-    "USART1",
-    "I2C3",
-    "SPI3"
-  ],
+  "updated_at": "2026-05-01T12:36:00.831Z",
   "description": "The Core.W tile combines the powerful STM32WBA55 100-MHz 32-bit Cortex-M33 processor together with an integrated 2.4GHz antenna on double-size T48 (4.0 x 8.0 mm) SMD package.  The tile provides a user-configurable combination of: SW debug & bootloading; 1MB flash & 128KB SRAM; wireless communications (BLE 5.4, Thread, Matter, Zigbee, proprietary); two FM+ (1MHz) I2C ports; two SPI ports; one USART; five 12-bit 2.5Msps ADC inputs (16-bit with oversampling); many timers; ten capacitive touch inputs; one serial-audio interface; IR output; and an on-board LED",
-  "json_version": "0.31",
+  "json_version": "0.38",
   "application_notes": [
     {
       "sort": 0,

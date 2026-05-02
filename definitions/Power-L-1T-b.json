@@ -63,9 +63,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         }
       ]
@@ -81,9 +82,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         }
       ]
@@ -182,7 +184,7 @@
     {
       "max": 1.8,
       "min": 1.8,
-      "type": "",
+      "type": "system",
       "notes": "",
       "gnd_pad": [
         "1"
@@ -228,6 +230,103 @@
       ]
     }
   ],
+  "config": {
+    "ldoEnable": {
+      "kind": "boolean",
+      "group": "Outputs",
+      "label": "LDO output enabled",
+      "binding": {
+        "pad": "3",
+        "kind": "strap",
+        "states": {
+          "low": "LDO off",
+          "high": "LDO on (forced)",
+          "open": "LDO on (default)"
+        }
+      },
+      "default": true,
+      "options": [
+        {
+          "value": true,
+          "states": {
+            "3": "open"
+          }
+        },
+        {
+          "value": false,
+          "states": {
+            "3": "low"
+          },
+          "netlist": {
+            "requires": [
+              {
+                "to": {
+                  "kind": "rail",
+                  "rail": "GND"
+                },
+                "tag": "ldoEnable.disabled.connection",
+                "from": {
+                  "pad": "3",
+                  "kind": "tile"
+                },
+                "role": "power"
+              }
+            ]
+          }
+        }
+      ],
+      "description": "On-tile LDO output. When true (default), pad 3 (SW) is left floating and the LDO is on. To disable, tie pad 3 to GND."
+    },
+    "lowPowerMode": {
+      "kind": "boolean",
+      "group": "Mode",
+      "label": "Low-power mode",
+      "binding": {
+        "pad": "2",
+        "kind": "strap",
+        "states": {
+          "low": "low-power mode (forced)",
+          "high": "active mode (I2C enabled)",
+          "open": "low-power mode (default; I2C disabled)"
+        }
+      },
+      "default": true,
+      "options": [
+        {
+          "value": true,
+          "states": {
+            "2": "open"
+          }
+        },
+        {
+          "value": false,
+          "states": {
+            "2": "high"
+          },
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "output"
+                  ]
+                },
+                "tag": "lowPowerMode.disabled.attached",
+                "from": {
+                  "pad": "2",
+                  "kind": "tile"
+                },
+                "role": "control"
+              }
+            ]
+          }
+        }
+      ],
+      "description": "When enabled (default), pad 2 (LP) is left low and the chip stays in ultra-low-power mode with the I2C interface disabled. To use I2C, set false: pad 2 must be driven > 1.35V (e.g., wired to V+ rail or a Core GPIO output held high)."
+    }
+  },
   "family": "Power",
   "package": {
     "pads": 10,
@@ -271,20 +370,22 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT",
           "is_required": true
         }
       ]
     }
   ],
-  "updated_at": "2026-03-07T11:55:31.661Z",
+  "updated_at": "2026-05-01T12:44:26.220Z",
   "description": "Perfect for wearables and compact battery-powered devices, the Power.L1.T tile integrates a single-cell Lithium-Ion battery charger with a max charge current of 500mA with a programmable LDO output and a 12-bit ADC for battery and system monitoring.",
-  "json_version": "0.6",
+  "json_version": "0.9",
   "application_notes": [
     {
       "sort": 0,

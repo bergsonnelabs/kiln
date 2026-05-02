@@ -33,13 +33,15 @@
           "type": "digital",
           "function": "I2C.AD0",
           "direction": "input",
+          "interface": "I2C",
           "is_default": true
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.MISO",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -56,13 +58,15 @@
           "note": "internal pull-up resistor enabled I2C by default; connect to GND to switch to SPI",
           "type": "digital",
           "function": "I2C.EN",
-          "direction": "input"
+          "direction": "input",
+          "interface": "I2C"
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.CS",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -77,16 +81,18 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.CLK",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -101,16 +107,18 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.MOSI",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -197,6 +205,181 @@
       ]
     }
   ],
+  "config": {
+    "interrupt": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use INT line",
+      "binding": {
+        "pad": "9",
+        "kind": "output"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "disabled",
+              "register": "INT_CFG"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "EXTI"
+                  ]
+                },
+                "tag": "interrupt.attached",
+                "from": {
+                  "pad": "9",
+                  "kind": "tile"
+                },
+                "role": "interrupt"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "DRDY-on-pad-9",
+              "register": "INT_CFG"
+            }
+          ]
+        }
+      ]
+    },
+    "i2cAddress": {
+      "kind": "select",
+      "when": {
+        "interfaceMode": "i2c"
+      },
+      "group": "Interfaces",
+      "label": "I2C address",
+      "binding": {
+        "pad": "2",
+        "kind": "strap",
+        "states": {
+          "low": "0x5C",
+          "high": "0x5D (forced)",
+          "open": "0x5D (default, via internal PU)"
+        }
+      },
+      "default": "default",
+      "options": [
+        {
+          "label": "0x5D (default)",
+          "value": "default",
+          "states": {
+            "2": "open"
+          },
+          "derived": {
+            "i2c_address": "0x5D"
+          },
+          "contributes": {
+            "busAddress": {
+              "bus": "i2c",
+              "value": "0x5D"
+            }
+          }
+        },
+        {
+          "label": "0x5C (alternate)",
+          "value": "alternate",
+          "states": {
+            "2": "low"
+          },
+          "derived": {
+            "i2c_address": "0x5C"
+          },
+          "netlist": {
+            "requires": [
+              {
+                "to": {
+                  "kind": "rail",
+                  "rail": "GND"
+                },
+                "tag": "i2cAddress.alternate.connection",
+                "from": {
+                  "pad": "2",
+                  "kind": "tile"
+                },
+                "role": "power"
+              }
+            ]
+          },
+          "contributes": {
+            "busAddress": {
+              "bus": "i2c",
+              "value": "0x5C"
+            }
+          }
+        }
+      ]
+    },
+    "interfaceMode": {
+      "kind": "select",
+      "group": "Interfaces",
+      "label": "Interface mode",
+      "binding": {
+        "pad": "3",
+        "kind": "strap",
+        "states": {
+          "low": "SPI",
+          "high": "I2C/I3C (forced)",
+          "open": "I2C/I3C (default, via internal PU)"
+        }
+      },
+      "default": "i2c",
+      "options": [
+        {
+          "label": "I2C",
+          "value": "i2c",
+          "states": {
+            "3": "open"
+          },
+          "activates": {
+            "interface": "I2C"
+          }
+        },
+        {
+          "label": "SPI",
+          "value": "spi",
+          "states": {
+            "3": "low"
+          },
+          "activates": {
+            "interface": "SPI"
+          }
+        },
+        {
+          "label": "I3C",
+          "value": "i3c",
+          "states": {
+            "3": "open"
+          },
+          "netlist": {
+            "assumes": [
+              "I3C uses 2-wire bus, I2C-compatible startup"
+            ]
+          },
+          "activates": {
+            "interface": "I3C"
+          }
+        }
+      ]
+    }
+  },
   "family": "Sense",
   "package": {
     "pads": 10,
@@ -239,12 +422,28 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT"
+        },
+        {
+          "pad": "2",
+          "role": "strap",
+          "function": "I2C.AD0"
+        },
+        {
+          "pad": "3",
+          "role": "strap",
+          "function": "I2C.EN"
         }
+      ],
+      "mutually_exclusive": [
+        "I3C",
+        "SPI"
       ]
     },
     {
@@ -259,20 +458,28 @@
       "pad_assignments": [
         {
           "pad": "2",
+          "role": "bus",
           "function": "SPI.MISO"
         },
         {
           "pad": "3",
+          "role": "other",
           "function": "SPI.CS"
         },
         {
           "pad": "4",
+          "role": "bus",
           "function": "SPI.CLK"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "SPI.MOSI"
         }
+      ],
+      "mutually_exclusive": [
+        "I2C",
+        "I3C"
       ]
     },
     {
@@ -287,17 +494,23 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I3C.CLK"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I3C.DAT"
         }
+      ],
+      "mutually_exclusive": [
+        "I2C",
+        "SPI"
       ]
     }
   ],
-  "updated_at": "2026-02-19T08:20:14.956Z",
-  "description": "Barometric pressure and temperature sensor based on the ST ILPS22QS. Dual full-scale modes cover up to 1260 hPa or 4060 hPa, with 24-bit pressure output and 0.5 hPa accuracy. Integrated Qvar electrostatic sensing supports touch and gesture detection. Communicates over I\u00b2C (up to 1 MHz), SPI (up to 10 MHz), or I3C (up to 12.5 MHz) to provide data at output rates of up to 200Hz with a 128-sample deep FIFO buffer.",
-  "json_version": "0.4",
+  "updated_at": "2026-05-01T12:16:44.129Z",
+  "description": "Barometric pressure and temperature sensor based on the ST ILPS22QS. Dual full-scale modes cover up to 1260 hPa or 4060 hPa, with 24-bit pressure output and 0.5 hPa accuracy. Integrated Qvar electrostatic sensing supports touch and gesture detection. Communicates over I²C (up to 1 MHz), SPI (up to 10 MHz), or I3C (up to 12.5 MHz) to provide data at output rates of up to 200Hz with a 128-sample deep FIFO buffer.",
+  "json_version": "0.7",
   "application_notes": []
 }

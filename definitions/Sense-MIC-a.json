@@ -50,9 +50,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -67,9 +68,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -156,6 +158,62 @@
       ]
     }
   ],
+  "config": {
+    "analogOut": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use AOUT analog output",
+      "binding": {
+        "pad": "6",
+        "kind": "output"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "disabled",
+              "register": "AOUT_EN"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "ADC",
+                  "capabilities": [
+                    "analog-input"
+                  ]
+                },
+                "tag": "analogOut.attached",
+                "from": {
+                  "pad": "6",
+                  "kind": "tile"
+                },
+                "role": "data"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "enabled",
+              "register": "AOUT_EN"
+            }
+          ]
+        }
+      ],
+      "description": "Pad 6 carries the chip's filtered analog audio output. Opt in to read it via a Core ADC pad in addition to the I2C digital path."
+    }
+  },
   "family": "Sense",
   "package": {
     "pads": 10,
@@ -198,19 +256,21 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT",
           "is_required": true
         }
       ]
     }
   ],
-  "updated_at": "2026-02-17T12:38:50.787Z",
+  "updated_at": "2026-05-01T12:41:02.677Z",
   "description": "The Sense.MIC combines a PUI Audio AMM-2742-T-R omnidirectional MEMS microphone with the MAX11645 12-bit ADC. The microphone covers 20 Hz to 20 kHz with 59 dB SNR and 123 dB acoustic overload point. The ADC samples at up to 94.4 ksps and can operate a I2C speeds up to 1.7MHz, thereby fully covering the microphone's bandwidth. Suited for voice detection, sound-level monitoring, and audio recording applications.",
-  "json_version": "0.3",
+  "json_version": "0.5",
   "application_notes": []
 }

@@ -42,13 +42,15 @@
           "note": "interna pull-up enables I2C by default.  Connect to GND to switch to 3-wire SPI",
           "type": "digital",
           "function": "I2C.EN",
-          "direction": "input"
+          "direction": "input",
+          "interface": "I2C"
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.CS",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -63,16 +65,18 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.CLK",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -87,16 +91,18 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
           "direction": "bidirectional",
+          "interface": "I2C",
           "is_default": true
         },
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "SPI.SDIO",
-          "direction": ""
+          "direction": "",
+          "interface": "SPI"
         }
       ]
     },
@@ -183,6 +189,98 @@
       ]
     }
   ],
+  "config": {
+    "int": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use INT line",
+      "binding": {
+        "pad": "9",
+        "kind": "output"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "disabled",
+              "register": "INT_CONFIG.INT"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "EXTI"
+                  ]
+                },
+                "tag": "int.attached",
+                "from": {
+                  "pad": "9",
+                  "kind": "tile"
+                },
+                "role": "interrupt"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "enabled",
+              "register": "INT_CONFIG.INT"
+            }
+          ]
+        }
+      ]
+    },
+    "interfaceMode": {
+      "kind": "select",
+      "group": "Interfaces",
+      "label": "Interface mode",
+      "binding": {
+        "pad": "3",
+        "kind": "strap",
+        "states": {
+          "low": "SPI/SPI3",
+          "high": "I2C/I3C (forced)",
+          "open": "I2C/I3C (default, via internal PU)"
+        }
+      },
+      "default": "i2c",
+      "options": [
+        {
+          "label": "I2C",
+          "value": "i2c",
+          "states": {
+            "3": "open"
+          },
+          "activates": {
+            "interface": "I2C"
+          }
+        },
+        {
+          "label": "SPI (4-wire)",
+          "value": "spi",
+          "states": {
+            "3": "low"
+          },
+          "activates": {
+            "interface": "SPI"
+          }
+        }
+      ]
+    }
+  },
   "family": "Sense",
   "package": {
     "pads": 10,
@@ -222,14 +320,24 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT",
           "is_required": true
+        },
+        {
+          "pad": "3",
+          "role": "strap",
+          "function": "I2C.EN"
         }
+      ],
+      "mutually_exclusive": [
+        "SPI"
       ]
     },
     {
@@ -244,24 +352,30 @@
       "pad_assignments": [
         {
           "pad": "3",
+          "role": "other",
           "function": "SPI.CS",
           "is_required": true
         },
         {
           "pad": "4",
+          "role": "bus",
           "function": "SPI.CLK",
           "is_required": true
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "SPI.SDIO",
           "is_required": true
         }
+      ],
+      "mutually_exclusive": [
+        "I2C"
       ]
     }
   ],
-  "updated_at": "2026-02-25T04:25:03.335Z",
-  "description": "The Sense.BBR infrared presence and motion-detection tile is based on the ST STHS34PF80. Capable of detecting stationary and moving objects within an 80\u00b0 field of view at up to 4 m without an external lens, the module operates in the 5\u201320 \u00b5m IR band, which is insensitive to visible light. On-chip algorithms distinguish between presence, motion, and changes in ambient temperature, with configurable thresholds and interrupt output. Output data rates from 0.25 to 30 Hz.",
-  "json_version": "0.4",
+  "updated_at": "2026-05-01T12:38:58.038Z",
+  "description": "The Sense.BBR infrared presence and motion-detection tile is based on the ST STHS34PF80. Capable of detecting stationary and moving objects within an 80° field of view at up to 4 m without an external lens, the module operates in the 5–20 µm IR band, which is insensitive to visible light. On-chip algorithms distinguish between presence, motion, and changes in ambient temperature, with configurable thresholds and interrupt output. Output data rates from 0.25 to 30 Hz.",
+  "json_version": "0.7",
   "application_notes": []
 }

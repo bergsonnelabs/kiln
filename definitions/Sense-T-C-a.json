@@ -57,9 +57,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -74,9 +75,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -163,6 +165,61 @@
       ]
     }
   ],
+  "config": {
+    "dataReady": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use RDY (data-ready) line",
+      "binding": {
+        "pad": "3",
+        "kind": "output"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "disabled",
+              "register": "RDY_CONFIG"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "EXTI"
+                  ]
+                },
+                "tag": "dataReady.attached",
+                "from": {
+                  "pad": "3",
+                  "kind": "tile"
+                },
+                "role": "interrupt"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "enabled",
+              "register": "RDY_CONFIG"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "family": "Sense",
   "package": {
     "pads": 10,
@@ -199,18 +256,20 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT"
         }
       ]
     }
   ],
-  "updated_at": "2026-02-17T12:57:19.899Z",
-  "description": "Built around the Azoteq IQS323 ProxFusion controller, the Sense.T.C tile's entire top surface functions as a capacitive touch sensor, while a second input channel is available via one of the pads.\n\nThe IQS323 provides both proximity and touch detection with all signal processing on-chip, exposing processed results over I2C. Each channel reports 16-bit filtered counts, a 16-bit long-term average baseline, and binary proximity/touch states with configurable thresholds, debounce, and hysteresis. When configured as a slider across multiple tiles, the controller provides a 16-bit position output with on-chip gesture recognition including tap, swipe, flick, and hold.\n\nReport rates are configurable per power mode, from every 16ms in normal self-capacitive mode (125\u00b5A average current consumption) up to every 160ms in 4 \u00b5A ultra-low-power mode (160 ms). In addition, event-driven reporting can leave the host free between changes in state.",
-  "json_version": "0.5",
+  "updated_at": "2026-05-01T12:41:02.767Z",
+  "description": "Built around the Azoteq IQS323 ProxFusion controller, the Sense.T.C tile's entire top surface functions as a capacitive touch sensor, while a second input channel is available via one of the pads.\n\nThe IQS323 provides both proximity and touch detection with all signal processing on-chip, exposing processed results over I2C. Each channel reports 16-bit filtered counts, a 16-bit long-term average baseline, and binary proximity/touch states with configurable thresholds, debounce, and hysteresis. When configured as a slider across multiple tiles, the controller provides a 16-bit position output with on-chip gesture recognition including tap, swipe, flick, and hold.\n\nReport rates are configurable per power mode, from every 16ms in normal self-capacitive mode (125µA average current consumption) up to every 160ms in 4 µA ultra-low-power mode (160 ms). In addition, event-driven reporting can leave the host free between changes in state.",
+  "json_version": "0.7",
   "application_notes": [
     {
       "sort": 0,

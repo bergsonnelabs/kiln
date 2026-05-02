@@ -57,9 +57,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.CLK",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -74,9 +75,10 @@
       "functions": [
         {
           "note": "",
-          "type": "interface",
+          "type": "digital",
           "function": "I2C.DAT",
-          "direction": "bidirectional"
+          "direction": "bidirectional",
+          "interface": "I2C"
         }
       ]
     },
@@ -163,6 +165,111 @@
       ]
     }
   ],
+  "config": {
+    "interrupt": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Use INT line",
+      "binding": {
+        "pad": "9",
+        "kind": "output"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "disabled",
+              "register": "INT_CONFIG"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "EXTI"
+                  ]
+                },
+                "tag": "interrupt.attached",
+                "from": {
+                  "pad": "9",
+                  "kind": "tile"
+                },
+                "role": "interrupt"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "via": "i2c",
+              "type": "register",
+              "value": "enabled",
+              "register": "INT_CONFIG"
+            }
+          ]
+        }
+      ]
+    },
+    "controlEnable": {
+      "kind": "boolean",
+      "group": "Sidebands",
+      "label": "Core-controlled enable",
+      "binding": {
+        "pad": "3",
+        "kind": "intent"
+      },
+      "default": false,
+      "options": [
+        {
+          "value": false,
+          "firmware_contract": [
+            {
+              "text": "EN left at its default state; firmware does not power-cycle",
+              "type": "note"
+            }
+          ]
+        },
+        {
+          "value": true,
+          "netlist": {
+            "expects": [
+              {
+                "to": {
+                  "kind": "matchFunction",
+                  "function": "GPIO",
+                  "capabilities": [
+                    "output"
+                  ]
+                },
+                "tag": "controlEnable.attached",
+                "from": {
+                  "pad": "3",
+                  "kind": "tile"
+                },
+                "role": "data"
+              }
+            ]
+          },
+          "firmware_contract": [
+            {
+              "text": "Firmware drives EN to power-cycle the sensor as needed",
+              "type": "note"
+            }
+          ]
+        }
+      ],
+      "description": "When true, pad 3 (EN) is wired to a Core GPIO output so firmware can power-cycle the sensor (e.g., for I2C address re-assignment in multi-sensor setups). When false, the chip stays in its reset / always-on state per the catalog default."
+    }
+  },
   "family": "Sense",
   "package": {
     "pads": 10,
@@ -203,17 +310,19 @@
       "pad_assignments": [
         {
           "pad": "4",
+          "role": "bus",
           "function": "I2C.CLK"
         },
         {
           "pad": "5",
+          "role": "bus",
           "function": "I2C.DAT"
         }
       ]
     }
   ],
-  "updated_at": "2026-02-16T18:13:30.448Z",
+  "updated_at": "2026-05-01T12:41:02.859Z",
   "description": "The Sense.TOF is a single-zone time-of-flight distance sensor based on the ams-Osram TMF8806, which uses a Class-1 eye-safe 940 nm VCSEL laser emitter with SPAD detection.  It provides 1-mm sensing resolution over a range from 1 centimeter to 5 meters (extendable to 10 meters) with a max output data rate of 30Hz.  The sensor features on-chip histogram processing, a 24-degree field of view, and pre-installed firmware suitable for obstacle detection, proximity sensing, collision avoidance, and autofocus applications.",
-  "json_version": "0.9",
+  "json_version": "0.11",
   "application_notes": []
 }
