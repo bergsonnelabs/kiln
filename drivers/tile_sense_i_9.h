@@ -722,6 +722,8 @@ uint8_t tile_sense_i_9_fifo_read_packet(tile_t* tile,
  * @brief  Run the built-in mechanical self-test for accel and gyro.
  *
  * @tessera expose category=tile name=self_test returns=bool section=advanced
+ * @tessera out_scalar accel_pass type=uint8_t
+ * @tessera out_scalar gyro_pass type=uint8_t
  *
  * Drives the accel and gyro through their factory-stored
  * self-excitation routine and compares the response to the

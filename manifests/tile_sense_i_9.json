@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@ca74389",
+  "source": "cores@9c4313f",
   "tile": "Sense.I.9",
   "palette": {
     "label": "Sense.I.9",
@@ -524,17 +524,29 @@
       "params": [
         {
           "name": "accel_pass",
-          "type": "?uint8_t*",
+          "type": "int",
+          "out_scalar": true,
           "description": "Output: bit 0/1/2 = X/Y/Z accel pass (1 = pass)"
         },
         {
           "name": "gyro_pass",
-          "type": "?uint8_t*",
+          "type": "int",
+          "out_scalar": true,
           "description": "Output: bit 0/1/2 = X/Y/Z gyro pass (1 = pass)"
         }
       ],
       "returns": "uint8_t",
       "dsl_returns": "bool",
+      "c_out_scalars": [
+        {
+          "name": "accel_pass",
+          "type": "uint8_t"
+        },
+        {
+          "name": "gyro_pass",
+          "type": "uint8_t"
+        }
+      ],
       "receiver": "tile_t*"
     },
     {

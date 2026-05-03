@@ -1191,6 +1191,10 @@ void tile_sense_i_6p6_set_accel_offset(tile_t *tile,
  *
  * Runs the built-in self-test for both accel and gyro.
  *
+ * @tessera expose category=tile name=self_test returns=bool section=advanced
+ * @tessera out_scalar accel_pass type=uint8_t
+ * @tessera out_scalar gyro_pass type=uint8_t
+ *
  * @param  accel_pass  Output: 1 if accel self-test passed, 0 if failed (per-axis OR'd)
  * @param  gyro_pass   Output: 1 if gyro self-test passed, 0 if failed
  * @return 1 if both passed, 0 if either failed

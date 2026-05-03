@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@ca74389",
+  "source": "cores@9c4313f",
   "tile": "Sense.I.6P6",
   "palette": {
     "label": "Sense.I.6P6",
@@ -1080,6 +1080,43 @@
         }
       ],
       "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "self_test"
+      ],
+      "symbol": "tile_sense_i_6p6_self_test",
+      "header": "tile_sense_i_6p6.h",
+      "category": "tile",
+      "description": "Perform self-test.",
+      "params": [
+        {
+          "name": "accel_pass",
+          "type": "int",
+          "out_scalar": true,
+          "description": "Output: 1 if accel self-test passed, 0 if failed (per-axis OR'd)"
+        },
+        {
+          "name": "gyro_pass",
+          "type": "int",
+          "out_scalar": true,
+          "description": "Output: 1 if gyro self-test passed, 0 if failed"
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "c_out_scalars": [
+        {
+          "name": "accel_pass",
+          "type": "uint8_t"
+        },
+        {
+          "name": "gyro_pass",
+          "type": "uint8_t"
+        }
+      ],
       "receiver": "tile_t *"
     },
     {

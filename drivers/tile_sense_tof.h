@@ -540,6 +540,11 @@ uint8_t tile_sense_tof_set_threshold_interrupt(tile_t *tile,
  *
  * Per HostDriverCommunication §8.12.2 (cmd 0x09 = RD_ADD_CONFIG).
  *
+ * @tessera expose category=tile name=get_threshold_interrupt returns=bool section=advanced
+ * @tessera out_scalar persistence type=uint8_t
+ * @tessera out_scalar low_mm type=uint16_t
+ * @tessera out_scalar high_mm type=uint16_t
+ *
  * @param  tile          Initialised tile handle.
  * @param  persistence   Output (may be NULL).
  * @param  low_mm        Output (may be NULL).
@@ -684,12 +689,9 @@ uint8_t tile_sense_tof_wait_for_object(tile_t *tile, uint16_t mm,
  * scale to a 0–100 percent value. Confidence is computed as
  * `(reliability * 100) / 63` — integer math, no floats.
  *
- * @note Not @tessera-exposed — the dual-pointer output doesn't map
- *       cleanly to the DSL's scalar return / array out_buffer
- *       conventions. DSL callers should use
- *       @ref tile_sense_tof_get_distance_mm plus
- *       @ref tile_sense_tof_is_object_within (or a future
- *       confidence-only getter) instead.
+ * @tessera expose category=tile name=read_distance_with_confidence returns=bool section=runtime
+ * @tessera out_scalar mm type=uint16_t
+ * @tessera out_scalar confidence_pct type=uint8_t
  *
  * @param  tile           Initialised tile handle.
  * @param  mm             Output: distance in millimetres (NULL allowed).

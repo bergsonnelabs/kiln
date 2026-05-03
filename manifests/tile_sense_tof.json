@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@ca74389",
+  "source": "cores@9c4313f",
   "tile": "Sense.TOF",
   "palette": {
     "label": "Sense.TOF",
@@ -199,6 +199,53 @@
     {
       "qname": [
         "$slot",
+        "get_threshold_interrupt"
+      ],
+      "symbol": "tile_sense_tof_get_threshold_interrupt",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Read back the current threshold-interrupt configuration.",
+      "params": [
+        {
+          "name": "persistence",
+          "type": "int",
+          "out_scalar": true,
+          "description": "Output (may be NULL)."
+        },
+        {
+          "name": "low_mm",
+          "type": "int",
+          "out_scalar": true,
+          "description": "Output (may be NULL)."
+        },
+        {
+          "name": "high_mm",
+          "type": "int",
+          "out_scalar": true,
+          "description": "Output (may be NULL)."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "c_out_scalars": [
+        {
+          "name": "persistence",
+          "type": "uint8_t"
+        },
+        {
+          "name": "low_mm",
+          "type": "uint16_t"
+        },
+        {
+          "name": "high_mm",
+          "type": "uint16_t"
+        }
+      ],
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
         "get_sys_clock_ticks"
       ],
       "symbol": "tile_sense_tof_get_sys_clock_ticks",
@@ -253,6 +300,43 @@
       ],
       "returns": "uint8_t",
       "dsl_returns": "bool",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "read_distance_with_confidence"
+      ],
+      "symbol": "tile_sense_tof_read_distance_with_confidence",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Read distance and confidence in one call.",
+      "params": [
+        {
+          "name": "mm",
+          "type": "int",
+          "out_scalar": true,
+          "description": "Output: distance in millimetres (NULL allowed)."
+        },
+        {
+          "name": "confidence_pct",
+          "type": "int",
+          "out_scalar": true,
+          "description": "Output: 0–100 confidence (NULL allowed)."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "c_out_scalars": [
+        {
+          "name": "mm",
+          "type": "uint16_t"
+        },
+        {
+          "name": "confidence_pct",
+          "type": "uint8_t"
+        }
+      ],
       "receiver": "tile_t *"
     }
   ],
