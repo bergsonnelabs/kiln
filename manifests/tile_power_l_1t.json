@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@bc0fb1c",
+  "source": "cores@f4d34f7",
   "tile": "Power.L.1T",
   "palette": {
     "label": "Power.L.1T",

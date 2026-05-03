@@ -47,13 +47,15 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="DMP3 (Digital Motion Processor)" section=advanced
- *   ICM-20948 ships with a full DMP3 firmware blob in ROM
- *   (quaternion fusion, gesture detection, pedometer, BAC
- *   classifier, tap / double-tap, significant motion). DMP3 firmware
- *   loading and output parsing is a substantial lift — deferred to
- *   a dedicated future session. Tracked separately from this
- *   coverage pass.
+ * @tessera unsupported severity=common category="DMP3 — extended outputs" section=advanced
+ *   Phase 1 (firmware load + verify) and Phase 2 (9-axis quaternion /
+ *   ROTATION_VECTOR) are now exposed via dmp_load / dmp_start_quat9 /
+ *   dmp_read_quat9. Still unimplemented: 6-axis quaternion (no-mag),
+ *   geomagnetic rotation vector, pedometer + step detector, BAC activity
+ *   classification, tap / double-tap, significant-motion detection,
+ *   pickup, tilt, fsync timestamping, and the multi-sensor accumulator
+ *   that lets several DMP outputs share one stream. Phase 4 plans
+ *   dmp_read_orientation (yaw/pitch/roll) on top of Quat9.
  *
  * @tessera unsupported severity=niche category="AK09916 FUSE ROM sensitivity adjustment"
  *   Not applicable to this chip. Earlier AKM parts (e.g. AK8963) shipped
@@ -65,13 +67,13 @@
  *   is needed or possible. Annotation kept to document the verification.
  *
  * @tessera unsupported severity=advanced category="Sensor hub for external aux sensors" section=advanced
- *   Architecturally gated. Driver currently uses INT_PIN_CFG.BYPASS_EN
- *   to expose the AK09916 directly on the host I2C bus, which is
- *   simpler and faster than routing reads through the ICM's I2C master.
- *   Closing this gap means moving AK09916 access into the master (slot 0)
- *   and exposing slots 1–3 for user-attached aux sensors — a structural
- *   rework that touches `get_raw_mags()`, init sequencing, and FIFO
- *   integration. Defer to a followup pass.
+ *   Driver uses INT_PIN_CFG.BYPASS_EN by default so the AK09916 is on
+ *   the host bus directly (simpler + faster than routing through the
+ *   ICM's internal I2C master). dmp_start_quat9() now drives the master
+ *   internally — claiming slots 0 + 1 — but slots 2 + 3 remain unused
+ *   and there is no public API for attaching user aux sensors to them.
+ *   Closing this gap means promoting the I2C-master configuration into
+ *   a public surface and reserving DMP's slot use behind it.
  *
  * @tessera unsupported severity=advanced category="FSYNC external-clock / timestamping"
  *   Hardware-gated. Chip can take a 31–50 kHz FSYNC input and stamp
@@ -194,6 +196,37 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 #define ICM20948_REG_ACCEL_WOM_THR    0x13  /**< WoM threshold (4 mg/LSB) */
 #define ICM20948_REG_ACCEL_CONFIG     0x14
 #define ICM20948_REG_ACCEL_CONFIG_2   0x15  /**< Self-test enables + averaging */
+#define ICM20948_REG_PRGM_START_ADDRH 0x50  /**< DMP firmware entry-point hi */
+#define ICM20948_REG_PRGM_START_ADDRL 0x51  /**< DMP firmware entry-point lo */
+
+/* Bank 3 registers (I2C master configuration). The DMP path drives the
+ * AK09916 through the chip's internal I2C master — see comments around
+ * tile_sense_i_9_dmp_start_quat9() for the rationale. */
+#define ICM20948_REG_I2C_MST_ODR_CFG  0x00  /**< Mag read rate when gyro+accel are LP */
+#define ICM20948_REG_I2C_MST_CTRL     0x01  /**< Bus speed + NSR */
+#define ICM20948_REG_I2C_MST_DLY_CTRL 0x02
+#define ICM20948_REG_I2C_PERIPH0_ADDR 0x03  /**< Slot 0 → AK09916 bulk read */
+#define ICM20948_REG_I2C_PERIPH0_REG  0x04
+#define ICM20948_REG_I2C_PERIPH0_CTRL 0x05
+#define ICM20948_REG_I2C_PERIPH0_DO   0x06
+#define ICM20948_REG_I2C_PERIPH1_ADDR 0x07  /**< Slot 1 → AK09916 single-meas trigger */
+#define ICM20948_REG_I2C_PERIPH1_REG  0x08
+#define ICM20948_REG_I2C_PERIPH1_CTRL 0x09
+#define ICM20948_REG_I2C_PERIPH1_DO   0x0A
+
+/* Bank 0: more registers used by DMP setup. */
+#define ICM20948_REG_LP_CONFIG        0x05  /**< Per-block low-power cycling */
+#define ICM20948_REG_SINGLE_FIFO_PRIO 0x26  /**< InvenSense-internal magic */
+#define ICM20948_REG_HW_FIX_DISABLE   0x75  /**< InvenSense-internal magic */
+#define ICM20948_REG_DATA_RDY_STATUS  0x74
+
+/* INT_PIN_CFG bits (bank 0, 0x0F) */
+#define ICM20948_INT_PIN_BYPASS_EN    (1U << 1)
+
+/* AK09916 register address used by the DMP-side bulk read. The DMP
+ * expects ten bytes starting at 0x03 (RSV2) — see initializeDMP()
+ * in the SparkFun port for the empirical reverse-engineering note. */
+#define AK09916_REG_RSV2              0x03
 
 /* USER_CTRL bits (bank 0, 0x03) */
 #define ICM20948_UC_FIFO_EN           (1 << 6)
@@ -997,5 +1030,118 @@ uint8_t tile_sense_i_9_dmp_load(tile_t* tile);
  * @return 1 if dmp_load() has succeeded since the driver last cleared its state.
  */
 uint8_t tile_sense_i_9_dmp_is_loaded(tile_t* tile);
+
+/* ================================================================
+ * DMP3 — Phase 2: 9-axis quaternion (Android ROTATION_VECTOR)
+ *
+ * The DMP fuses accel + gyro + mag into a unit quaternion (q0,q1,q2,q3)
+ * representing orientation in an absolute (north-aligned) frame. Only
+ * q1, q2, q3 are emitted — q0 = sqrt(1 − q1² − q2² − q3²) and is
+ * recovered host-side. Components are Q30 fixed-point.
+ *
+ * Mag-access mode rule (important):
+ *
+ *   - At init, the driver puts the AK09916 directly on the host I2C
+ *     bus via INT_PIN_CFG.BYPASS_EN. tile_sense_i_9_get_raw_mags(),
+ *     tile_sense_i_9_set_mag_mode(), tile_sense_i_9_mag_overflowed(),
+ *     and tile_sense_i_9_mag_self_test() all rely on this and "just
+ *     work".
+ *
+ *   - tile_sense_i_9_dmp_start_quat9() switches the chip into I2C-master
+ *     mode (BYPASS_EN cleared, USER_CTRL.I2C_MST_EN set) so the DMP can
+ *     pull mag samples internally. While DMP is running, the host has
+ *     no direct path to the AK09916 — those four mag calls return
+ *     stale / zero data and should not be used.
+ *
+ *   - tile_sense_i_9_dmp_stop() reverts to bypass mode and re-enables
+ *     direct mag access. After dmp_stop() it is safe to call mag funcs
+ *     again, though set_mag_mode() must be re-issued (the DMP path
+ *     leaves the AK09916 in single-measurement mode).
+ *
+ * Phase 4 will add yaw/pitch/roll. For now, host-side conversion to
+ * Euler angles or float is the caller's job.
+ * ================================================================ */
+
+/**
+ * @brief  Configure the DMP for 9-axis quaternion output and start it.
+ *
+ * Wires the chip up to compute a fused (accel+gyro+mag) orientation
+ * quaternion at the requested period and stream it to the FIFO.
+ * Equivalent to InvenSense's "ROTATION_VECTOR" Android sensor.
+ *
+ * Requires dmp_load() to have succeeded since the last reset.
+ *
+ * Side effects:
+ *   - Switches AK09916 access from bypass to I2C-master mode (see the
+ *     mag-access-mode rule comment block above this function).
+ *   - Reconfigures accel + gyro to 56.25 Hz ODR (DMP-recommended) and
+ *     ±4 g / ±2000 dps full-scale (also DMP-recommended).
+ *   - Resets and enables the FIFO; old packets are discarded.
+ *
+ * @tessera expose category=tile name=dmp_start_quat9 returns=bool section=advanced
+ * @param  tile              Initialized tile handle (DMP firmware loaded).
+ * @param  output_period_ms  DMP output period, in ms (clamped to 10–1000 ms).
+ *                           Internally maps to a divider against the DMP's
+ *                           ~225 Hz base ODR.
+ * @return 1 on success, 0 if firmware isn't loaded or a bus error occurred.
+ */
+uint8_t tile_sense_i_9_dmp_start_quat9(tile_t* tile, uint16_t output_period_ms);
+
+/**
+ * @brief  Stop the DMP and revert to direct-bus mag access.
+ *
+ * Clears DMP_EN, disables the I2C master, drops the data-output feature
+ * masks, and re-enables BYPASS_EN. After this call the four mag helpers
+ * (get_raw_mags / set_mag_mode / mag_overflowed / mag_self_test) work
+ * again — but you'll need to re-issue set_mag_mode() to put the AK09916
+ * back into a continuous mode (DMP leaves it in single-measurement).
+ *
+ * Idempotent — safe to call when the DMP is already stopped.
+ *
+ * @tessera expose category=tile name=dmp_stop section=advanced
+ * @param  tile  Initialized tile handle.
+ */
+void tile_sense_i_9_dmp_stop(tile_t* tile);
+
+/**
+ * @brief  Non-blocking check for a queued DMP quat9 packet.
+ *
+ * Reads the FIFO byte-count register and returns 1 when at least one
+ * full Quat9 packet (header + payload + accuracy = 16 bytes) is
+ * available. Cheap (a single 2-byte register read).
+ *
+ * @tessera expose category=tile name=dmp_data_ready returns=bool section=advanced
+ * @param  tile  Initialized tile handle.
+ * @return 1 if a packet can be read, 0 otherwise.
+ */
+uint8_t tile_sense_i_9_dmp_data_ready(tile_t* tile);
+
+/**
+ * @brief  Read one 9-axis quaternion packet from the DMP FIFO.
+ *
+ * Pulls a header + 14-byte Quat9 payload from the FIFO and decodes:
+ *   out_q[0] = q0 (scalar / w) — recovered as sqrt(1 − q1² − q2² − q3²)
+ *   out_q[1] = q1 (vector / x)
+ *   out_q[2] = q2 (vector / y)
+ *   out_q[3] = q3 (vector / z)
+ * Components are Q30 fixed-point — divide by 2^30 (1073741824) to get
+ * a unit-quaternion float. The accuracy field is the DMP's heading
+ * accuracy estimate (chip-internal scale; treat smaller = better).
+ *
+ * On a header mismatch (FIFO content isn't a Quat9 packet) the FIFO
+ * is reset and the function returns 0 — this can happen briefly
+ * after dmp_start_quat9() while the pipeline drains its first sample.
+ *
+ * @tessera expose category=tile name=dmp_read_quat9 returns=int[4] section=advanced
+ * @tessera out_buffer out_q type=int32_t length=4
+ * @tessera out_scalar out_accuracy type=uint16_t
+ *
+ * @param  tile          Initialized tile handle.
+ * @param  out_q         Output array, 4 × int32_t [q0, q1, q2, q3] in Q30.
+ * @param  out_accuracy  Output: DMP heading-accuracy estimate.
+ * @return 1 if a packet was decoded, 0 if FIFO didn't have one ready.
+ */
+uint8_t tile_sense_i_9_dmp_read_quat9(tile_t* tile, int32_t out_q[4],
+                                      uint16_t* out_accuracy);
 
 #endif /* INC_TILE_SENSE_I_9_H_ */
