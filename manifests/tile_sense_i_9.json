@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@bc0fb1c",
+  "source": "cores@f4d34f7",
   "tile": "Sense.I.9",
   "palette": {
     "label": "Sense.I.9",
@@ -690,6 +690,84 @@
       ],
       "returns": "uint8_t",
       "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "dmp_start_quat9"
+      ],
+      "symbol": "tile_sense_i_9_dmp_start_quat9",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Configure the DMP for 9-axis quaternion output and start it.",
+      "params": [
+        {
+          "name": "output_period_ms",
+          "type": "int",
+          "description": "DMP output period, in ms (clamped to 10–1000 ms)."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "dmp_stop"
+      ],
+      "symbol": "tile_sense_i_9_dmp_stop",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Stop the DMP and revert to direct-bus mag access.",
+      "params": [],
+      "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "dmp_data_ready"
+      ],
+      "symbol": "tile_sense_i_9_dmp_data_ready",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Non-blocking check for a queued DMP quat9 packet.",
+      "params": [],
+      "returns": "uint8_t",
+      "dsl_returns": "bool",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "dmp_read_quat9"
+      ],
+      "symbol": "tile_sense_i_9_dmp_read_quat9",
+      "header": "tile_sense_i_9.h",
+      "category": "tile",
+      "description": "Read one 9-axis quaternion packet from the DMP FIFO.",
+      "params": [
+        {
+          "name": "out_accuracy",
+          "type": "int",
+          "out_scalar": true,
+          "description": "Output: DMP heading-accuracy estimate."
+        }
+      ],
+      "returns": "uint8_t",
+      "dsl_returns": "int[4]",
+      "c_out_buffer": {
+        "type": "int32_t",
+        "length": 4
+      },
+      "c_out_scalars": [
+        {
+          "name": "out_accuracy",
+          "type": "uint16_t"
+        }
+      ],
       "receiver": "tile_t*"
     }
   ],

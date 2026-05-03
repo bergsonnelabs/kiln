@@ -46,6 +46,10 @@ static uint8_t resolve_id(uint8_t instance)
 
 typedef struct {
     uint8_t dmp_loaded;        /**< 1 once dmp_load() has succeeded since reset. */
+    uint8_t dmp_active;        /**< 1 between dmp_start_quat9() and dmp_stop().
+                                    When set, AK09916 is on the chip's internal
+                                    I2C master — bypass-mode mag helpers must
+                                    NOT be used. */
     uint8_t last_dmp_bank;     /**< Last MEM_BANK_SEL value written; skip the
                                     bus write when the next access stays in the
                                     same bank. 0xFF = "no bank selected yet". */
@@ -168,6 +172,7 @@ void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
      * driver-side flag has to follow). */
     icm_state_t *s = state_for(tile);
     s->dmp_loaded     = 0;
+    s->dmp_active     = 0;
     s->last_dmp_bank  = 0xFF;
 
     /* Verify device is on bus */
@@ -324,6 +329,7 @@ void tile_sense_i_9_reset(tile_t* tile)
      * The caller has to re-issue dmp_load() before reading DMP outputs. */
     icm_state_t *s = state_for(tile);
     s->dmp_loaded    = 0;
+    s->dmp_active    = 0;
     s->last_dmp_bank = 0xFF;
     tile->state = TILE_STATE_NONE;
 }
@@ -978,4 +984,532 @@ uint8_t tile_sense_i_9_dmp_load(tile_t* tile)
 uint8_t tile_sense_i_9_dmp_is_loaded(tile_t* tile)
 {
     return state_for(tile)->dmp_loaded ? 1 : 0;
+}
+
+/* ================================================================ */
+/* DMP3 — Phase 2: 9-axis quaternion (ROTATION_VECTOR)                */
+/*                                                                    */
+/* Reference: TDK eMD-SmartMotion-ICM20948-1.1.0-MP. Mirrored from    */
+/* SparkFun's ICM_20948.cpp (initializeDMP) +                         */
+/* ICM_20948_C.c (inv_icm20948_set_dmp_sensor_period,                 */
+/*                 inv_icm20948_enable_dmp_sensor,                    */
+/*                 inv_icm20948_read_dmp_data,                        */
+/*                 inv_icm20948_set_gyro_sf,                          */
+/*                 ICM_20948_i2c_master_enable,                       */
+/*                 ICM_20948_i2c_controller_configure_peripheral).    */
+/* ================================================================ */
+
+/* DMP RAM offsets (eMD; values lifted unchanged from ICM_20948_DMP.h). */
+#define DMP_RAM_DATA_OUT_CTL1      (4U  * 16U + 0U)   /* 0x40, 16-bit BE  */
+#define DMP_RAM_DATA_OUT_CTL2      (4U  * 16U + 2U)   /* 0x42, 16-bit BE  */
+#define DMP_RAM_DATA_INTR_CTL      (4U  * 16U + 12U)  /* 0x4C, 16-bit BE  */
+#define DMP_RAM_MOTION_EVENT_CTL   (4U  * 16U + 14U)  /* 0x4E, 16-bit BE  */
+#define DMP_RAM_DATA_RDY_STATUS    (8U  * 16U + 10U)  /* 0x8A, 16-bit BE  */
+#define DMP_RAM_ODR_QUAT9          (10U * 16U + 8U)   /* 0xA8, 16-bit BE  */
+#define DMP_RAM_ODR_CNTR_QUAT9     (8U  * 16U + 8U)   /* 0x88, 16-bit BE  */
+#define DMP_RAM_ACC_SCALE          (30U * 16U + 0U)   /* 0x1E0, 32-bit BE */
+#define DMP_RAM_ACC_SCALE2         (79U * 16U + 4U)   /* 0x4F4, 32-bit BE */
+#define DMP_RAM_CPASS_MTX_00       (23U * 16U + 0U)
+#define DMP_RAM_CPASS_MTX_01       (23U * 16U + 4U)
+#define DMP_RAM_CPASS_MTX_02       (23U * 16U + 8U)
+#define DMP_RAM_CPASS_MTX_10       (23U * 16U + 12U)
+#define DMP_RAM_CPASS_MTX_11       (24U * 16U + 0U)
+#define DMP_RAM_CPASS_MTX_12       (24U * 16U + 4U)
+#define DMP_RAM_CPASS_MTX_20       (24U * 16U + 8U)
+#define DMP_RAM_CPASS_MTX_21       (24U * 16U + 12U)
+#define DMP_RAM_CPASS_MTX_22       (25U * 16U + 0U)
+#define DMP_RAM_B2S_MTX_00         (208U * 16U + 0U)
+#define DMP_RAM_B2S_MTX_11         (209U * 16U + 0U)
+#define DMP_RAM_B2S_MTX_22         (210U * 16U + 0U)
+#define DMP_RAM_GYRO_SF            (19U * 16U + 0U)   /* 32-bit, signed BE  */
+#define DMP_RAM_GYRO_FULLSCALE     (72U * 16U + 12U)  /* 32-bit BE          */
+#define DMP_RAM_ACCEL_ONLY_GAIN    (16U * 16U + 12U)  /* 32-bit BE          */
+#define DMP_RAM_ACCEL_ALPHA_VAR    (91U * 16U + 0U)   /* 32-bit BE          */
+#define DMP_RAM_ACCEL_A_VAR        (92U * 16U + 0U)   /* 32-bit BE          */
+#define DMP_RAM_ACCEL_CAL_RATE     (94U * 16U + 4U)   /* 16-bit BE          */
+#define DMP_RAM_CPASS_TIME_BUFFER  (112U * 16U + 14U) /* 16-bit BE          */
+
+/* Header bitmap (DATA_OUT_CTL1 + Quat9 packet header). */
+#define DMP_HDR_QUAT9              0x0400U
+#define DMP_HDR_HEADER2            0x0008U
+
+/* Motion event control bits relevant to Quat9. */
+#define DMP_MEC_9AXIS              0x0040U
+#define DMP_MEC_ACCEL_CALIBR       0x0200U
+#define DMP_MEC_GYRO_CALIBR        0x0100U
+#define DMP_MEC_COMPASS_CALIBR     0x0080U
+
+/* DATA_RDY_STATUS bits (which sensors feed the DMP). */
+#define DMP_DRS_GYRO               0x0001U
+#define DMP_DRS_ACCEL              0x0002U
+#define DMP_DRS_SECONDARY_COMPASS  0x0008U
+
+/* DMP firmware program-start address (eMD; stored to PRGM_START_ADDRH/L). */
+#define DMP_PRGM_START_ADDRESS     0x1000U
+
+/* Quat9 wire packet sizes. */
+#define DMP_QUAT9_HEADER_BYTES     2U
+#define DMP_QUAT9_PAYLOAD_BYTES    14U
+#define DMP_QUAT9_TOTAL_BYTES      (DMP_QUAT9_HEADER_BYTES + DMP_QUAT9_PAYLOAD_BYTES)  /* 16 */
+
+/* Helpers — write 2 / 4 BE bytes to a DMP RAM offset. */
+static void dmp_write_u16_be(tile_t *tile, uint16_t addr, uint16_t v)
+{
+    uint8_t b[2] = { (uint8_t)(v >> 8), (uint8_t)(v & 0xFF) };
+    dmp_write_mems(tile, addr, 2U, b);
+}
+
+static void dmp_write_u32_be(tile_t *tile, uint16_t addr, uint32_t v)
+{
+    uint8_t b[4] = {
+        (uint8_t)((v >> 24) & 0xFF),
+        (uint8_t)((v >> 16) & 0xFF),
+        (uint8_t)((v >>  8) & 0xFF),
+        (uint8_t)((v      ) & 0xFF),
+    };
+    dmp_write_mems(tile, addr, 4U, b);
+}
+
+/* DMP gyro scaling factor, per inv_icm20948_set_gyro_sf(). The chip
+ * stores PLL trim in TIMEBASE_CORRECTION_PLL (bank 1, 0x28); the
+ * "magic constant" expression below is straight from InvenSense's
+ * eMD reference and is what makes the DMP's internal gyro integrator
+ * agree with real-world degrees-per-second. */
+static int32_t dmp_calc_gyro_sf(tile_t *tile, uint8_t gyro_div, int gyro_level)
+{
+    set_bank(tile, ICM20948_BANK_1);
+    int8_t pll = (int8_t)icm_read1(tile, 0x28);
+    set_bank(tile, ICM20948_BANK_0);
+
+    /* Per the eMD reference, gyro_level is forced to 4 regardless of FSR
+     * (gyro full-scale is set separately via DMP_RAM_GYRO_FULLSCALE). */
+    (void)gyro_level;
+    int level = 4;
+
+    const unsigned long long magic       = 264446880937391ULL;
+    const unsigned long long magic_scale = 100000ULL;
+    unsigned long long result_ll;
+    if ((uint8_t)pll & 0x80U) {
+        result_ll = (magic * (1ULL << level) * (1U + gyro_div))
+                  / (1270U - ((uint8_t)pll & 0x7FU)) / magic_scale;
+    } else {
+        result_ll = (magic * (1ULL << level) * (1U + gyro_div))
+                  / (1270U + (uint32_t)(uint8_t)pll) / magic_scale;
+    }
+    if (result_ll > 0x7FFFFFFFULL) result_ll = 0x7FFFFFFFULL;
+    return (int32_t)result_ll;
+}
+
+/* Configure I2C-master peripheral slot. Mirrors
+ * inv_icm20948_i2c_controller_configure_peripheral(). Caller is on
+ * any bank; we set + restore bank 0. */
+static void dmp_cfg_periph(tile_t *tile, uint8_t slot, uint8_t addr,
+                           uint8_t reg, uint8_t len, uint8_t rnw,
+                           uint8_t enable, uint8_t grp, uint8_t byte_sw,
+                           uint8_t data_out)
+{
+    /* Slot register-block offsets (in bank 3): every slot is 4 regs apart
+     * starting at PERIPH0_ADDR (0x03). */
+    uint8_t base = (uint8_t)(ICM20948_REG_I2C_PERIPH0_ADDR + (slot * 4U));
+
+    set_bank(tile, ICM20948_BANK_3);
+
+    /* PERIPHx_ADDR: bit 7 = R/!W, bits [6:0] = 7-bit slave address. */
+    icm_write(tile, base + 0U,
+              (uint8_t)((rnw ? 0x80U : 0x00U) | (addr & 0x7FU)));
+    /* If we're configuring a write, push the byte to PERIPHx_DO first
+     * — the master grabs it on the next cycle. */
+    if (!rnw) {
+        icm_write(tile, base + 3U, data_out);
+    }
+    icm_write(tile, base + 1U, reg);
+
+    /* PERIPHx_CTRL: bit7 = EN, bit5 = GRP (start pairing at byte 1+2),
+     * bit4 = BYTE_SW, bits [3:0] = LEN. */
+    uint8_t ctrl = (uint8_t)((enable  ? 0x80U : 0x00U)
+                           | (grp     ? 0x10U : 0x00U)
+                           | (byte_sw ? 0x40U : 0x00U)
+                           | (len & 0x0FU));
+    icm_write(tile, base + 2U, ctrl);
+
+    set_bank(tile, ICM20948_BANK_0);
+}
+
+/* Switch the AK09916 path from BYPASS into the chip's I2C master so
+ * the DMP can pull mag samples internally. Configures slot 0 to do a
+ * 10-byte burst read starting at AK09916 register 0x03 (RSV2 — see the
+ * SparkFun port's narrative for the empirical reverse-engineering note;
+ * that band of the AK09916 contains the data the DMP expects, in BE,
+ * with the DRDY bit at the start), and slot 1 to write the
+ * single-measurement command back to CNTL2 every cycle. */
+static void dmp_setup_mag_master(tile_t *tile)
+{
+    /* 1. Force AK09916 to a known state via bypass (last chance before
+     *    we steal the bus). Soft-reset clears any half-set CNTL2 mode. */
+    set_bank(tile, ICM20948_BANK_0);
+    icm_modify(tile, ICM20948_REG_INT_PIN_CFG,
+               ICM20948_INT_PIN_BYPASS_EN, ICM20948_INT_PIN_BYPASS_EN);
+    ak_write(tile, AK09916_REG_CNTL3, 0x01);  /* SRST */
+    tile->hal->delay_ms(2);
+    ak_write(tile, AK09916_REG_CNTL2, SENSE_I_9_MAG_POWER_DOWN);
+    tile->hal->delay_ms(1);
+
+    /* 2. Drop bypass; the AK09916 is now reachable only through the
+     *    chip's internal master. */
+    icm_modify(tile, ICM20948_REG_INT_PIN_CFG,
+               ICM20948_INT_PIN_BYPASS_EN, 0);
+
+    /* 3. Configure I2C master clock + NSR. 0x07 → ~345 kHz which is
+     *    inside AK09916's 400 kHz spec; bit 4 (P_NSR=1) inserts a
+     *    repeated start. */
+    set_bank(tile, ICM20948_BANK_3);
+    icm_write(tile, ICM20948_REG_I2C_MST_CTRL, 0x17);
+    /* I2C_MST_ODR_CONFIG: 1100 / 2^4 = 68.75 Hz mag read rate. */
+    icm_write(tile, ICM20948_REG_I2C_MST_ODR_CFG, 0x04);
+    set_bank(tile, ICM20948_BANK_0);
+
+    /* 4. Slot 0: AK09916 → bulk read of 10 bytes starting at 0x03.
+     *    GRP=1, BYTE_SW=1 to land mag data in the FIFO byte order the
+     *    DMP expects (matches the SparkFun port's args). */
+    dmp_cfg_periph(tile, 0,
+                   AK09916_I2C_ADDR, AK09916_REG_RSV2, 10U,
+                   /*rnw=*/1, /*en=*/1, /*grp=*/1, /*bswap=*/1, /*do=*/0);
+
+    /* 5. Slot 1: AK09916 → write CNTL2 = single-measurement each cycle.
+     *    The "len=1" + EN=1 with rnw=0 trips the master into write mode
+     *    and pushes PERIPH1_DO. */
+    dmp_cfg_periph(tile, 1,
+                   AK09916_I2C_ADDR, AK09916_REG_CNTL2, 1U,
+                   /*rnw=*/0, /*en=*/1, /*grp=*/0, /*bswap=*/0,
+                   /*do=*/SENSE_I_9_MAG_SINGLE);
+
+    /* 6. Engage the master. */
+    icm_modify(tile, ICM20948_USER_CTRL,
+               ICM20948_USER_CTRL_I2C_MST_EN, ICM20948_USER_CTRL_I2C_MST_EN);
+}
+
+/* Reverse dmp_setup_mag_master(): disable slots, drop I2C master,
+ * re-enable bypass so the host can talk to the AK09916 again. */
+static void dmp_teardown_mag_master(tile_t *tile)
+{
+    /* Disable slots first to stop the master pinging the AK09916. */
+    set_bank(tile, ICM20948_BANK_3);
+    icm_write(tile, ICM20948_REG_I2C_PERIPH0_CTRL, 0x00);
+    icm_write(tile, ICM20948_REG_I2C_PERIPH1_CTRL, 0x00);
+    set_bank(tile, ICM20948_BANK_0);
+
+    /* Drop master, restore bypass. */
+    icm_modify(tile, ICM20948_USER_CTRL, ICM20948_USER_CTRL_I2C_MST_EN, 0);
+    icm_modify(tile, ICM20948_REG_INT_PIN_CFG,
+               ICM20948_INT_PIN_BYPASS_EN, ICM20948_INT_PIN_BYPASS_EN);
+}
+
+/* Initialize all of the chip-side + DMP-side knobs needed for any DMP
+ * sensor (per InvenSense AN "Programming Sequence for DMP Hardware
+ * Functions"; mirrored from SparkFun's initializeDMP()). Caller has
+ * already loaded the firmware and confirmed the chip is awake. */
+static void dmp_chip_setup(tile_t *tile)
+{
+    tiles_pal_t *hal = tile->hal;
+
+    set_bank(tile, ICM20948_BANK_0);
+
+    /* Auto clock select. */
+    icm_write(tile, ICM20948_REG_PWR_MGMT_1, 0x01);
+
+    /* Enable accel+gyro, disable temp (bit 6 reserved-but-set per InvenSense Nucleo). */
+    icm_write(tile, ICM20948_REG_PWR_MGMT_2, 0x40);
+
+    /* Cycle only the I2C master; accel+gyro stay continuous. LP_CONFIG bit 6
+     * = I2C master cycled, leave bits 5 + 4 (accel/gyro cycled) clear. */
+    icm_write(tile, ICM20948_REG_LP_CONFIG, 0x40);
+
+    /* Disable FIFO + DMP while we configure. */
+    icm_modify(tile, ICM20948_USER_CTRL,
+               (uint8_t)(ICM20948_USER_CTRL_FIFO_EN | ICM20948_USER_CTRL_DMP_EN), 0);
+
+    /* Accel: ±4 g, DLPF on (per eMD recommendation for DMP). */
+    set_bank(tile, ICM20948_BANK_2);
+    icm_write(tile, ICM20948_REG_ACCEL_CONFIG, 0x09);  /* DLPF=1, FS=4g, DLPF_EN */
+    /* Gyro: ±2000 dps, DLPF on. */
+    icm_write(tile, ICM20948_REG_GYRO_CONFIG, 0x07);   /* DLPF=0, FS=2000dps, DLPF_EN */
+
+    /* Sample-rate dividers: 19 → 1100/(1+19) = 55 Hz gyro, 1125/(1+19)
+     * ≈ 56.25 Hz accel — the eMD reference rate for most DMP sensors. */
+    icm_write(tile, ICM20948_REG_GYRO_SMPLRT, 19);
+    icm_write(tile, ICM20948_REG_ACCEL_SMPLRT_H, 0);
+    icm_write(tile, ICM20948_REG_ACCEL_SMPLRT_L, 19);
+    set_bank(tile, ICM20948_BANK_0);
+
+    /* Disable raw-data-ready and FIFO-stream registers — DMP runs the FIFO. */
+    icm_write(tile, ICM20948_REG_FIFO_EN_1, 0x00);
+    icm_write(tile, ICM20948_REG_FIFO_EN_2, 0x00);
+    icm_write(tile, ICM20948_REG_INT_ENABLE_1, 0x00);
+
+    /* Reset FIFO. */
+    icm_write(tile, ICM20948_REG_FIFO_RST, 0x1F);
+    icm_write(tile, ICM20948_REG_FIFO_RST, 0x00);
+
+    /* DMP firmware entry point (bank 2, 0x50/0x51, big-endian 0x1000). */
+    set_bank(tile, ICM20948_BANK_2);
+    icm_write(tile, ICM20948_REG_PRGM_START_ADDRH,
+              (uint8_t)((DMP_PRGM_START_ADDRESS >> 8) & 0xFF));
+    icm_write(tile, ICM20948_REG_PRGM_START_ADDRL,
+              (uint8_t)(DMP_PRGM_START_ADDRESS & 0xFF));
+    set_bank(tile, ICM20948_BANK_0);
+
+    /* InvenSense-magic registers — values copied verbatim from the eMD
+     * reference. Their datasheet doesn't document these; trust the port. */
+    icm_write(tile, ICM20948_REG_HW_FIX_DISABLE, 0x48);
+    icm_write(tile, ICM20948_REG_SINGLE_FIFO_PRIO, 0xE4);
+
+    /* DMP-RAM constants for the chosen FSR + ODR. */
+    /* ACC_SCALE for ±4 g: 1 g aligns to 2^25 → write 0x04000000. */
+    dmp_write_u32_be(tile, DMP_RAM_ACC_SCALE,  0x04000000U);
+    /* ACC_SCALE2 for ±4 g: hardware-unit output → write 0x00040000. */
+    dmp_write_u32_be(tile, DMP_RAM_ACC_SCALE2, 0x00040000U);
+
+    /* Compass mount matrix: identity-ish with sign flips per eMD nucleo
+     * reference. ±1 → ±0x09999999 (≈ 1 µT × 2^30 / 6.667 LSB-per-µT). */
+    static const uint8_t cpass_zero[4]  = {0x00, 0x00, 0x00, 0x00};
+    static const uint8_t cpass_plus[4]  = {0x09, 0x99, 0x99, 0x99};
+    static const uint8_t cpass_minus[4] = {0xF6, 0x66, 0x66, 0x67};
+    dmp_write_mems(tile, DMP_RAM_CPASS_MTX_00, 4, cpass_plus);
+    dmp_write_mems(tile, DMP_RAM_CPASS_MTX_01, 4, cpass_zero);
+    dmp_write_mems(tile, DMP_RAM_CPASS_MTX_02, 4, cpass_zero);
+    dmp_write_mems(tile, DMP_RAM_CPASS_MTX_10, 4, cpass_zero);
+    dmp_write_mems(tile, DMP_RAM_CPASS_MTX_11, 4, cpass_minus);
+    dmp_write_mems(tile, DMP_RAM_CPASS_MTX_12, 4, cpass_zero);
+    dmp_write_mems(tile, DMP_RAM_CPASS_MTX_20, 4, cpass_zero);
+    dmp_write_mems(tile, DMP_RAM_CPASS_MTX_21, 4, cpass_zero);
+    dmp_write_mems(tile, DMP_RAM_CPASS_MTX_22, 4, cpass_minus);
+
+    /* B2S (body-to-sensor) mount matrix: identity. 1.0 = 0x40000000. */
+    static const uint8_t b2s_plus[4] = {0x40, 0x00, 0x00, 0x00};
+    static const uint8_t b2s_zero[4] = {0x00, 0x00, 0x00, 0x00};
+    dmp_write_mems(tile, DMP_RAM_B2S_MTX_00 + 0,  4, b2s_plus);
+    dmp_write_mems(tile, DMP_RAM_B2S_MTX_00 + 4,  4, b2s_zero);
+    dmp_write_mems(tile, DMP_RAM_B2S_MTX_00 + 8,  4, b2s_zero);
+    dmp_write_mems(tile, DMP_RAM_B2S_MTX_00 + 12, 4, b2s_zero);
+    dmp_write_mems(tile, DMP_RAM_B2S_MTX_11 + 0,  4, b2s_plus);
+    dmp_write_mems(tile, DMP_RAM_B2S_MTX_11 + 4,  4, b2s_zero);
+    dmp_write_mems(tile, DMP_RAM_B2S_MTX_11 + 8,  4, b2s_zero);
+    dmp_write_mems(tile, DMP_RAM_B2S_MTX_11 + 12, 4, b2s_zero);
+    dmp_write_mems(tile, DMP_RAM_B2S_MTX_22,      4, b2s_plus);
+
+    /* Gyro SF — eMD's PLL-trimmed scale; without this the integrator drifts. */
+    int32_t gsf = dmp_calc_gyro_sf(tile, /*div=*/19, /*level=*/3);
+    dmp_write_u32_be(tile, DMP_RAM_GYRO_SF, (uint32_t)gsf);
+
+    /* Gyro full-scale: 2000 dps → 2^28. */
+    dmp_write_u32_be(tile, DMP_RAM_GYRO_FULLSCALE, 0x10000000U);
+
+    /* Accel-only-gain + alpha + a-var for 56 Hz ODR — values straight
+     * from the InvenSense Nucleo reference. */
+    static const uint8_t accel_only_gain[4] = {0x03, 0xA4, 0x92, 0x49}; /* 56 Hz */
+    static const uint8_t accel_alpha_var[4] = {0x34, 0x92, 0x49, 0x25};
+    static const uint8_t accel_a_var[4]     = {0x0B, 0x6D, 0xB6, 0xDB};
+    dmp_write_mems(tile, DMP_RAM_ACCEL_ONLY_GAIN, 4, accel_only_gain);
+    dmp_write_mems(tile, DMP_RAM_ACCEL_ALPHA_VAR, 4, accel_alpha_var);
+    dmp_write_mems(tile, DMP_RAM_ACCEL_A_VAR,     4, accel_a_var);
+
+    /* Calibration-rate counters. */
+    dmp_write_u16_be(tile, DMP_RAM_ACCEL_CAL_RATE,    0x0000);
+    /* Mag is read at 68.75 Hz (I2C_MST_ODR_CFG=4); CPASS_TIME_BUFFER
+     * is the number of mag samples per second the DMP expects. */
+    dmp_write_u16_be(tile, DMP_RAM_CPASS_TIME_BUFFER, 0x0045);  /* 69 */
+
+    (void)hal;
+}
+
+/* Public — start 9-axis quaternion output. */
+uint8_t tile_sense_i_9_dmp_start_quat9(tile_t* tile, uint16_t output_period_ms)
+{
+    if (tile == NULL || tile->hal == NULL) return 0;
+    icm_state_t *s = state_for(tile);
+    if (!s->dmp_loaded) return 0;
+
+    /* Clamp period to the practical 10..1000 ms band. The DMP base is
+     * ~225 Hz (gyro div=19 → 55 Hz; the DMP runs Quat9 at 225 Hz against
+     * its internal 1.1 kHz / 5 == 220 Hz reference), so divider =
+     * (225 / target_hz) - 1 = (225 * period_ms / 1000) - 1. */
+    if (output_period_ms < 10)   output_period_ms = 10;
+    if (output_period_ms > 1000) output_period_ms = 1000;
+    uint32_t div32 = ((uint32_t)225U * output_period_ms) / 1000U;
+    if (div32 == 0) div32 = 1;
+    uint16_t odr_div = (uint16_t)(div32 - 1U);
+
+    /* Phase 0: chip + DMP-RAM setup (per InvenSense AN). */
+    dmp_chip_setup(tile);
+
+    /* Phase 1: route AK09916 through the internal I2C master so the DMP
+     * can pull mag samples. This breaks bypass-mode helpers — see the
+     * mag-access-mode rule in the header. */
+    dmp_setup_mag_master(tile);
+    s->dmp_active = 1;
+
+    /* Phase 2: enable Quat9 output (ROTATION_VECTOR). DATA_OUT_CTL1 bit
+     * 0x0400 = Quat9. We deliberately leave DATA_OUT_CTL2 = 0 so the
+     * DMP doesn't append a header2 byte — Quat9's payload already has
+     * a 2-byte heading-accuracy field at the end, which is what callers
+     * actually want. */
+    set_bank(tile, ICM20948_BANK_0);
+    dmp_write_u16_be(tile, DMP_RAM_DATA_OUT_CTL1, DMP_HDR_QUAT9);
+    dmp_write_u16_be(tile, DMP_RAM_DATA_OUT_CTL2, 0x0000);
+    dmp_write_u16_be(tile, DMP_RAM_DATA_INTR_CTL, DMP_HDR_QUAT9);
+
+    /* Tell the DMP which raw streams it can rely on. Quat9 needs
+     * accel + gyro + secondary compass. */
+    dmp_write_u16_be(tile, DMP_RAM_DATA_RDY_STATUS,
+                     DMP_DRS_GYRO | DMP_DRS_ACCEL | DMP_DRS_SECONDARY_COMPASS);
+
+    /* Motion event control — turn on the 9-axis pipe + the calibration
+     * stages it consumes. */
+    dmp_write_u16_be(tile, DMP_RAM_MOTION_EVENT_CTL,
+                     DMP_MEC_9AXIS | DMP_MEC_ACCEL_CALIBR
+                   | DMP_MEC_GYRO_CALIBR | DMP_MEC_COMPASS_CALIBR);
+
+    /* Output rate. The ODR_CNTR register has to be cleared whenever ODR
+     * changes (eMD note in inv_icm20948_set_dmp_sensor_period). */
+    dmp_write_u16_be(tile, DMP_RAM_ODR_QUAT9,      odr_div);
+    dmp_write_u16_be(tile, DMP_RAM_ODR_CNTR_QUAT9, 0x0000);
+
+    /* Phase 3: light up the FIFO + DMP. Reset FIFO once more so we
+     * don't get half-baked packets from the configure phase. */
+    icm_write(tile, ICM20948_REG_FIFO_RST, 0x1F);
+    icm_write(tile, ICM20948_REG_FIFO_RST, 0x00);
+
+    icm_modify(tile, ICM20948_USER_CTRL,
+               (uint8_t)(ICM20948_USER_CTRL_DMP_EN | ICM20948_USER_CTRL_FIFO_EN
+                       | ICM20948_USER_CTRL_DMP_RST),
+               (uint8_t)(ICM20948_USER_CTRL_DMP_EN | ICM20948_USER_CTRL_FIFO_EN));
+
+    return 1;
+}
+
+void tile_sense_i_9_dmp_stop(tile_t* tile)
+{
+    if (tile == NULL || tile->hal == NULL) return;
+    icm_state_t *s = state_for(tile);
+
+    set_bank(tile, ICM20948_BANK_0);
+
+    /* Drop DMP_EN + FIFO_EN. */
+    icm_modify(tile, ICM20948_USER_CTRL,
+               (uint8_t)(ICM20948_USER_CTRL_DMP_EN | ICM20948_USER_CTRL_FIFO_EN), 0);
+
+    /* Clear the feature masks so a future dmp_start_*() starts clean. */
+    if (s->dmp_loaded) {
+        dmp_write_u16_be(tile, DMP_RAM_DATA_OUT_CTL1,    0x0000);
+        dmp_write_u16_be(tile, DMP_RAM_DATA_OUT_CTL2,    0x0000);
+        dmp_write_u16_be(tile, DMP_RAM_DATA_INTR_CTL,    0x0000);
+        dmp_write_u16_be(tile, DMP_RAM_MOTION_EVENT_CTL, 0x0000);
+        dmp_write_u16_be(tile, DMP_RAM_DATA_RDY_STATUS,  0x0000);
+    }
+
+    /* Reset FIFO so leftover packets don't fool a future fifo_count() check. */
+    icm_write(tile, ICM20948_REG_FIFO_RST, 0x1F);
+    icm_write(tile, ICM20948_REG_FIFO_RST, 0x00);
+
+    /* Revert AK09916 access to bypass — direct mag helpers work again
+     * after this returns. */
+    if (s->dmp_active) {
+        dmp_teardown_mag_master(tile);
+        s->dmp_active = 0;
+    }
+}
+
+uint8_t tile_sense_i_9_dmp_data_ready(tile_t* tile)
+{
+    if (tile == NULL) return 0;
+    return (tile_sense_i_9_fifo_count(tile) >= DMP_QUAT9_TOTAL_BYTES) ? 1 : 0;
+}
+
+uint8_t tile_sense_i_9_dmp_read_quat9(tile_t* tile, int32_t out_q[4],
+                                      uint16_t* out_accuracy)
+{
+    if (tile == NULL || out_q == NULL) return 0;
+
+    /* Need at least header + payload before we touch FIFO_R_W. */
+    set_bank(tile, ICM20948_BANK_0);
+    if (tile_sense_i_9_fifo_count(tile) < DMP_QUAT9_TOTAL_BYTES) return 0;
+
+    /* Read header. */
+    uint8_t hdr_buf[DMP_QUAT9_HEADER_BYTES];
+    icm_read(tile, ICM20948_REG_FIFO_R_W, hdr_buf, DMP_QUAT9_HEADER_BYTES);
+    uint16_t header = (uint16_t)((uint16_t)hdr_buf[0] << 8 | hdr_buf[1]);
+
+    /* Quat9-only stream: header should be exactly 0x0400. If something
+     * else slipped in (e.g. a stale packet from before reset), nuke
+     * the FIFO and bail — the next call gets a clean window. */
+    if ((header & DMP_HDR_QUAT9) == 0) {
+        icm_write(tile, ICM20948_REG_FIFO_RST, 0x1F);
+        icm_write(tile, ICM20948_REG_FIFO_RST, 0x00);
+        return 0;
+    }
+    if (header & DMP_HDR_HEADER2) {
+        /* Defensive — Phase 2 shouldn't enable header2, but if some
+         * future path does, drain the header2 + bail rather than
+         * mis-parse the payload. */
+        uint8_t h2[2];
+        icm_read(tile, ICM20948_REG_FIFO_R_W, h2, 2);
+        (void)h2;
+    }
+
+    /* Payload: 12 bytes BE int32 (q1, q2, q3) + 2 bytes BE uint16 accuracy. */
+    uint8_t pl[DMP_QUAT9_PAYLOAD_BYTES];
+    icm_read(tile, ICM20948_REG_FIFO_R_W, pl, DMP_QUAT9_PAYLOAD_BYTES);
+
+    int32_t q1 = (int32_t)(((uint32_t)pl[0]  << 24)
+                         | ((uint32_t)pl[1]  << 16)
+                         | ((uint32_t)pl[2]  <<  8)
+                         | ((uint32_t)pl[3]       ));
+    int32_t q2 = (int32_t)(((uint32_t)pl[4]  << 24)
+                         | ((uint32_t)pl[5]  << 16)
+                         | ((uint32_t)pl[6]  <<  8)
+                         | ((uint32_t)pl[7]       ));
+    int32_t q3 = (int32_t)(((uint32_t)pl[8]  << 24)
+                         | ((uint32_t)pl[9]  << 16)
+                         | ((uint32_t)pl[10] <<  8)
+                         | ((uint32_t)pl[11]      ));
+    uint16_t accuracy = (uint16_t)(((uint16_t)pl[12] << 8) | pl[13]);
+
+    /* Recover q0 = sqrt(1 - q1² - q2² - q3²). All values are Q30, so
+     * 1.0 corresponds to (1<<30). Square-and-sum in Q60 (int64). If the
+     * three components are jointly above the unit sphere (rounding
+     * noise can put them slightly over) clamp the radicand to 0 so
+     * sqrt doesn't barf. Newton's iteration on int64. */
+    const int64_t one_q30  = (int64_t)1 << 30;
+    const int64_t one_q60  = one_q30 * one_q30;
+    int64_t q1q1 = (int64_t)q1 * (int64_t)q1;
+    int64_t q2q2 = (int64_t)q2 * (int64_t)q2;
+    int64_t q3q3 = (int64_t)q3 * (int64_t)q3;
+    int64_t rad  = one_q60 - q1q1 - q2q2 - q3q3;
+    if (rad < 0) rad = 0;
+
+    /* Integer sqrt of `rad` (a non-negative int64). Result fits in
+     * int32 because rad <= 2^60 → sqrt(rad) <= 2^30. */
+    int32_t q0 = 0;
+    if (rad > 0) {
+        /* Initial guess: the high half of `rad` shifted right gives
+         * a sqrt-order approximation; ensures Newton converges fast. */
+        uint64_t r = (uint64_t)rad;
+        uint64_t x = r;
+        /* Bit-tricks initial estimate — start at `r >> 1` clamped above 1. */
+        if (x > 1) x >>= 1;
+        for (uint8_t i = 0; i < 24; i++) {
+            uint64_t y = (x + r / x) >> 1;
+            if (y >= x) break;
+            x = y;
+        }
+        if (x > (uint64_t)0x7FFFFFFFU) x = 0x7FFFFFFFU;
+        q0 = (int32_t)x;
+    }
+
+    out_q[0] = q0;
+    out_q[1] = q1;
+    out_q[2] = q2;
+    out_q[3] = q3;
+    if (out_accuracy) *out_accuracy = accuracy;
+    return 1;
 }
