@@ -484,6 +484,22 @@ uint8_t tile_sense_i_6p6_fifo_read_packet(tile_t *tile, sense_i_6p6_fifo_packet_
     return 1;
 }
 
+/** @brief Flat-output variant — fills int32_t out[8]. */
+void tile_sense_i_6p6_fifo_read_packet_flat(tile_t *tile, int32_t *out)
+{
+    sense_i_6p6_fifo_packet_t pkt = {0};
+    if (!tile_sense_i_6p6_fifo_read_packet(tile, &pkt)) return;
+    if (!out) return;
+    out[0] = (int32_t)pkt.accel[0];
+    out[1] = (int32_t)pkt.accel[1];
+    out[2] = (int32_t)pkt.accel[2];
+    out[3] = (int32_t)pkt.gyro[0];
+    out[4] = (int32_t)pkt.gyro[1];
+    out[5] = (int32_t)pkt.gyro[2];
+    out[6] = (int32_t)pkt.temp;
+    out[7] = (int32_t)pkt.timestamp;
+}
+
 /** @brief Read multiple FIFO packets. */
 uint16_t tile_sense_i_6p6_fifo_read_packets(tile_t *tile,
                                               sense_i_6p6_fifo_packet_t *packets,
@@ -794,6 +810,20 @@ void tile_sense_i_6p6_get_tap_result(tile_t *tile, sense_i_6p6_tap_result_t *res
     result->axis      = (d4 >> 1) & 0x03;
     result->direction = d4 & 0x01;
     result->timing    = d5 & 0x3F;
+}
+
+void tile_sense_i_6p6_get_tap_result_flat(tile_t *tile,
+                                          int32_t *count,
+                                          int32_t *axis,
+                                          int32_t *direction,
+                                          int32_t *timing)
+{
+    sense_i_6p6_tap_result_t r = {0};
+    tile_sense_i_6p6_get_tap_result(tile, &r);
+    if (count)     *count     = (int32_t)r.count;
+    if (axis)      *axis      = (int32_t)r.axis;
+    if (direction) *direction = (int32_t)r.direction;
+    if (timing)    *timing    = (int32_t)r.timing;
 }
 
 /* ================================================================

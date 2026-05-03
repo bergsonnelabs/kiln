@@ -418,6 +418,36 @@ void tile_sense_tof_get_result(tile_t *tile, sense_tof_result_t *result)
     tof_write_reg(tile, TMF8806_REG_INT_STATUS, TMF8806_INT_RESULT);
 }
 
+void tile_sense_tof_get_result_flat(tile_t *tile, int32_t *out)
+{
+    sense_tof_result_t r = {0};
+    tile_sense_tof_get_result(tile, &r);
+    if (!out) return;
+    out[0] = (int32_t)r.distance_mm;
+    out[1] = (int32_t)r.status;
+    out[2] = (int32_t)r.reliability;
+    out[3] = (int32_t)r.temperature;     /* int8_t → int32_t sign-extends */
+    out[4] = (int32_t)r.result_number;
+}
+
+uint8_t tile_sense_tof_measure_single_flat(tile_t *tile,
+                                           int32_t *mm,
+                                           int32_t *status,
+                                           int32_t *reliability,
+                                           int32_t *temp_c,
+                                           int32_t *seq,
+                                           uint32_t timeout_ms)
+{
+    sense_tof_result_t r = {0};
+    uint8_t ok = tile_sense_tof_measure_single(tile, &r, timeout_ms);
+    if (mm)          *mm          = (int32_t)r.distance_mm;
+    if (status)      *status      = (int32_t)r.status;
+    if (reliability) *reliability = (int32_t)r.reliability;
+    if (temp_c)      *temp_c      = (int32_t)r.temperature;
+    if (seq)         *seq         = (int32_t)r.result_number;
+    return ok;
+}
+
 uint8_t tile_sense_tof_result_ready(tile_t *tile)
 {
     uint8_t int_status = tof_read_reg(tile, TMF8806_REG_INT_STATUS);
