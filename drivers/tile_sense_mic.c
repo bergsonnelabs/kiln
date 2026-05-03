@@ -366,8 +366,9 @@ void tile_sense_mic_get_samples(tile_t *tile, uint16_t *buf, uint16_t count)
  * ================================================================ */
 
 /** @brief Compute the DC level (mean) of a sample buffer. */
-uint16_t tile_sense_mic_dc_level(const uint16_t *samples, uint16_t count)
+uint16_t tile_sense_mic_dc_level(tile_t *tile, const uint16_t *samples, uint16_t count)
 {
+    (void)tile;
     if (count == 0) return 0;
     uint32_t sum = 0;
     for (uint16_t i = 0; i < count; i++) {
@@ -377,8 +378,9 @@ uint16_t tile_sense_mic_dc_level(const uint16_t *samples, uint16_t count)
 }
 
 /** @brief Compute peak-to-peak amplitude of a sample buffer. */
-uint16_t tile_sense_mic_peak_to_peak(const uint16_t *samples, uint16_t count)
+uint16_t tile_sense_mic_peak_to_peak(tile_t *tile, const uint16_t *samples, uint16_t count)
 {
+    (void)tile;
     if (count == 0) return 0;
     uint16_t min_val = samples[0];
     uint16_t max_val = samples[0];
@@ -390,9 +392,10 @@ uint16_t tile_sense_mic_peak_to_peak(const uint16_t *samples, uint16_t count)
 }
 
 /** @brief Compute RMS amplitude relative to a DC offset. */
-uint16_t tile_sense_mic_rms(const uint16_t *samples, uint16_t count,
+uint16_t tile_sense_mic_rms(tile_t *tile, const uint16_t *samples, uint16_t count,
                             uint16_t dc_offset)
 {
+    (void)tile;
     if (count == 0) return 0;
     uint32_t sum_sq = 0;
     for (uint16_t i = 0; i < count; i++) {
@@ -477,7 +480,7 @@ static uint16_t mic_capture_rms_mv(tile_t *tile)
     for (uint16_t i = 0; i < MIC_TIER2_BUF_LEN; i++) {
         buf[i] = mic_read_sample(tile);
     }
-    uint16_t rms_raw = tile_sense_mic_rms(buf, MIC_TIER2_BUF_LEN, s->dc_offset);
+    uint16_t rms_raw = tile_sense_mic_rms(tile, buf, MIC_TIER2_BUF_LEN, s->dc_offset);
     /* mV = raw * vref_mv / 4096 */
     return (uint16_t)(((uint32_t)rms_raw * s->vref_mv) >> 12);
 }

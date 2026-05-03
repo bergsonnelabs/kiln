@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@3d5addf",
+  "source": "cores@bf3167c",
   "tile": "Sense.T.C",
   "palette": {
     "label": "Sense.T.C",

@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@3d5addf",
+  "source": "cores@bf3167c",
   "tile": "Sense.MIC",
   "palette": {
     "label": "Sense.MIC",
@@ -254,6 +254,86 @@
         "name": "buf",
         "type": "uint16_t",
         "cap_param": "count"
+      },
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "dc_level"
+      ],
+      "symbol": "tile_sense_mic_dc_level",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Compute the DC level (mean) of a sample buffer.",
+      "params": [
+        {
+          "name": "samples",
+          "type": "int[]",
+          "description": "Sample buffer (typically from get_samples())."
+        }
+      ],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "c_in_buffer": {
+        "name": "samples",
+        "type": "uint16_t",
+        "length_param": "count"
+      },
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "peak_to_peak"
+      ],
+      "symbol": "tile_sense_mic_peak_to_peak",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Compute peak-to-peak amplitude of a sample buffer (raw counts).",
+      "params": [
+        {
+          "name": "samples",
+          "type": "int[]",
+          "description": "Sample buffer."
+        }
+      ],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "c_in_buffer": {
+        "name": "samples",
+        "type": "uint16_t",
+        "length_param": "count"
+      },
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "rms"
+      ],
+      "symbol": "tile_sense_mic_rms",
+      "header": "tile_sense_mic.h",
+      "category": "tile",
+      "description": "Compute RMS amplitude relative to a DC offset (raw counts).",
+      "params": [
+        {
+          "name": "samples",
+          "type": "int[]",
+          "description": "Sample buffer."
+        },
+        {
+          "name": "dc_offset",
+          "type": "int",
+          "description": "DC bias point (use dc_level() to measure, or pass 2048)."
+        }
+      ],
+      "returns": "uint16_t",
+      "dsl_returns": "int",
+      "c_in_buffer": {
+        "name": "samples",
+        "type": "uint16_t",
+        "length_param": "count"
       },
       "receiver": "tile_t *"
     },

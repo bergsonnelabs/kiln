@@ -515,6 +515,18 @@ void tile_sense_tof_get_app_version(tile_t *tile, sense_tof_version_t *version)
     version->patch = tof_read_reg(tile, TMF8806_REG_APPREV_PATCH);
 }
 
+void tile_sense_tof_get_app_version_flat(tile_t *tile,
+                                         int32_t *major,
+                                         int32_t *minor,
+                                         int32_t *patch)
+{
+    sense_tof_version_t v = {0};
+    tile_sense_tof_get_app_version(tile, &v);
+    if (major) *major = (int32_t)v.major;
+    if (minor) *minor = (int32_t)v.minor;
+    if (patch) *patch = (int32_t)v.patch;
+}
+
 /* ---- Runtime configuration ---- */
 
 void tile_sense_tof_set_distance_mode(tile_t *tile, sense_tof_distance_mode_t mode)
@@ -589,6 +601,17 @@ uint8_t tile_sense_tof_get_serial_number(tile_t *tile, uint8_t *serial)
     }
 
     return 0;
+}
+
+void tile_sense_tof_get_serial_number_flat(tile_t *tile, int32_t *out)
+{
+    if (!out) return;
+    uint8_t serial[4] = {0};
+    tile_sense_tof_get_serial_number(tile, serial);
+    out[0] = (int32_t)serial[0];
+    out[1] = (int32_t)serial[1];
+    out[2] = (int32_t)serial[2];
+    out[3] = (int32_t)serial[3];
 }
 
 /* ---------------------------------------------------------------- */
@@ -740,6 +763,19 @@ uint8_t tile_sense_tof_read_histogram(tile_t *tile, uint8_t hist_type,
     /* Clear the interrupt. */
     tof_write_reg(tile, TMF8806_REG_INT_STATUS, TMF8806_INT_HISTOGRAM);
     return 1;
+}
+
+void tile_sense_tof_read_histogram_flat(tile_t *tile,
+                                        uint8_t hist_type,
+                                        uint32_t timeout_ms,
+                                        int32_t *out)
+{
+    if (!out) return;
+    uint8_t buf[128] = {0};
+    tile_sense_tof_read_histogram(tile, hist_type, buf, timeout_ms);
+    for (int i = 0; i < 128; i++) {
+        out[i] = (int32_t)buf[i];
+    }
 }
 
 /* ---------------------------------------------------------------- */

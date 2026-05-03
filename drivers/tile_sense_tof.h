@@ -491,6 +491,26 @@ void tile_sense_tof_get_calibration(tile_t *tile, uint8_t *data);
 void tile_sense_tof_get_app_version(tile_t *tile, sense_tof_version_t *version);
 
 /**
+ * @brief  DSL-friendly flat-output variant of get_app_version().
+ *
+ * Drops the struct in favor of three positional out-scalars.
+ *
+ * @tessera expose category=tile name=get_app_version section=advanced
+ * @tessera out_scalar major type=int32_t
+ * @tessera out_scalar minor type=int32_t
+ * @tessera out_scalar patch type=int32_t
+ *
+ * @param  tile   Initialised tile handle.
+ * @param  major  Output: major version number.
+ * @param  minor  Output: minor version number.
+ * @param  patch  Output: patch version number.
+ */
+void tile_sense_tof_get_app_version_flat(tile_t *tile,
+                                         int32_t *major,
+                                         int32_t *minor,
+                                         int32_t *patch);
+
+/**
  * @brief  Read the device serial number.
  *
  * Issues the serial number command (0x47) and reads back the response.
@@ -501,6 +521,22 @@ void tile_sense_tof_get_app_version(tile_t *tile, sense_tof_version_t *version);
  * @return 1 if serial number was read successfully, 0 on error.
  */
 uint8_t tile_sense_tof_get_serial_number(tile_t *tile, uint8_t *serial);
+
+/**
+ * @brief  DSL-friendly flat-output variant of get_serial_number().
+ *
+ * Drops the success bool — on bus error, the buffer comes back as
+ * all-zeros, which is invalid as a real serial number so callers can
+ * detect failure by checking for a zero serial. Bytes widen to int32
+ * for DSL int compatibility.
+ *
+ * @tessera expose category=tile name=get_serial_number returns=int[4] section=advanced
+ * @tessera out_buffer out type=int32_t length=4
+ *
+ * @param  tile  Initialised tile handle.
+ * @param  out   Output buffer (4 int32_t slots).
+ */
+void tile_sense_tof_get_serial_number_flat(tile_t *tile, int32_t *out);
 
 /* ---- Runtime configuration ---- */
 
@@ -668,6 +704,27 @@ uint32_t tile_sense_tof_get_sys_clock_ticks(tile_t *tile);
  */
 uint8_t tile_sense_tof_read_histogram(tile_t *tile, uint8_t hist_type,
                                       uint8_t *buf128, uint32_t timeout_ms);
+
+/**
+ * @brief  DSL-friendly flat-output variant of read_histogram().
+ *
+ * Drops the success bool — on timeout / bus error the buffer comes
+ * back zero-filled. Bytes widen to int32 for DSL int compatibility.
+ * Caller passes hist_type and timeout_ms as scalar args; the buffer
+ * is the function's output (collapsed into the int[128] return).
+ *
+ * @tessera expose category=tile name=read_histogram returns=int[128] section=advanced
+ * @tessera out_buffer out type=int32_t length=128
+ *
+ * @param  tile        Initialised tile handle.
+ * @param  hist_type   Histogram-type byte (see read_histogram() docs).
+ * @param  timeout_ms  Maximum wait for the histogram-ready interrupt.
+ * @param  out         Output buffer (128 int32_t slots).
+ */
+void tile_sense_tof_read_histogram_flat(tile_t *tile,
+                                        uint8_t hist_type,
+                                        uint32_t timeout_ms,
+                                        int32_t *out);
 
 /* ============================================================== */
 /* Runtime — tier-2 idiomatic helpers                              */
