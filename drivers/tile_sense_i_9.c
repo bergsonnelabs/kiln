@@ -15,7 +15,9 @@
  */
 
 #include "tile_sense_i_9.h"
+#include "tile_sense_i_9_dmp3.h"
 #include <stddef.h>
+#include <string.h>
 
 /* -------------------------------------------------------------- */
 /* Instance mapping                                                */
@@ -32,6 +34,31 @@ static uint8_t resolve_id(uint8_t instance)
 {
     if (instance >= ID_TABLE_LEN) return 0x00;
     return id_table[instance];
+}
+
+/* -------------------------------------------------------------- */
+/* Per-instance driver state                                       */
+/*                                                                  */
+/* Today: tracks DMP firmware-load status + last DMP-RAM bank for  */
+/* the bank-select-skip optimization. Will grow as Phase 2/3/4     */
+/* land more DMP-side state (active features, output rate, etc.). */
+/* -------------------------------------------------------------- */
+
+typedef struct {
+    uint8_t dmp_loaded;        /**< 1 once dmp_load() has succeeded since reset. */
+    uint8_t last_dmp_bank;     /**< Last MEM_BANK_SEL value written; skip the
+                                    bus write when the next access stays in the
+                                    same bank. 0xFF = "no bank selected yet". */
+} icm_state_t;
+
+static icm_state_t icm_state[ID_TABLE_LEN];
+
+static icm_state_t *state_for(tile_t *tile)
+{
+    for (uint8_t i = 0; i < ID_TABLE_LEN; i++) {
+        if (id_table[i] == tile->id) return &icm_state[i];
+    }
+    return &icm_state[0];
 }
 
 /* -------------------------------------------------------------- */
@@ -134,6 +161,14 @@ void tile_sense_i_9_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
 
     tile->hal = hal;
     tile->id  = id;
+
+    /* Per-instance state — cleared on every init so DMP load status
+     * never carries over from a prior session even if the chip wasn't
+     * power-cycled (the software-reset below clears DMP RAM, so the
+     * driver-side flag has to follow). */
+    icm_state_t *s = state_for(tile);
+    s->dmp_loaded     = 0;
+    s->last_dmp_bank  = 0xFF;
 
     /* Verify device is on bus */
     if (hal->i2c_is_ready(hal->handle, id) != 0) {
@@ -284,6 +319,12 @@ void tile_sense_i_9_reset(tile_t* tile)
     set_bank(tile, ICM20948_BANK_0);
     icm_write(tile, ICM20948_REG_PWR_MGMT_1, 1 << 7);
     tile->hal->delay_ms(50);
+    /* Software reset clears DMP RAM as a side-effect — drop the
+     * driver-side flag so dmp_is_loaded() reflects the new reality.
+     * The caller has to re-issue dmp_load() before reading DMP outputs. */
+    icm_state_t *s = state_for(tile);
+    s->dmp_loaded    = 0;
+    s->last_dmp_bank = 0xFF;
     tile->state = TILE_STATE_NONE;
 }
 
@@ -802,4 +843,139 @@ uint8_t tile_sense_i_9_wait_for_motion(tile_t* tile, uint32_t timeout_ms)
         waited += step;
     }
     return 0;
+}
+
+/* ================================================================ */
+/* DMP3 — firmware load                                              */
+/*                                                                    */
+/* Reference: TDK eMD-SmartMotion-ICM20948-1.1.0-MP. Load procedure   */
+/* mirrored from SparkFun's port (inv_icm20948_write_mems +           */
+/* inv_icm20948_firmware_load in their ICM_20948_C.c).                */
+/* ================================================================ */
+
+/** Maximum bytes per I²C burst into MEM_R_W. The ICM-20948's
+ *  serial interface buffer accepts at least 16 bytes per transaction
+ *  per the eMD reference; keep at the proven value. */
+#define DMP_MEM_CHUNK   16U
+
+/** Page size of the DMP RAM. Bank crossings (a write that would
+ *  span the 0x100-byte boundary) need an extra MEM_BANK_SEL update. */
+#define DMP_PAGE_SIZE   0x100U
+
+/** Write `len` bytes from `data` to DMP RAM starting at `addr` (a
+ *  16-bit address: high byte = bank, low byte = offset within page).
+ *  Handles bank crossings and chunks the bus access at DMP_MEM_CHUNK.
+ *  Caller is responsible for being on register bank 0. */
+static void dmp_write_mems(tile_t *tile, uint16_t addr, uint16_t len,
+                           const uint8_t *data)
+{
+    icm_state_t *s = state_for(tile);
+    uint16_t written = 0;
+
+    while (written < len) {
+        uint8_t bank      = (uint8_t)((addr >> 8) & 0x0F);
+        uint8_t page_off  = (uint8_t)(addr & 0xFF);
+        uint16_t remain   = len - written;
+        uint16_t to_page  = DMP_PAGE_SIZE - page_off;
+        uint16_t this_len = remain < DMP_MEM_CHUNK ? remain : DMP_MEM_CHUNK;
+        if (this_len > to_page) this_len = to_page;
+
+        if (bank != s->last_dmp_bank) {
+            icm_write(tile, ICM20948_REG_MEM_BANK_SEL, bank);
+            s->last_dmp_bank = bank;
+        }
+        icm_write(tile, ICM20948_REG_MEM_START_ADDR, page_off);
+        tile->hal->i2c_write(tile->hal->handle, tile->id,
+                             ICM20948_REG_MEM_R_W,
+                             (uint8_t *)&data[written], (uint16_t)this_len);
+
+        written += this_len;
+        addr    += this_len;
+    }
+}
+
+/** Read `len` bytes from DMP RAM at `addr` into `data`. Same chunking
+ *  + bank-crossing rules as dmp_write_mems. Caller is on bank 0. */
+static void dmp_read_mems(tile_t *tile, uint16_t addr, uint16_t len,
+                          uint8_t *data)
+{
+    icm_state_t *s = state_for(tile);
+    uint16_t read = 0;
+
+    while (read < len) {
+        uint8_t bank      = (uint8_t)((addr >> 8) & 0x0F);
+        uint8_t page_off  = (uint8_t)(addr & 0xFF);
+        uint16_t remain   = len - read;
+        uint16_t to_page  = DMP_PAGE_SIZE - page_off;
+        uint16_t this_len = remain < DMP_MEM_CHUNK ? remain : DMP_MEM_CHUNK;
+        if (this_len > to_page) this_len = to_page;
+
+        if (bank != s->last_dmp_bank) {
+            icm_write(tile, ICM20948_REG_MEM_BANK_SEL, bank);
+            s->last_dmp_bank = bank;
+        }
+        icm_write(tile, ICM20948_REG_MEM_START_ADDR, page_off);
+        tile->hal->i2c_read(tile->hal->handle, tile->id,
+                            ICM20948_REG_MEM_R_W,
+                            &data[read], (uint16_t)this_len);
+
+        read += this_len;
+        addr += this_len;
+    }
+}
+
+uint8_t tile_sense_i_9_dmp_load(tile_t* tile)
+{
+    if (tile->state != TILE_STATE_READY) return 0;
+
+    icm_state_t *s = state_for(tile);
+    if (s->dmp_loaded) return 1;  /* idempotent — re-load is unnecessary */
+
+    /* DMP RAM access lives in bank 0; ensure we're not stuck on bank 1/2/3
+     * from some prior register access. Force bank-cache invalidation on
+     * the DMP-side so the first write sets MEM_BANK_SEL explicitly. */
+    set_bank(tile, ICM20948_BANK_0);
+    s->last_dmp_bank = 0xFF;
+
+    /* The chip must be awake AND not in low-power for the DMP RAM port
+     * to function. init() leaves it in run mode, but be defensive in
+     * case the caller put it to sleep before invoking dmp_load. */
+    icm_modify(tile, ICM20948_REG_PWR_MGMT_1, 0x40, 0x00);  /* clear SLEEP */
+    icm_modify(tile, ICM20948_REG_PWR_MGMT_1, 0x20, 0x00);  /* clear LP_EN */
+    tile->hal->delay_ms(5);
+
+    /* Load: 14301-byte blob to DMP RAM starting at DMP_LOAD_START. */
+    dmp_write_mems(tile, ICM20948_DMP_LOAD_START,
+                   ICM20948_DMP_FIRMWARE_SIZE,
+                   icm20948_dmp3_firmware);
+
+    /* Verify: read back in DMP_MEM_CHUNK-sized windows and compare.
+     * A mismatch usually means a flaky bus or a chip in the wrong
+     * power state; surface as a load failure so the caller can
+     * retry / reset. */
+    {
+        uint8_t scratch[DMP_MEM_CHUNK];
+        uint16_t off = 0;
+        s->last_dmp_bank = 0xFF;  /* reset cache for the read pass */
+        while (off < ICM20948_DMP_FIRMWARE_SIZE) {
+            uint16_t chunk = ICM20948_DMP_FIRMWARE_SIZE - off;
+            if (chunk > DMP_MEM_CHUNK) chunk = DMP_MEM_CHUNK;
+            dmp_read_mems(tile,
+                          (uint16_t)(ICM20948_DMP_LOAD_START + off),
+                          chunk, scratch);
+            if (memcmp(scratch, &icm20948_dmp3_firmware[off], chunk) != 0) {
+                TILE_ON_ERROR(tile, "dmp_load: verify mismatch");
+                return 0;
+            }
+            off += chunk;
+        }
+    }
+
+    s->dmp_loaded = 1;
+    return 1;
+}
+
+uint8_t tile_sense_i_9_dmp_is_loaded(tile_t* tile)
+{
+    return state_for(tile)->dmp_loaded ? 1 : 0;
 }

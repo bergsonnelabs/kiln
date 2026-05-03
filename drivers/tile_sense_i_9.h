@@ -162,6 +162,21 @@ TILES_CHECK_VERSION(1, 0);  /* requires tiles.h >= 1.0 */
 #define ICM20948_REG_FIFO_COUNTL    0x71
 #define ICM20948_REG_FIFO_R_W       0x72
 
+/* DMP RAM access (bank 0). DMP firmware lives in a 16-bank RAM
+ * accessed indirectly: write the bank number to MEM_BANK_SEL,
+ * the low-byte address to MEM_START_ADDR (auto-increments on burst
+ * access), then read or write through MEM_R_W. */
+#define ICM20948_REG_MEM_START_ADDR 0x7C
+#define ICM20948_REG_MEM_R_W        0x7D
+#define ICM20948_REG_MEM_BANK_SEL   0x7E
+
+/* USER_CTRL (0x03) bit fields used by DMP. */
+#define ICM20948_USER_CTRL_DMP_EN     (1U << 7)
+#define ICM20948_USER_CTRL_FIFO_EN    (1U << 6)
+#define ICM20948_USER_CTRL_I2C_MST_EN (1U << 5)
+#define ICM20948_USER_CTRL_DMP_RST    (1U << 3)
+#define ICM20948_USER_CTRL_FIFO_RST   (1U << 2)
+
 /* Bank 1 registers (self-test reference values) */
 #define ICM20948_B1_SELF_TEST_X_GYRO  0x02
 #define ICM20948_B1_SELF_TEST_Y_GYRO  0x03
@@ -933,5 +948,54 @@ void tile_sense_i_9_read_heading_centi_degrees(tile_t* tile,
  * @return 1 if motion was detected, 0 on timeout
  */
 uint8_t tile_sense_i_9_wait_for_motion(tile_t* tile, uint32_t timeout_ms);
+
+/* ================================================================
+ * DMP3 — on-chip Digital Motion Processor (Phase 1: firmware load)
+ *
+ * The ICM-20948 has a coprocessor (DMP3) that can run sensor-fusion
+ * firmware on-chip. Without firmware loaded, the DMP is dormant and
+ * the chip behaves as a plain raw-sample sensor. With firmware loaded
+ * and configured, the DMP outputs derived quantities (quaternions,
+ * linear accel, calibrated mag) into a packet stream the host reads
+ * from FIFO.
+ *
+ * Firmware blob: 14301 bytes, vendored from TDK eMD via SparkFun's
+ * ICM-20948 Arduino library. See tile_sense_i_9_dmp3.h.
+ *
+ * This phase ships the firmware-load + verify path only. Reading
+ * DMP outputs (quaternions etc.) lands in subsequent phases.
+ * ================================================================ */
+
+/**
+ * @brief  Load the DMP3 firmware into the chip's DMP RAM and verify.
+ *
+ * Performs the full eMD load sequence: chunked write of the 14301-byte
+ * blob to DMP RAM (handling the 0x100-byte bank-page crossings), then
+ * a chunked read-back compare. Idempotent — repeated calls re-verify
+ * but don't reload.
+ *
+ * Blocks for ~250 ms on a 400 kHz I²C bus (chunk size = 16 bytes,
+ * one bank-select write per crossing).
+ *
+ * The DMP is left in the loaded-but-disabled state. Enabling output
+ * (DMP_EN in USER_CTRL + feature configuration) is a separate step,
+ * shipped in a follow-up phase.
+ *
+ * @param  tile  Initialized tile handle.
+ * @return 1 on successful load + verify, 0 on bus error or verify mismatch.
+ */
+uint8_t tile_sense_i_9_dmp_load(tile_t* tile);
+
+/**
+ * @brief  Check whether DMP firmware has been loaded since the last reset.
+ *
+ * Tracks driver-side state set by dmp_load(). A chip reset clears
+ * the DMP RAM but doesn't auto-clear this flag — call after reset()
+ * to know whether you need to reload.
+ *
+ * @param  tile  Initialized tile handle.
+ * @return 1 if dmp_load() has succeeded since the driver last cleared its state.
+ */
+uint8_t tile_sense_i_9_dmp_is_loaded(tile_t* tile);
 
 #endif /* INC_TILE_SENSE_I_9_H_ */
