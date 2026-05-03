@@ -367,6 +367,55 @@ uint16_t tile_sense_tof_get_distance_mm(tile_t *tile);
 void tile_sense_tof_get_result(tile_t *tile, sense_tof_result_t *result);
 
 /**
+ * @brief  DSL-friendly flat-output variant of get_result().
+ *
+ * Drops the struct in favor of a positional int[5] array — the DSL
+ * doesn't have a struct ABI yet, so the per-field outputs come back
+ * indexed. Layout: out[0]=distance_mm, out[1]=status,
+ * out[2]=reliability, out[3]=temperature_c, out[4]=result_number.
+ * The temperature is widened from int8_t to int32_t so negative
+ * values sign-extend correctly.
+ *
+ * @tessera expose category=tile name=get_result returns=int[5] section=runtime
+ * @tessera out_buffer out type=int32_t length=5
+ *
+ * @param  tile  Initialised tile handle.
+ * @param  out   Output buffer (5 int32_t slots).
+ */
+void tile_sense_tof_get_result_flat(tile_t *tile, int32_t *out);
+
+/**
+ * @brief  DSL-friendly flat-output variant of measure_single().
+ *
+ * Combines a single-shot measurement with positional int outputs.
+ * Same layout convention as get_result_flat — the per-field values
+ * land in five out-scalar slots. Returns the chip's success flag.
+ *
+ * @tessera expose category=tile name=measure_single returns=bool section=runtime
+ * @tessera out_scalar mm type=int32_t
+ * @tessera out_scalar status type=int32_t
+ * @tessera out_scalar reliability type=int32_t
+ * @tessera out_scalar temp_c type=int32_t
+ * @tessera out_scalar seq type=int32_t
+ *
+ * @param  tile        Initialised tile handle.
+ * @param  mm          Output: distance in millimetres.
+ * @param  status      Output: result status code.
+ * @param  reliability Output: 0–63 reliability score.
+ * @param  temp_c      Output: die temperature in degrees Celsius.
+ * @param  seq         Output: monotonic result counter.
+ * @param  timeout_ms  Maximum wait for the measurement to complete.
+ * @return 1 on a valid result, 0 on timeout / bus error.
+ */
+uint8_t tile_sense_tof_measure_single_flat(tile_t *tile,
+                                           int32_t *mm,
+                                           int32_t *status,
+                                           int32_t *reliability,
+                                           int32_t *temp_c,
+                                           int32_t *seq,
+                                           uint32_t timeout_ms);
+
+/**
  * @brief  Check if a new measurement result is available.
  * @tessera expose category=tile name=result_ready returns=bool section=runtime
  *

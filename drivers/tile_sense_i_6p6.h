@@ -857,6 +857,28 @@ void tile_sense_i_6p6_fifo_flush(tile_t *tile);
 uint8_t tile_sense_i_6p6_fifo_read_packet(tile_t *tile, sense_i_6p6_fifo_packet_t *pkt);
 
 /**
+ * @brief  DSL-friendly flat-output variant of fifo_read_packet().
+ *
+ * Drops the struct in favor of a positional int[8] array — the DSL
+ * doesn't have a struct ABI yet, so the per-field outputs come back
+ * indexed. Layout:
+ *   out[0..2] = accel x,y,z   (raw int16 widened to int32)
+ *   out[3..5] = gyro x,y,z    (raw int16 widened to int32)
+ *   out[6]    = temp          (raw int8 widened to int32)
+ *   out[7]    = timestamp     (raw uint16)
+ *
+ * Drops the success bool — call fifo_count() first to know whether
+ * there's data. On an empty FIFO, the slots are left untouched.
+ *
+ * @tessera expose category=tile name=fifo_read_packet returns=int[8] section=fifo
+ * @tessera out_buffer out type=int32_t length=8
+ *
+ * @param  tile  Initialised tile handle.
+ * @param  out   Output buffer (8 int32_t slots).
+ */
+void tile_sense_i_6p6_fifo_read_packet_flat(tile_t *tile, int32_t *out);
+
+/**
  * @brief  Read multiple FIFO packets.
  * @param  packets    Output array
  * @param  max_count  Maximum packets to read
@@ -1159,6 +1181,31 @@ void tile_sense_i_6p6_tap_disable(tile_t *tile);
  * @param  result  Output tap information
  */
 void tile_sense_i_6p6_get_tap_result(tile_t *tile, sense_i_6p6_tap_result_t *result);
+
+/**
+ * @brief  DSL-friendly flat-output variant of get_tap_result().
+ *
+ * Same data, four positional out-scalars instead of a struct. Useful
+ * for polling-style flows; event-driven flows already get these values
+ * via the `Sense.I.6P6.tap` event payload.
+ *
+ * @tessera expose category=tile name=get_tap_result section=tap
+ * @tessera out_scalar count type=int32_t
+ * @tessera out_scalar axis type=int32_t
+ * @tessera out_scalar direction type=int32_t
+ * @tessera out_scalar timing type=int32_t
+ *
+ * @param  tile       Initialised tile handle.
+ * @param  count      Output: 0 = none, 1 = single tap, 2 = double.
+ * @param  axis       Output: 0 = X, 1 = Y, 2 = Z.
+ * @param  direction  Output: 0 = positive, 1 = negative.
+ * @param  timing     Output: double-tap timing (chip-specific units).
+ */
+void tile_sense_i_6p6_get_tap_result_flat(tile_t *tile,
+                                          int32_t *count,
+                                          int32_t *axis,
+                                          int32_t *direction,
+                                          int32_t *timing);
 
 /* ================================================================
  * Public API — Advanced

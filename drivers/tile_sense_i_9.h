@@ -714,6 +714,26 @@ uint16_t tile_sense_i_9_fifo_count(tile_t* tile);
 uint8_t tile_sense_i_9_fifo_read_packet(tile_t* tile,
                                         sense_i_9_fifo_packet_t* pkt);
 
+/**
+ * @brief  DSL-friendly flat-output variant of fifo_read_packet().
+ *
+ * Drops the struct in favor of a positional int[6] array — the DSL
+ * doesn't have a struct ABI yet, so the per-field outputs come back
+ * indexed. Layout:
+ *   out[0..2] = accel x,y,z   (raw int16 widened to int32)
+ *   out[3..5] = gyro x,y,z    (raw int16 widened to int32)
+ *
+ * Drops the success bool — call fifo_count() first to know whether
+ * there's data. On an empty FIFO, the slots are left untouched.
+ *
+ * @tessera expose category=tile name=fifo_read_packet returns=int[6] section=fifo
+ * @tessera out_buffer out type=int32_t length=6
+ *
+ * @param  tile  Initialized tile handle.
+ * @param  out   Output buffer (6 int32_t slots).
+ */
+void tile_sense_i_9_fifo_read_packet_flat(tile_t* tile, int32_t* out);
+
 /* ================================================================
  * Self-test
  * ================================================================ */

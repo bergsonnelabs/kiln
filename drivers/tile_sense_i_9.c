@@ -452,6 +452,19 @@ uint8_t tile_sense_i_9_fifo_read_packet(tile_t* tile,
     return 1;
 }
 
+void tile_sense_i_9_fifo_read_packet_flat(tile_t* tile, int32_t* out)
+{
+    sense_i_9_fifo_packet_t pkt = {0};
+    if (!tile_sense_i_9_fifo_read_packet(tile, &pkt)) return;
+    if (!out) return;
+    out[0] = (int32_t)pkt.accel[0];
+    out[1] = (int32_t)pkt.accel[1];
+    out[2] = (int32_t)pkt.accel[2];
+    out[3] = (int32_t)pkt.gyro[0];
+    out[4] = (int32_t)pkt.gyro[1];
+    out[5] = (int32_t)pkt.gyro[2];
+}
+
 /* -------------------------------------------------------------- */
 /* Self-test                                                       */
 /* -------------------------------------------------------------- */
