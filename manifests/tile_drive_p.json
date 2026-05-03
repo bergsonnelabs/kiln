@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@9c4313f",
+  "source": "cores@cb66c74",
   "tile": "Drive.P",
   "palette": {
     "label": "Drive.P",
@@ -94,6 +94,30 @@
         }
       ],
       "returns": "void",
+      "receiver": "tile_t*"
+    },
+    {
+      "qname": [
+        "$slot",
+        "wfs_write"
+      ],
+      "symbol": "tile_drive_p_wfs_write",
+      "header": "tile_drive_p.h",
+      "category": "tile",
+      "description": "Write a multi-word WFS command to the BOS1921.",
+      "params": [
+        {
+          "name": "words",
+          "type": "int[]",
+          "description": "Array of 16-bit words (big-endian on wire)"
+        }
+      ],
+      "returns": "void",
+      "c_in_buffer": {
+        "name": "words",
+        "type": "uint16_t",
+        "length_param": "count"
+      },
       "receiver": "tile_t*"
     },
     {

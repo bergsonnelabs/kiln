@@ -405,6 +405,9 @@ uint8_t tile_sense_tof_factory_calibrate(tile_t *tile, uint32_t timeout_ms);
  * sensor before each measurement start. Call this after init() to
  * restore calibration from non-volatile storage.
  *
+ * @tessera expose category=tile name=set_calibration section=advanced
+ * @tessera in_buffer data type=uint8_t length=14
+ *
  * @param  tile  Initialised tile handle.
  * @param  data  Pointer to 14-byte calibration data array.
  */
@@ -416,6 +419,9 @@ void tile_sense_tof_set_calibration(tile_t *tile, const uint8_t *data);
  * Reads 14 bytes of calibration data from the sensor's calibration
  * registers. Typically called after tile_sense_tof_factory_calibrate()
  * to save the data for later reloading via set_calibration().
+ *
+ * @tessera expose category=tile name=get_calibration returns=int[14] section=advanced
+ * @tessera out_buffer data type=uint8_t length=14
  *
  * @param  tile  Initialised tile handle.
  * @param  data  Output buffer for 14 bytes of calibration data.
@@ -485,6 +491,9 @@ void tile_sense_tof_set_period(tile_t *tile, uint8_t period_ms);
  * Preserving algorithm state across power cycles avoids the ~8 ms
  * re-initialisation penalty and maintains measurement accuracy.
  *
+ * @tessera expose category=tile name=save_state returns=int[11] section=advanced
+ * @tessera out_buffer data type=uint8_t length=11
+ *
  * @param  tile  Initialised tile handle (measurement should be stopped).
  * @param  data  Output buffer for 11 bytes of state data.
  */
@@ -500,6 +509,9 @@ void tile_sense_tof_save_state(tile_t *tile, uint8_t *data);
  * The calibration data bitmask in the measurement command (cmd_data7)
  * is automatically updated to include algState when state data has
  * been restored.
+ *
+ * @tessera expose category=tile name=restore_state section=advanced
+ * @tessera in_buffer data type=uint8_t length=11
  *
  * @param  tile  Initialised tile handle (after wake, before start).
  * @param  data  Pointer to 11 bytes of previously saved state data.

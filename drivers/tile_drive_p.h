@@ -261,6 +261,9 @@ void tile_drive_p_write_reg(tile_t* tile, uint8_t reg, uint16_t value);
 /**
  * @brief  Write a multi-word WFS command to the BOS1921.
  *
+ * @tessera expose category=tile name=wfs_write section=advanced
+ * @tessera in_buffer words type=uint16_t length_param=count
+ *
  * @param  tile   Pointer to tile handle
  * @param  words  Array of 16-bit words (big-endian on wire)
  * @param  count  Number of words (max 8)

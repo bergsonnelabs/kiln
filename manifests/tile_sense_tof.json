@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@9c4313f",
+  "source": "cores@cb66c74",
   "tile": "Sense.TOF",
   "palette": {
     "label": "Sense.TOF",
@@ -132,6 +132,48 @@
     {
       "qname": [
         "$slot",
+        "set_calibration"
+      ],
+      "symbol": "tile_sense_tof_set_calibration",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Load factory calibration data into the driver.",
+      "params": [
+        {
+          "name": "data",
+          "type": "int[14]",
+          "description": "Pointer to 14-byte calibration data array."
+        }
+      ],
+      "returns": "void",
+      "c_in_buffer": {
+        "name": "data",
+        "type": "uint8_t",
+        "length": 14
+      },
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "get_calibration"
+      ],
+      "symbol": "tile_sense_tof_get_calibration",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Read the current factory calibration data from the sensor.",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[14]",
+      "c_out_buffer": {
+        "type": "uint8_t",
+        "length": 14
+      },
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
         "set_distance_mode"
       ],
       "symbol": "tile_sense_tof_set_distance_mode",
@@ -165,6 +207,48 @@
         }
       ],
       "returns": "void",
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "save_state"
+      ],
+      "symbol": "tile_sense_tof_save_state",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Save the algorithm state from the sensor.",
+      "params": [],
+      "returns": "void",
+      "dsl_returns": "int[11]",
+      "c_out_buffer": {
+        "type": "uint8_t",
+        "length": 11
+      },
+      "receiver": "tile_t *"
+    },
+    {
+      "qname": [
+        "$slot",
+        "restore_state"
+      ],
+      "symbol": "tile_sense_tof_restore_state",
+      "header": "tile_sense_tof.h",
+      "category": "tile",
+      "description": "Restore algorithm state to the sensor.",
+      "params": [
+        {
+          "name": "data",
+          "type": "int[11]",
+          "description": "Pointer to 11 bytes of previously saved state data."
+        }
+      ],
+      "returns": "void",
+      "c_in_buffer": {
+        "name": "data",
+        "type": "uint8_t",
+        "length": 11
+      },
       "receiver": "tile_t *"
     },
     {
