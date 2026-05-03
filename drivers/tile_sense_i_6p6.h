@@ -889,6 +889,30 @@ uint16_t tile_sense_i_6p6_fifo_read_packets(tile_t *tile,
                                               uint16_t max_count);
 
 /**
+ * @brief  DSL-friendly flat-output variant of fifo_read_packets().
+ *
+ * Drains up to N packets from the FIFO into the caller's int32 buffer,
+ * 8 ints per packet (same layout as fifo_read_packet_flat). Returns
+ * the number of *packets* read (not ints), so callers can iterate
+ * with `for i in 0..n { let ax = buf[i*8 + 0]; ... }`.
+ *
+ * The caller's array length is the int-cap (N packets × 8 ints), not
+ * the packet count — `cap_ints / 8` packets are attempted. Mirrors
+ * the cap-mode array-OUT convention used by Sense.BP read_fifo_batch.
+ *
+ * @tessera expose category=tile name=fifo_read_packets returns=int section=fifo
+ * @tessera out_buffer out type=int32_t cap_param=cap_ints
+ *
+ * @param  tile      Initialised tile handle.
+ * @param  out       Output buffer; must be sized N × 8 ints.
+ * @param  cap_ints  Buffer capacity in int slots (= packets × 8).
+ * @return Number of packets actually drained from the FIFO.
+ */
+uint16_t tile_sense_i_6p6_fifo_read_packets_flat(tile_t *tile,
+                                                  int32_t *out,
+                                                  uint16_t cap_ints);
+
+/**
  * @brief  Read the FIFO record count.
  *
  * @tessera expose category=tile name=fifo_count returns=int section=fifo

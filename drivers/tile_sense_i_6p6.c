@@ -517,6 +517,36 @@ uint16_t tile_sense_i_6p6_fifo_read_packets(tile_t *tile,
     return read;
 }
 
+/** @brief Flat-output variant — drains up to (cap_ints / 8) packets
+ *  into a flat int32 buffer (8 ints per packet, same layout as
+ *  fifo_read_packet_flat). Returns the number of packets read. */
+uint16_t tile_sense_i_6p6_fifo_read_packets_flat(tile_t *tile,
+                                                  int32_t *out,
+                                                  uint16_t cap_ints)
+{
+    if (!out || cap_ints < 8) return 0;
+    uint16_t max_packets = cap_ints / 8;
+    uint16_t available = tile_sense_i_6p6_fifo_count(tile);
+    if (max_packets > available) max_packets = available;
+
+    uint16_t read = 0;
+    for (uint16_t i = 0; i < max_packets; i++) {
+        sense_i_6p6_fifo_packet_t pkt;
+        if (!tile_sense_i_6p6_fifo_read_packet(tile, &pkt)) break;
+        const uint16_t off = i * 8;
+        out[off + 0] = (int32_t)pkt.accel[0];
+        out[off + 1] = (int32_t)pkt.accel[1];
+        out[off + 2] = (int32_t)pkt.accel[2];
+        out[off + 3] = (int32_t)pkt.gyro[0];
+        out[off + 4] = (int32_t)pkt.gyro[1];
+        out[off + 5] = (int32_t)pkt.gyro[2];
+        out[off + 6] = (int32_t)pkt.temp;
+        out[off + 7] = (int32_t)pkt.timestamp;
+        read++;
+    }
+    return read;
+}
+
 /** @brief Get the number of lost FIFO packets since last check. */
 uint16_t tile_sense_i_6p6_fifo_lost_count(tile_t *tile)
 {

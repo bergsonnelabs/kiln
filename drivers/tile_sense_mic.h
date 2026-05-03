@@ -472,23 +472,46 @@ void tile_sense_mic_get_samples(tile_t *tile, uint16_t *buf, uint16_t count);
  *
  * Useful for determining the mic bias point. Varies with supply
  * voltage and PCB bias circuit (typically 600–900 with VDD ref).
+ *
+ * @tessera expose category=tile name=dc_level returns=int section=runtime
+ * @tessera in_buffer samples type=uint16_t length_param=count
+ *
+ * @param  tile     Tile handle (unused — accepted for DSL-binding
+ *                  symmetry with the rest of the driver surface).
+ * @param  samples  Sample buffer (typically from get_samples()).
+ * @param  count    Number of samples in the buffer.
+ * @return DC offset in raw ADC counts.
  */
-uint16_t tile_sense_mic_dc_level(const uint16_t *samples, uint16_t count);
+uint16_t tile_sense_mic_dc_level(tile_t *tile, const uint16_t *samples, uint16_t count);
 
 /**
  * @brief  Compute peak-to-peak amplitude of a sample buffer (raw counts).
  *
  * Returns max - min across all samples. Silence ≈ 5–20 counts (noise floor).
+ *
+ * @tessera expose category=tile name=peak_to_peak returns=int section=runtime
+ * @tessera in_buffer samples type=uint16_t length_param=count
+ *
+ * @param  tile     Tile handle (unused — accepted for DSL-binding symmetry).
+ * @param  samples  Sample buffer.
+ * @param  count    Number of samples.
+ * @return Peak-to-peak amplitude in raw ADC counts.
  */
-uint16_t tile_sense_mic_peak_to_peak(const uint16_t *samples, uint16_t count);
+uint16_t tile_sense_mic_peak_to_peak(tile_t *tile, const uint16_t *samples, uint16_t count);
 
 /**
  * @brief  Compute RMS amplitude relative to a DC offset (raw counts).
  *
- * @param  dc_offset  DC bias point (use dc_level() to measure, or pass 2048)
- * @return RMS of AC component in raw ADC counts
+ * @tessera expose category=tile name=rms returns=int section=runtime
+ * @tessera in_buffer samples type=uint16_t length_param=count
+ *
+ * @param  tile       Tile handle (unused — accepted for DSL-binding symmetry).
+ * @param  samples    Sample buffer.
+ * @param  count      Number of samples.
+ * @param  dc_offset  DC bias point (use dc_level() to measure, or pass 2048).
+ * @return RMS of AC component in raw ADC counts.
  */
-uint16_t tile_sense_mic_rms(const uint16_t *samples, uint16_t count,
+uint16_t tile_sense_mic_rms(tile_t *tile, const uint16_t *samples, uint16_t count,
                             uint16_t dc_offset);
 
 /**
