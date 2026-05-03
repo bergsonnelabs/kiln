@@ -1,6 +1,6 @@
 {
   "schema": "tessera-manifest/v1",
-  "source": "cores@bf3167c",
+  "source": "cores@bc0fb1c",
   "tile": "Drive.DC.H",
   "palette": {
     "label": "Drive.DC.H",
