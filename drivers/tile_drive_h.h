@@ -26,13 +26,13 @@
  *   }
  * @endcode
  *
- * @tessera tile label=Drive.H icon=≋
+ * @studio tile label=Drive.H icon=≋
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
  * (none — this driver covers every register-controllable feature of
  * the DRV2605L. OTP burning is implemented in firmware but
- * intentionally not exposed to Tessera because it permanently
+ * intentionally not exposed to Studio because it permanently
  * modifies the chip; access it from C via tile_drive_h_program_otp().)
  */
 
@@ -226,7 +226,7 @@ void tile_drive_h_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
  * the sequence, and triggers playback. For repeats > 1,
  * re-triggers with a 200ms gap between plays.
  *
- * @tessera expose category=tile name=play section=runtime
+ * @studio expose category=tile name=play section=runtime
  * @param  index    [1..123] Library effect index (see datasheet).
  * @param  repeats  [1..20] Number of times to play (1 = once).
  */
@@ -242,8 +242,8 @@ void tile_drive_h_play(tile_t* tile, uint8_t index, uint8_t repeats);
  * is "stop"), so a 3-effect sequence written as `[5, 10, 15, 0,
  * 0, 0, 0, 0]` plays effects 5/10/15 then halts.
  *
- * @tessera expose category=tile name=play_sequence section=runtime
- * @tessera in_buffer effects type=uint8_t length=8 length_param=count
+ * @studio expose category=tile name=play_sequence section=runtime
+ * @studio in_buffer effects type=uint8_t length=8 length_param=count
  * @param  tile     Pointer to tile handle
  * @param  effects  Array of effect indices (1-123, 0 = stop)
  * @param  count    Number of effects (1-8)
@@ -258,8 +258,8 @@ void tile_drive_h_play_sequence(tile_t* tile, const uint8_t *effects,
  * the GO bit. Use this to pre-load effects before switching to
  * external trigger mode (edge or level).
  *
- * @tessera expose category=tile name=load_sequence section=runtime
- * @tessera in_buffer effects type=uint8_t length=8 length_param=count
+ * @studio expose category=tile name=load_sequence section=runtime
+ * @studio in_buffer effects type=uint8_t length=8 length_param=count
  * @param  tile     Pointer to tile handle
  * @param  effects  Array of effect indices (1-123, 0 = stop)
  * @param  count    Number of effects (1-8)
@@ -279,7 +279,7 @@ void tile_drive_h_load_sequence(tile_t* tile, const uint8_t *effects,
  *
  * Slot is silently ignored if >= 8; delay_steps is clipped to 0x7F.
  *
- * @tessera expose category=tile name=set_sequence_wait
+ * @studio expose category=tile name=set_sequence_wait
  * @param  tile         Pointer to tile handle
  * @param  slot         Slot index 0..7
  * @param  delay_steps  Wait length in 10 ms steps (0 = no wait, 0x7F = 1.27 s)
@@ -300,7 +300,7 @@ void tile_drive_h_set_sequence_wait(tile_t* tile, uint8_t slot,
  *   - DRIVE_H_TRIG_LEVEL: GO follows the IN/TRIG pin level.
  *     High = playing, low = idle. Falling edge cancels.
  *
- * @tessera expose category=tile name=set_trigger section=runtime
+ * @studio expose category=tile name=set_trigger section=runtime
  * @param  tile  Pointer to tile handle
  * @param  mode  One of DRIVE_H_TRIG_INTERNAL, DRIVE_H_TRIG_EDGE,
  *               DRIVE_H_TRIG_LEVEL
@@ -313,7 +313,7 @@ void tile_drive_h_set_trigger(tile_t* tile, uint8_t mode);
  * Reads the GO bit in register 0x0C. The GO bit remains high
  * until playback completes.
  *
- * @tessera expose category=tile name=is_playing returns=bool section=runtime
+ * @studio expose category=tile name=is_playing returns=bool section=runtime
  * @return 1 if playing, 0 if idle
  */
 uint8_t tile_drive_h_is_playing(tile_t* tile);
@@ -321,7 +321,7 @@ uint8_t tile_drive_h_is_playing(tile_t* tile);
 /**
  * @brief  Stop any currently playing effect.
  *
- * @tessera expose category=tile name=stop section=runtime
+ * @studio expose category=tile name=stop section=runtime
  */
 void tile_drive_h_stop(tile_t* tile);
 
@@ -335,7 +335,7 @@ void tile_drive_h_stop(tile_t* tile);
  * (silence). This call also updates the FEEDBACK_CTRL N_ERM_LRA
  * bit so the chip drives the correct actuator type.
  *
- * @tessera expose category=tile name=set_library
+ * @studio expose category=tile name=set_library
  * @param  tile     Pointer to tile handle
  * @param  library  Library index 0..6 (use DRIVE_H_LIB_* constants)
  */
@@ -355,7 +355,7 @@ void tile_drive_h_set_library(tile_t* tile, uint8_t library);
  * Pass 0xFF for fb_brake / loop_gain to leave them untouched. Run
  * tile_drive_h_calibrate() afterwards to update A_CAL_COMP / A_CAL_BEMF.
  *
- * @tessera expose category=tile name=set_actuator_params
+ * @studio expose category=tile name=set_actuator_params
  * @param  tile           Pointer to tile handle
  * @param  rated_voltage  RATED_VOLTAGE byte (0 = no change)
  * @param  od_clamp       OD_CLAMP byte (0 = no change)
@@ -379,7 +379,7 @@ void tile_drive_h_set_actuator_params(tile_t* tile,
  *
  * Pass 0xFF for any field to leave that register slice untouched.
  *
- * @tessera expose category=tile name=set_resonance_params
+ * @studio expose category=tile name=set_resonance_params
  * @param  tile           Pointer to tile handle
  * @param  sample_time    Sample time 0..3 (0=150µs, 3=300µs; 0xFF = no change)
  * @param  blanking_time  Blanking time 0..3 (0xFF = no change)
@@ -402,7 +402,7 @@ void tile_drive_h_set_resonance_params(tile_t* tile,
  * These offsets are only honoured in open-loop mode — closed-loop
  * mode generates them automatically from back-EMF feedback.
  *
- * @tessera expose category=tile name=set_waveform_timing
+ * @studio expose category=tile name=set_waveform_timing
  * @param  tile          Pointer to tile handle
  * @param  overdrive     Overdrive Time Offset (0x0D, signed × 5 ms)
  * @param  sustain_pos   Sustain-Time Positive Offset (0x0E, signed × 5 ms)
@@ -425,14 +425,14 @@ void tile_drive_h_set_waveform_timing(tile_t* tile,
  * by tile_drive_h_rtp_write(). Call tile_drive_h_rtp_stop()
  * to return to internal trigger mode.
  *
- * @tessera expose category=tile name=rtp_start section=runtime
+ * @studio expose category=tile name=rtp_start section=runtime
  */
 void tile_drive_h_rtp_start(tile_t* tile);
 
 /**
  * @brief  Write an amplitude value in RTP mode.
  *
- * @tessera expose category=tile name=rtp_write section=runtime
+ * @studio expose category=tile name=rtp_write section=runtime
  * @param  amplitude  [0..127] Amplitude (0 = off, 127 = max).
  */
 void tile_drive_h_rtp_write(tile_t* tile, uint8_t amplitude);
@@ -450,7 +450,7 @@ void tile_drive_h_rtp_write(tile_t* tile, uint8_t amplitude);
  * unidirectional vs bidirectional input interpretation; tie this
  * to the same convention as the format flag.
  *
- * @tessera expose category=tile name=set_rtp_format
+ * @studio expose category=tile name=set_rtp_format
  * @param  tile        Pointer to tile handle
  * @param  unsigned_   1 = unsigned data format, 0 = signed (default)
  * @param  bidir       1 = bidirectional input (default), 0 = unidirectional
@@ -460,7 +460,7 @@ void tile_drive_h_set_rtp_format(tile_t* tile, uint8_t unsigned_, uint8_t bidir)
 /**
  * @brief  Exit RTP mode and return to internal trigger mode.
  *
- * @tessera expose category=tile name=rtp_stop section=runtime
+ * @studio expose category=tile name=rtp_stop section=runtime
  */
 void tile_drive_h_rtp_stop(tile_t* tile);
 
@@ -478,7 +478,7 @@ void tile_drive_h_rtp_stop(tile_t* tile);
  * Call tile_drive_h_set_rtp_format() first if you need to change
  * the unidirectional / bidirectional interpretation.
  *
- * @tessera expose category=tile name=pwm_input_start
+ * @studio expose category=tile name=pwm_input_start
  */
 void tile_drive_h_pwm_input_start(tile_t* tile);
 
@@ -494,7 +494,7 @@ void tile_drive_h_pwm_input_start(tile_t* tile);
  *       output a clean analog level — Drive.H has no input filter
  *       or AC-coupling cap on TRIG.
  *
- * @tessera expose category=tile name=analog_input_start
+ * @studio expose category=tile name=analog_input_start
  */
 void tile_drive_h_analog_input_start(tile_t* tile);
 
@@ -504,7 +504,7 @@ void tile_drive_h_analog_input_start(tile_t* tile);
  * Returns to internal-trigger mode (MODE=0). Same effect as
  * tile_drive_h_audio_stop(); both modes share the IN/TRIG pin.
  *
- * @tessera expose category=tile name=pwm_input_stop
+ * @studio expose category=tile name=pwm_input_stop
  */
 void tile_drive_h_pwm_input_stop(tile_t* tile);
 
@@ -524,7 +524,7 @@ void tile_drive_h_pwm_input_stop(tile_t* tile);
  *       audio-to-vibe must add their own external 1 µF AC-coupling
  *       cap between the audio source and pad 2.
  *
- * @tessera expose category=tile name=audio_start
+ * @studio expose category=tile name=audio_start
  */
 void tile_drive_h_audio_start(tile_t* tile);
 
@@ -544,7 +544,7 @@ void tile_drive_h_audio_start(tile_t* tile);
  *
  * Pass 0xFF for any field to leave it untouched.
  *
- * @tessera expose category=tile name=set_audio_params
+ * @studio expose category=tile name=set_audio_params
  * @param  tile         Pointer to tile handle
  * @param  peak_time    ATH_PEAK_TIME 0..3 (10/20/30/40 ms; 0xFF = no change)
  * @param  filter       ATH_FILTER 0..3 (100/125/150/200 Hz; 0xFF = no change)
@@ -567,7 +567,7 @@ void tile_drive_h_set_audio_params(tile_t* tile,
  * Returns to internal-trigger mode (MODE=0) and clears the
  * AC_COUPLE bit. Same physical effect as tile_drive_h_pwm_input_stop().
  *
- * @tessera expose category=tile name=audio_stop
+ * @studio expose category=tile name=audio_stop
  */
 void tile_drive_h_audio_stop(tile_t* tile);
 
@@ -579,7 +579,7 @@ void tile_drive_h_audio_stop(tile_t* tile);
  * Contains DEVICE_ID[7:5], DIAG_RESULT[3], FB_STS[2],
  * OVER_TEMP[1], OC_DETECT[0]. Status bits clear on read.
  *
- * @tessera expose category=tile name=get_status returns=int section=runtime
+ * @studio expose category=tile name=get_status returns=int section=runtime
  * @param  tile  Pointer to tile handle
  * @return Raw status byte
  */
@@ -592,7 +592,7 @@ uint8_t tile_drive_h_get_status(tile_t* tile);
  * for completion. The DRV2605L checks whether the actuator is
  * present, open, or shorted.
  *
- * @tessera expose category=tile name=diagnose returns=bool section=runtime
+ * @studio expose category=tile name=diagnose returns=bool section=runtime
  * @return 1 if actuator passed diagnostics, 0 if fault detected
  */
 uint8_t tile_drive_h_diagnose(tile_t* tile);
@@ -605,7 +605,7 @@ uint8_t tile_drive_h_diagnose(tile_t* tile);
  * the DRV2605L stores optimized A_CAL_COMP and A_CAL_BEMF values
  * that improve playback fidelity.
  *
- * @tessera expose category=tile name=calibrate returns=bool section=runtime
+ * @studio expose category=tile name=calibrate returns=bool section=runtime
  * @return 1 if calibration passed, 0 if it failed to converge
  */
 uint8_t tile_drive_h_calibrate(tile_t* tile);
@@ -617,7 +617,7 @@ uint8_t tile_drive_h_calibrate(tile_t* tile);
  * while the device is actively driving a waveform (RTP, library
  * playback, etc.).
  *
- * @tessera expose category=tile name=get_vbat_mv returns=int section=runtime
+ * @studio expose category=tile name=get_vbat_mv returns=int section=runtime
  * @return Battery voltage in mV (e.g. 3300 = 3.3 V), 0 if idle
  */
 uint16_t tile_drive_h_get_vbat_mv(tile_t* tile);
@@ -629,7 +629,7 @@ uint16_t tile_drive_h_get_vbat_mv(tile_t* tile);
  * valid while the device is actively driving a waveform and
  * must not be polled during braking.
  *
- * @tessera expose category=tile name=get_resonance_hz returns=int section=runtime
+ * @studio expose category=tile name=get_resonance_hz returns=int section=runtime
  * @return Resonant frequency in Hz (e.g. 235), 0 if unavailable
  */
 uint16_t tile_drive_h_get_resonance_hz(tile_t* tile);
@@ -643,7 +643,7 @@ uint16_t tile_drive_h_get_resonance_hz(tile_t* tile);
  * register values and can be woken quickly with
  * tile_drive_h_wake().
  *
- * @tessera expose category=tile name=standby section=runtime
+ * @studio expose category=tile name=standby section=runtime
  */
 void tile_drive_h_standby(tile_t* tile);
 
@@ -653,7 +653,7 @@ void tile_drive_h_standby(tile_t* tile);
  * Clears the STANDBY bit in the MODE register. The device
  * returns to the active state, ready for playback.
  *
- * @tessera expose category=tile name=wake section=runtime
+ * @studio expose category=tile name=wake section=runtime
  */
 void tile_drive_h_wake(tile_t* tile);
 
@@ -670,7 +670,7 @@ void tile_drive_h_wake(tile_t* tile);
  *
  * @warning IRREVERSIBLE. The DRV2605L OTP can be programmed exactly
  *          once per device. A bad programming run permanently
- *          mistunes the chip. NOT exposed to Tessera by design.
+ *          mistunes the chip. NOT exposed to Studio by design.
  *
  * Pre-conditions:
  *   - Run tile_drive_h_calibrate() first and confirm pass.
@@ -691,7 +691,7 @@ uint8_t tile_drive_h_program_otp(tile_t* tile);
  * Returns 1 if the chip's OTP cells have already been programmed
  * (registers 0x16–0x1A boot from OTP rather than chip defaults).
  *
- * @tessera expose category=tile name=get_otp_status returns=bool
+ * @studio expose category=tile name=get_otp_status returns=bool
  * @return 1 if OTP is programmed, 0 if unprogrammed
  */
 uint8_t tile_drive_h_get_otp_status(tile_t* tile);
@@ -709,7 +709,7 @@ uint8_t tile_drive_h_get_otp_status(tile_t* tile);
 /**
  * @brief  Fire a single sharp tactile click.
  *
- * @tessera expose category=tile name=play_click section=runtime
+ * @studio expose category=tile name=play_click section=runtime
  *
  * Plays ROM library effect 1 ("Strong Click — 100%") once. Returns
  * immediately; the chip drives the click after the call returns.
@@ -722,7 +722,7 @@ void tile_drive_h_play_click(tile_t* tile);
 /**
  * @brief  Fire a double tap.
  *
- * @tessera expose category=tile name=play_double_tap section=runtime
+ * @studio expose category=tile name=play_double_tap section=runtime
  *
  * Loads the sequencer with two strong-click effects (ROM library
  * effect 10 — "Double Click — 100%") and triggers playback. The
@@ -736,7 +736,7 @@ void tile_drive_h_play_double_tap(tile_t* tile);
 /**
  * @brief  Play an alert pattern.
  *
- * @tessera expose category=tile name=play_alert section=runtime
+ * @studio expose category=tile name=play_alert section=runtime
  *
  * Sequences three ROM-library effects to produce a sharp-buzz-sharp
  * notification: effect 14 ("Strong Buzz — 100%" tick) → effect 56
@@ -750,7 +750,7 @@ void tile_drive_h_play_alert(tile_t* tile);
 /**
  * @brief  Play a sustained vibration for `ms` milliseconds.
  *
- * @tessera expose category=tile name=play_buzz section=runtime
+ * @studio expose category=tile name=play_buzz section=runtime
  *
  * Switches into RTP (Real-Time Playback) mode, drives a constant
  * full-amplitude signal for `ms` milliseconds, then stops the RTP
@@ -769,7 +769,7 @@ void tile_drive_h_play_buzz(tile_t* tile, uint16_t ms);
 /**
  * @brief  Check whether smart-loop calibration converged.
  *
- * @tessera expose category=tile name=is_calibrated returns=bool section=runtime
+ * @studio expose category=tile name=is_calibrated returns=bool section=runtime
  *
  * Reads the STATUS register's DIAG_RESULT bit, which the auto-
  * calibration engine populates on completion: 0 = converged

@@ -36,18 +36,18 @@
  *
  * Datasheet: https://ams.com/tmf8806
  *
- * @tessera tile label=Sense.TOF icon=◊
+ * @studio tile label=Sense.TOF icon=◊
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="10 m extended-range mode" section=advanced
+ * @studio unsupported severity=common category="10 m extended-range mode" section=advanced
  *   Deferred to a dedicated session. TMF8806 App0 firmware supports
  *   up to 5 m range out of ROM; 10 m mode requires downloading a
  *   binary RAM patch from AMS via the bootloader's W_RAM +
  *   RAMREMAP_RESET protocol — non-trivial firmware-loading flow not
  *   in scope for this driver-coverage pass.
  *
- * @tessera unsupported severity=niche category="GPIO0 / GPIO1 external trigger"
+ * @studio unsupported severity=niche category="GPIO0 / GPIO1 external trigger"
  *   Hardware-gated. Chip's GPIO0/1 (external trigger / status
  *   output) aren't routed to tile pads (verified in
  *   Sense-TOF-a.json — pads 6/7/8 carry no function). Future tile
@@ -265,7 +265,7 @@ void tile_sense_tof_init(tiles_pal_t *hal, uint8_t instance,
 
 /**
  * @brief  Enter standby mode (ENABLE = 0x00).
- * @tessera expose category=tile name=sleep section=lifecycle
+ * @studio expose category=tile name=sleep section=lifecycle
  *
  * Stops any active measurement and powers down the sensor. Use
  * tile_sense_tof_wake() to resume without full re-initialisation.
@@ -276,7 +276,7 @@ void tile_sense_tof_sleep(tile_t *tile);
 
 /**
  * @brief  Resume from standby mode.
- * @tessera expose category=tile name=wake section=lifecycle
+ * @studio expose category=tile name=wake section=lifecycle
  *
  * Re-executes the bootloader wake and App0 request sequence. Does not
  * restart measurements — call tile_sense_tof_start() after waking.
@@ -287,7 +287,7 @@ void tile_sense_tof_wake(tile_t *tile);
 
 /**
  * @brief  Reset the device via the CPU reset bit in ENABLE.
- * @tessera expose category=tile name=reset section=lifecycle
+ * @studio expose category=tile name=reset section=lifecycle
  *
  * Performs a full CPU reset and re-runs the boot sequence. All runtime
  * state including calibration is lost. Call init() again after reset.
@@ -300,7 +300,7 @@ void tile_sense_tof_reset(tile_t *tile);
 
 /**
  * @brief  Start continuous or single-shot measurement.
- * @tessera expose category=tile name=start section=runtime
+ * @studio expose category=tile name=start section=runtime
  *
  * Writes the factory calibration data (if loaded), configures the
  * measurement command payload from the current cfg, and issues the
@@ -315,7 +315,7 @@ void tile_sense_tof_start(tile_t *tile);
 
 /**
  * @brief  Stop an active measurement.
- * @tessera expose category=tile name=stop section=runtime
+ * @studio expose category=tile name=stop section=runtime
  *
  * Sends the stop command and waits for the sensor to acknowledge.
  * No-op if no measurement is active.
@@ -343,7 +343,7 @@ uint8_t tile_sense_tof_measure_single(tile_t *tile, sense_tof_result_t *result,
 
 /**
  * @brief  Read the distance from the most recent result.
- * @tessera expose category=tile name=get_distance_mm returns=int section=runtime
+ * @studio expose category=tile name=get_distance_mm returns=int section=runtime
  *
  * Returns the peak distance in millimeters. Does not check whether
  * new data is available — call tile_sense_tof_result_ready() first
@@ -376,8 +376,8 @@ void tile_sense_tof_get_result(tile_t *tile, sense_tof_result_t *result);
  * The temperature is widened from int8_t to int32_t so negative
  * values sign-extend correctly.
  *
- * @tessera expose category=tile name=get_result returns=int[5] section=runtime
- * @tessera out_buffer out type=int32_t length=5
+ * @studio expose category=tile name=get_result returns=int[5] section=runtime
+ * @studio out_buffer out type=int32_t length=5
  *
  * @param  tile  Initialised tile handle.
  * @param  out   Output buffer (5 int32_t slots).
@@ -391,12 +391,12 @@ void tile_sense_tof_get_result_flat(tile_t *tile, int32_t *out);
  * Same layout convention as get_result_flat — the per-field values
  * land in five out-scalar slots. Returns the chip's success flag.
  *
- * @tessera expose category=tile name=measure_single returns=bool section=runtime
- * @tessera out_scalar mm type=int32_t
- * @tessera out_scalar status type=int32_t
- * @tessera out_scalar reliability type=int32_t
- * @tessera out_scalar temp_c type=int32_t
- * @tessera out_scalar seq type=int32_t
+ * @studio expose category=tile name=measure_single returns=bool section=runtime
+ * @studio out_scalar mm type=int32_t
+ * @studio out_scalar status type=int32_t
+ * @studio out_scalar reliability type=int32_t
+ * @studio out_scalar temp_c type=int32_t
+ * @studio out_scalar seq type=int32_t
  *
  * @param  tile        Initialised tile handle.
  * @param  mm          Output: distance in millimetres.
@@ -417,7 +417,7 @@ uint8_t tile_sense_tof_measure_single_flat(tile_t *tile,
 
 /**
  * @brief  Check if a new measurement result is available.
- * @tessera expose category=tile name=result_ready returns=bool section=runtime
+ * @studio expose category=tile name=result_ready returns=bool section=runtime
  *
  * Reads the INT_STATUS register and checks the result interrupt bit.
  * Does not clear the interrupt — that is done by get_result() or
@@ -432,7 +432,7 @@ uint8_t tile_sense_tof_result_ready(tile_t *tile);
 
 /**
  * @brief  Run the factory calibration procedure.
- * @tessera expose category=tile name=factory_calibrate returns=bool section=advanced
+ * @studio expose category=tile name=factory_calibrate returns=bool section=advanced
  *
  * Performs a calibration measurement using the current mode settings.
  * The sensor must be positioned with a known target or open field per
@@ -454,8 +454,8 @@ uint8_t tile_sense_tof_factory_calibrate(tile_t *tile, uint32_t timeout_ms);
  * sensor before each measurement start. Call this after init() to
  * restore calibration from non-volatile storage.
  *
- * @tessera expose category=tile name=set_calibration section=advanced
- * @tessera in_buffer data type=uint8_t length=14
+ * @studio expose category=tile name=set_calibration section=advanced
+ * @studio in_buffer data type=uint8_t length=14
  *
  * @param  tile  Initialised tile handle.
  * @param  data  Pointer to 14-byte calibration data array.
@@ -469,8 +469,8 @@ void tile_sense_tof_set_calibration(tile_t *tile, const uint8_t *data);
  * registers. Typically called after tile_sense_tof_factory_calibrate()
  * to save the data for later reloading via set_calibration().
  *
- * @tessera expose category=tile name=get_calibration returns=int[14] section=advanced
- * @tessera out_buffer data type=uint8_t length=14
+ * @studio expose category=tile name=get_calibration returns=int[14] section=advanced
+ * @studio out_buffer data type=uint8_t length=14
  *
  * @param  tile  Initialised tile handle.
  * @param  data  Output buffer for 14 bytes of calibration data.
@@ -495,10 +495,10 @@ void tile_sense_tof_get_app_version(tile_t *tile, sense_tof_version_t *version);
  *
  * Drops the struct in favor of three positional out-scalars.
  *
- * @tessera expose category=tile name=get_app_version section=advanced
- * @tessera out_scalar major type=int32_t
- * @tessera out_scalar minor type=int32_t
- * @tessera out_scalar patch type=int32_t
+ * @studio expose category=tile name=get_app_version section=advanced
+ * @studio out_scalar major type=int32_t
+ * @studio out_scalar minor type=int32_t
+ * @studio out_scalar patch type=int32_t
  *
  * @param  tile   Initialised tile handle.
  * @param  major  Output: major version number.
@@ -530,8 +530,8 @@ uint8_t tile_sense_tof_get_serial_number(tile_t *tile, uint8_t *serial);
  * detect failure by checking for a zero serial. Bytes widen to int32
  * for DSL int compatibility.
  *
- * @tessera expose category=tile name=get_serial_number returns=int[4] section=advanced
- * @tessera out_buffer out type=int32_t length=4
+ * @studio expose category=tile name=get_serial_number returns=int[4] section=advanced
+ * @studio out_buffer out type=int32_t length=4
  *
  * @param  tile  Initialised tile handle.
  * @param  out   Output buffer (4 int32_t slots).
@@ -542,7 +542,7 @@ void tile_sense_tof_get_serial_number_flat(tile_t *tile, int32_t *out);
 
 /**
  * @brief  Change the distance mode on the fly.
- * @tessera expose category=tile name=set_distance_mode section=runtime
+ * @studio expose category=tile name=set_distance_mode section=runtime
  *
  * Stops any active measurement, updates the cached mode, and restarts.
  * If no measurement was running, only updates the config for the next start().
@@ -554,7 +554,7 @@ void tile_sense_tof_set_distance_mode(tile_t *tile, sense_tof_distance_mode_t mo
 
 /**
  * @brief  Change the measurement repetition period on the fly.
- * @tessera expose category=tile name=set_period section=runtime
+ * @studio expose category=tile name=set_period section=runtime
  *
  * Stops any active measurement, updates the cached period, and restarts.
  * If no measurement was running, only updates the config for the next start().
@@ -576,8 +576,8 @@ void tile_sense_tof_set_period(tile_t *tile, uint8_t period_ms);
  * Preserving algorithm state across power cycles avoids the ~8 ms
  * re-initialisation penalty and maintains measurement accuracy.
  *
- * @tessera expose category=tile name=save_state returns=int[11] section=advanced
- * @tessera out_buffer data type=uint8_t length=11
+ * @studio expose category=tile name=save_state returns=int[11] section=advanced
+ * @studio out_buffer data type=uint8_t length=11
  *
  * @param  tile  Initialised tile handle (measurement should be stopped).
  * @param  data  Output buffer for 11 bytes of state data.
@@ -595,8 +595,8 @@ void tile_sense_tof_save_state(tile_t *tile, uint8_t *data);
  * is automatically updated to include algState when state data has
  * been restored.
  *
- * @tessera expose category=tile name=restore_state section=advanced
- * @tessera in_buffer data type=uint8_t length=11
+ * @studio expose category=tile name=restore_state section=advanced
+ * @studio in_buffer data type=uint8_t length=11
  *
  * @param  tile  Initialised tile handle (after wake, before start).
  * @param  data  Pointer to 11 bytes of previously saved state data.
@@ -614,7 +614,7 @@ void tile_sense_tof_restore_state(tile_t *tile, const uint8_t *data);
  * measurements. Lets a sleeping host stay asleep until something
  * gets close.
  *
- * @tessera expose category=tile name=set_threshold_interrupt section=config
+ * @studio expose category=tile name=set_threshold_interrupt section=config
  *
  * Per HostDriverCommunication §8.12 (cmd 0x08 = WR_ADD_CONFIG):
  *   - persistence = 0  → interrupt every measurement (default)
@@ -637,10 +637,10 @@ uint8_t tile_sense_tof_set_threshold_interrupt(tile_t *tile,
  *
  * Per HostDriverCommunication §8.12.2 (cmd 0x09 = RD_ADD_CONFIG).
  *
- * @tessera expose category=tile name=get_threshold_interrupt returns=bool section=advanced
- * @tessera out_scalar persistence type=uint8_t
- * @tessera out_scalar low_mm type=uint16_t
- * @tessera out_scalar high_mm type=uint16_t
+ * @studio expose category=tile name=get_threshold_interrupt returns=bool section=advanced
+ * @studio out_scalar persistence type=uint8_t
+ * @studio out_scalar low_mm type=uint16_t
+ * @studio out_scalar high_mm type=uint16_t
  *
  * @param  tile          Initialised tile handle.
  * @param  persistence   Output (may be NULL).
@@ -667,7 +667,7 @@ uint8_t tile_sense_tof_get_threshold_interrupt(tile_t *tile,
  *
  * Reads SYS_CLOCK_0..3 (0x24–0x27) as a single 4-byte burst.
  *
- * @tessera expose category=tile name=get_sys_clock_ticks returns=int section=runtime
+ * @studio expose category=tile name=get_sys_clock_ticks returns=int section=runtime
  *
  * @param  tile  Initialised tile handle.
  * @return 32-bit system-clock tick count (0 if not in App0 / no
@@ -713,8 +713,8 @@ uint8_t tile_sense_tof_read_histogram(tile_t *tile, uint8_t hist_type,
  * Caller passes hist_type and timeout_ms as scalar args; the buffer
  * is the function's output (collapsed into the int[128] return).
  *
- * @tessera expose category=tile name=read_histogram returns=int[128] section=advanced
- * @tessera out_buffer out type=int32_t length=128
+ * @studio expose category=tile name=read_histogram returns=int[128] section=advanced
+ * @studio out_buffer out type=int32_t length=128
  *
  * @param  tile        Initialised tile handle.
  * @param  hist_type   Histogram-type byte (see read_histogram() docs).
@@ -757,7 +757,7 @@ void tile_sense_tof_read_histogram_flat(tile_t *tile,
 /**
  * @brief  Single-shot measurement; true if an object is within `mm`.
  *
- * @tessera expose category=tile name=is_object_within returns=bool section=runtime
+ * @studio expose category=tile name=is_object_within returns=bool section=runtime
  *
  * Performs one blocking single-shot measurement (up to 200 ms) and
  * returns 1 iff the reported distance is non-zero, less than or
@@ -778,7 +778,7 @@ uint8_t tile_sense_tof_is_object_within(tile_t *tile, uint16_t mm);
 /**
  * @brief  Block until an object is detected within `mm`, or timeout.
  *
- * @tessera expose category=tile name=wait_for_object returns=bool section=runtime
+ * @studio expose category=tile name=wait_for_object returns=bool section=runtime
  *
  * Polls single-shot measurements until one matches the
  * `is_object_within` predicate or `timeout_ms` elapses. Polls every
@@ -807,9 +807,9 @@ uint8_t tile_sense_tof_wait_for_object(tile_t *tile, uint16_t mm,
  * scale to a 0–100 percent value. Confidence is computed as
  * `(reliability * 100) / 63` — integer math, no floats.
  *
- * @tessera expose category=tile name=read_distance_with_confidence returns=bool section=runtime
- * @tessera out_scalar mm type=uint16_t
- * @tessera out_scalar confidence_pct type=uint8_t
+ * @studio expose category=tile name=read_distance_with_confidence returns=bool section=runtime
+ * @studio out_scalar mm type=uint16_t
+ * @studio out_scalar confidence_pct type=uint8_t
  *
  * @param  tile           Initialised tile handle.
  * @param  mm             Output: distance in millimetres (NULL allowed).

@@ -32,11 +32,11 @@
  *
  * Datasheet: https://www.st.com/resource/en/datasheet/ilps22qs.pdf
  *
- * @tessera tile label=Sense.BP icon=◇
+ * @studio tile label=Sense.BP icon=◇
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="Analog Hub / Qvar charge-variation sensing" section=config
+ * @studio unsupported severity=advanced category="Analog Hub / Qvar charge-variation sensing" section=config
  *   Hardware-gated on Sense.BP rev a. The ILPS22QS reads charge variation
  *   on dedicated input pins (chip pins 5 = AH2/QVAR2 and 7 = AH1/QVAR1)
  *   that need an external electrode wired in. The current tile rev
@@ -46,12 +46,12 @@
  *   the chip. Closing this gap requires a tile hardware revision that
  *   routes one or both AH pins to a tile pad with electrode access.
  *
- * @tessera unsupported severity=advanced category="Alternate bus modes (SPI / I3C)"
+ * @studio unsupported severity=advanced category="Alternate bus modes (SPI / I3C)"
  *   Ecosystem-gated. ILPS22QS supports 3-wire and 4-wire SPI (CS = pad
  *   3 strap) and I3C SDR. The driver framework currently uses tiles_pal
  *   I²C calls exclusively; adding SPI requires plumbing hal->spi_*
  *   through the driver, and I3C requires a new bus abstraction in
- *   Tessera that doesn't exist yet. Defer to a future multi-bus
+ *   Studio that doesn't exist yet. Defer to a future multi-bus
  *   driver framework pass.
  *
  * @note All bus I/O is routed through tiles_pal_t function pointers.
@@ -249,14 +249,14 @@ void tile_sense_bp_init(tiles_pal_t *hal, uint8_t instance,
 
 /**
  * @brief  Enter power-down mode (ODR = 0).
- * @tessera expose category=tile name=sleep section=lifecycle
+ * @studio expose category=tile name=sleep section=lifecycle
  * @param  tile  Initialised tile handle.
  */
 void tile_sense_bp_sleep(tile_t *tile);
 
 /**
  * @brief  Resume from power-down using cached ODR/AVG settings.
- * @tessera expose category=tile name=wake section=lifecycle
+ * @studio expose category=tile name=wake section=lifecycle
  * @param  tile  Sleeping tile handle.
  */
 void tile_sense_bp_wake(tile_t *tile);
@@ -266,7 +266,7 @@ void tile_sense_bp_wake(tile_t *tile);
  *
  * All registers return to defaults. Call init() again after reset.
  *
- * @tessera expose category=tile name=reset section=lifecycle
+ * @studio expose category=tile name=reset section=lifecycle
  * @param  tile  Tile handle.
  */
 void tile_sense_bp_reset(tile_t *tile);
@@ -275,7 +275,7 @@ void tile_sense_bp_reset(tile_t *tile);
 
 /**
  * @brief  Set the output data rate.
- * @tessera expose category=tile name=set_odr section=config
+ * @studio expose category=tile name=set_odr section=config
  * @param  tile  Initialised tile handle.
  * @param  odr   Desired output data rate.
  */
@@ -283,7 +283,7 @@ void tile_sense_bp_set_odr(tile_t *tile, sense_bp_odr_t odr);
 
 /**
  * @brief  Set the averaging filter depth.
- * @tessera expose category=tile name=set_avg section=config
+ * @studio expose category=tile name=set_avg section=config
  * @param  tile  Initialised tile handle.
  * @param  avg   Desired averaging.
  */
@@ -291,7 +291,7 @@ void tile_sense_bp_set_avg(tile_t *tile, sense_bp_avg_t avg);
 
 /**
  * @brief  Set the full-scale mode.
- * @tessera expose category=tile name=set_fullscale section=config
+ * @studio expose category=tile name=set_fullscale section=config
  * @param  tile  Initialised tile handle.
  * @param  fs    Full-scale selection.
  */
@@ -299,7 +299,7 @@ void tile_sense_bp_set_fullscale(tile_t *tile, sense_bp_fs_t fs);
 
 /**
  * @brief  Enable or disable the low-pass filter.
- * @tessera expose category=tile name=set_lpf section=config
+ * @studio expose category=tile name=set_lpf section=config
  * @param  tile    Initialised tile handle.
  * @param  enable  1 = enable, 0 = disable.
  * @param  bw      Bandwidth selection (only used if enable = 1).
@@ -310,7 +310,7 @@ void tile_sense_bp_set_lpf(tile_t *tile, uint8_t enable, sense_bp_lpf_bw_t bw);
 
 /**
  * @brief  Read the raw 24-bit pressure output (two's complement).
- * @tessera expose category=tile name=get_pressure_raw returns=int section=runtime
+ * @studio expose category=tile name=get_pressure_raw returns=int section=runtime
  * @param  tile  Initialised tile handle.
  * @return Raw 24-bit signed value, sign-extended to int32_t.
  */
@@ -318,7 +318,7 @@ int32_t tile_sense_bp_get_pressure_raw(tile_t *tile);
 
 /**
  * @brief  Read pressure in milli-hectopascals (integer, no float).
- * @tessera expose category=tile name=get_pressure_mhpa returns=int section=runtime
+ * @studio expose category=tile name=get_pressure_mhpa returns=int section=runtime
  *
  * Returns pressure * 1000 in mhPa units. For example, 1013250 = 1013.250 hPa.
  * Accounts for the current full-scale mode setting.
@@ -332,7 +332,7 @@ int32_t tile_sense_bp_get_pressure_mhpa(tile_t *tile);
 
 /**
  * @brief  Read the raw 16-bit temperature output (two's complement).
- * @tessera expose category=tile name=get_temp_raw returns=int section=runtime
+ * @studio expose category=tile name=get_temp_raw returns=int section=runtime
  * @param  tile  Initialised tile handle.
  * @return Raw 16-bit signed value, sign-extended to int16_t.
  */
@@ -340,7 +340,7 @@ int16_t tile_sense_bp_get_temp_raw(tile_t *tile);
 
 /**
  * @brief  Read temperature in centi-degrees Celsius (integer, no float).
- * @tessera expose category=tile name=get_temp_cdeg returns=int section=runtime
+ * @studio expose category=tile name=get_temp_cdeg returns=int section=runtime
  *
  * Returns temperature * 100. For example, 2534 = 25.34 °C.
  * Sensor sensitivity is 100 LSB/°C, so this is (raw * 100) / 100 = raw.
@@ -354,7 +354,7 @@ int32_t tile_sense_bp_get_temp_cdeg(tile_t *tile);
 
 /**
  * @brief  Trigger a single measurement in power-down mode.
- * @tessera expose category=tile name=oneshot section=runtime
+ * @studio expose category=tile name=oneshot section=runtime
  *
  * ODR must be POWERDOWN. Sets the ONESHOT bit in CTRL_REG2.
  * The bit self-clears when the measurement is complete.
@@ -367,7 +367,7 @@ void tile_sense_bp_oneshot(tile_t *tile);
 
 /**
  * @brief  Read the STATUS register.
- * @tessera expose category=tile name=get_status returns=int section=runtime
+ * @studio expose category=tile name=get_status returns=int section=runtime
  * @param  tile  Initialised tile handle.
  * @return Raw STATUS byte (use ILPS22QS_STATUS_* masks).
  */
@@ -375,7 +375,7 @@ uint8_t tile_sense_bp_get_status(tile_t *tile);
 
 /**
  * @brief  Check if new pressure data is available.
- * @tessera expose category=tile name=pressure_ready returns=bool section=runtime
+ * @studio expose category=tile name=pressure_ready returns=bool section=runtime
  * @param  tile  Initialised tile handle.
  * @return 1 if P_DA is set, 0 otherwise.
  */
@@ -383,7 +383,7 @@ uint8_t tile_sense_bp_pressure_ready(tile_t *tile);
 
 /**
  * @brief  Check if new temperature data is available.
- * @tessera expose category=tile name=temp_ready returns=bool section=runtime
+ * @studio expose category=tile name=temp_ready returns=bool section=runtime
  * @param  tile  Initialised tile handle.
  * @return 1 if T_DA is set, 0 otherwise.
  */
@@ -393,7 +393,7 @@ uint8_t tile_sense_bp_temp_ready(tile_t *tile);
 
 /**
  * @brief  Configure the FIFO mode.
- * @tessera expose category=tile name=set_fifo_mode section=fifo
+ * @studio expose category=tile name=set_fifo_mode section=fifo
  * @param  tile  Initialised tile handle.
  * @param  mode  FIFO mode selection.
  */
@@ -401,7 +401,7 @@ void tile_sense_bp_set_fifo_mode(tile_t *tile, sense_bp_fifo_mode_t mode);
 
 /**
  * @brief  Set the FIFO watermark threshold (0–127).
- * @tessera expose category=tile name=set_fifo_watermark section=fifo
+ * @studio expose category=tile name=set_fifo_watermark section=fifo
  * @param  tile       Initialised tile handle.
  * @param  watermark  Threshold level (0–127).
  */
@@ -409,7 +409,7 @@ void tile_sense_bp_set_fifo_watermark(tile_t *tile, uint8_t watermark);
 
 /**
  * @brief  Read the number of unread FIFO samples.
- * @tessera expose category=tile name=get_fifo_level returns=int section=fifo
+ * @studio expose category=tile name=get_fifo_level returns=int section=fifo
  * @param  tile  Initialised tile handle.
  * @return Number of unread samples (0–128).
  */
@@ -417,7 +417,7 @@ uint8_t tile_sense_bp_get_fifo_level(tile_t *tile);
 
 /**
  * @brief  Read FIFO status flags.
- * @tessera expose category=tile name=get_fifo_status returns=int section=fifo
+ * @studio expose category=tile name=get_fifo_status returns=int section=fifo
  * @param  tile  Initialised tile handle.
  * @return Raw FIFO_STATUS2 byte (use ILPS22QS_FIFO_* masks).
  */
@@ -425,7 +425,7 @@ uint8_t tile_sense_bp_get_fifo_status(tile_t *tile);
 
 /**
  * @brief  Read one raw 24-bit pressure sample from the FIFO.
- * @tessera expose category=tile name=read_fifo_raw returns=int section=fifo
+ * @studio expose category=tile name=read_fifo_raw returns=int section=fifo
  * @param  tile  Initialised tile handle.
  * @return Raw 24-bit signed pressure value, sign-extended to int32_t.
  */
@@ -434,8 +434,8 @@ int32_t tile_sense_bp_read_fifo_raw(tile_t *tile);
 /**
  * @brief  Read multiple raw pressure samples from the FIFO.
  *
- * @tessera expose category=tile name=read_fifo_batch returns=int section=fifo
- * @tessera out_buffer buf type=int32_t cap_param=count
+ * @studio expose category=tile name=read_fifo_batch returns=int section=fifo
+ * @studio out_buffer buf type=int32_t cap_param=count
  * @param  tile   Initialised tile handle.
  * @param  buf    Caller-allocated buffer the driver fills with raw
  *                24-bit signed values (sign-extended to int32_t).
@@ -450,7 +450,7 @@ uint8_t tile_sense_bp_read_fifo_batch(tile_t *tile, int32_t *buf,
 
 /**
  * @brief  Set the pressure interrupt threshold in hPa.
- * @tessera expose category=tile name=set_threshold_hpa section=config
+ * @studio expose category=tile name=set_threshold_hpa section=config
  *
  * The threshold is applied to the differential pressure (P_DIFF_IN).
  * Enable PHE/PLE bits in INTERRUPT_CFG to generate interrupts.
@@ -462,7 +462,7 @@ void tile_sense_bp_set_threshold_hpa(tile_t *tile, uint16_t ths_hpa);
 
 /**
  * @brief  Configure the interrupt source register.
- * @tessera expose category=tile name=set_interrupt_cfg section=config
+ * @studio expose category=tile name=set_interrupt_cfg section=config
  * @param  tile  Initialised tile handle.
  * @param  cfg   Raw INTERRUPT_CFG byte (use ILPS22QS_INTCFG_* masks).
  */
@@ -470,7 +470,7 @@ void tile_sense_bp_set_interrupt_cfg(tile_t *tile, uint8_t cfg);
 
 /**
  * @brief  Read the interrupt source register (clears latched flags).
- * @tessera expose category=tile name=get_int_source returns=int section=config
+ * @studio expose category=tile name=get_int_source returns=int section=config
  * @param  tile  Initialised tile handle.
  * @return Raw INT_SOURCE byte (use ILPS22QS_INT_SRC_* masks).
  */
@@ -479,7 +479,7 @@ uint8_t tile_sense_bp_get_int_source(tile_t *tile);
 /**
  * @brief  Check whether the chip's power-on boot sequence is complete.
  *
- * @tessera expose category=tile name=is_boot_complete returns=int section=runtime
+ * @studio expose category=tile name=is_boot_complete returns=int section=runtime
  *
  * After VDD ramps, the ILPS22QS reloads its trim parameters from NVM.
  * The BOOT_ON bit in INT_SOURCE reads 1 during this phase and 0 once
@@ -504,7 +504,7 @@ uint8_t tile_sense_bp_is_boot_complete(tile_t *tile);
 
 /**
  * @brief  Enable autozero mode.
- * @tessera expose category=tile name=set_autozero section=config
+ * @studio expose category=tile name=set_autozero section=config
  *
  * Captures current pressure as REF_P. Output registers then show
  * the difference from reference. Reset with reset_autozero().
@@ -515,14 +515,14 @@ void tile_sense_bp_set_autozero(tile_t *tile);
 
 /**
  * @brief  Reset autozero mode to normal operation.
- * @tessera expose category=tile name=reset_autozero section=config
+ * @studio expose category=tile name=reset_autozero section=config
  * @param  tile  Initialised tile handle.
  */
 void tile_sense_bp_reset_autozero(tile_t *tile);
 
 /**
  * @brief  Enable autorefp mode.
- * @tessera expose category=tile name=set_autorefp section=config
+ * @studio expose category=tile name=set_autorefp section=config
  *
  * Captures current pressure as REF_P for interrupt threshold comparison.
  * Output registers are not affected. Reset with reset_autorefp().
@@ -533,14 +533,14 @@ void tile_sense_bp_set_autorefp(tile_t *tile);
 
 /**
  * @brief  Reset autorefp mode to normal operation.
- * @tessera expose category=tile name=reset_autorefp section=config
+ * @studio expose category=tile name=reset_autorefp section=config
  * @param  tile  Initialised tile handle.
  */
 void tile_sense_bp_reset_autorefp(tile_t *tile);
 
 /**
  * @brief  Set pressure offset for one-point calibration (RPDS registers).
- * @tessera expose category=tile name=set_pressure_offset section=config
+ * @studio expose category=tile name=set_pressure_offset section=config
  *
  * The offset is in raw LSB units (signed 16-bit) and is subtracted from
  * the measured pressure before output.
@@ -552,7 +552,7 @@ void tile_sense_bp_set_pressure_offset(tile_t *tile, int16_t offset);
 
 /**
  * @brief  Read the reference pressure registers (REF_P).
- * @tessera expose category=tile name=get_ref_pressure returns=int section=config
+ * @studio expose category=tile name=get_ref_pressure returns=int section=config
  * @param  tile  Initialised tile handle.
  * @return 16-bit signed reference pressure value.
  */
@@ -563,7 +563,7 @@ int16_t tile_sense_bp_get_ref_pressure(tile_t *tile);
 /**
  * @brief  Estimate altitude (mm) above the supplied sea-level pressure.
  *
- * @tessera expose category=tile name=read_altitude_mm returns=int section=runtime
+ * @studio expose category=tile name=read_altitude_mm returns=int section=runtime
  *
  * Pure-integer linear approximation around the reference pressure:
  *   h_mm = 8430 * (P0_pa - P_pa) / 100
@@ -596,7 +596,7 @@ int32_t tile_sense_bp_read_altitude_mm(tile_t *tile, uint32_t sea_level_pa);
 /**
  * @brief  Block until measured pressure deviates from a captured baseline.
  *
- * @tessera expose category=tile name=wait_for_pressure_change returns=int section=runtime
+ * @studio expose category=tile name=wait_for_pressure_change returns=int section=runtime
  *
  * Captures the current pressure at call time, then polls at the chip's
  * configured ODR cadence until either:

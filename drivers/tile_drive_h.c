@@ -708,7 +708,7 @@ void tile_drive_h_audio_stop(tile_t* tile)
 }
 
 /* -------------------------------------------------------------- */
-/* OTP programming (DESTRUCTIVE — no @tessera expose)              */
+/* OTP programming (DESTRUCTIVE — no @studio expose)              */
 /* -------------------------------------------------------------- */
 
 uint8_t tile_drive_h_get_otp_status(tile_t* tile)
