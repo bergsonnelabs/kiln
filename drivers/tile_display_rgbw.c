@@ -245,7 +245,7 @@ void tile_display_rgbw_breathe(tile_t *tile, uint8_t r, uint8_t g, uint8_t b,
 {
     /* Software ramp — 32 steps up, 32 steps down (64 total).
      * On-chip AEU could do this autonomously, but its bytecode is not
-     * publicly documented (see header @tessera unsupported note). */
+     * publicly documented (see header @studio unsupported note). */
     const uint8_t STEPS = 32;
     uint16_t step_ms = period_ms / (uint16_t)(STEPS * 2u);
     if (step_ms == 0) step_ms = 1;  /* clamp — too-short period falls back to choppy */

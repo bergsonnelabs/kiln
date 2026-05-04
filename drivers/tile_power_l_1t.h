@@ -17,7 +17,7 @@
  * Datasheet: https://www.bergsonne.io/tiles/power/l1t
  * IC datasheet: https://www.ti.com/lit/ds/symlink/bq25150.pdf
  *
- * @tessera tile label=Power.L.1T icon=☷
+ * @studio tile label=Power.L.1T icon=☷
  *
  * Quick start:
  * @code
@@ -37,7 +37,7 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="MR button + INT pin handling" section=advanced
+ * @studio unsupported severity=advanced category="MR button + INT pin handling" section=advanced
  *   The chip's MR (push-button) and INT (interrupt) pins aren't
  *   routed to tile pads on the current revision — nothing for a
  *   Core GPIO to attach to. Closing this gap requires a tile
@@ -198,7 +198,7 @@ void tile_power_l_1t_init(tiles_pal_t* hal, uint8_t instance, tile_t* tile,
  * resolution scales: ≤318 mA uses 1.25 mA steps, >318 mA uses
  * 2.5 mA steps. Values clamp to 1.25–500 mA.
  *
- * @tessera expose category=tile name=set_charge_current_ma section=config
+ * @studio expose category=tile name=set_charge_current_ma section=config
  * @param  tile  Initialised tile handle
  * @param  ma    Target charge current in mA (1.25–500)
  */
@@ -211,7 +211,7 @@ void tile_power_l_1t_set_charge_current_ma(tile_t* tile, uint16_t ma);
  * to that range. Use 4200 for typical Li-Ion, 3650 for LFP, 4350+
  * for high-voltage NMC variants.
  *
- * @tessera expose category=tile name=set_charge_voltage_mv section=config
+ * @studio expose category=tile name=set_charge_voltage_mv section=config
  * @param  tile  Initialised tile handle
  * @param  mv    Target battery voltage in mV (3600–4600)
  */
@@ -223,7 +223,7 @@ void tile_power_l_1t_set_charge_voltage_mv(tile_t* tile, uint16_t mv);
  * Pre-charge applies to deeply-discharged cells; usually 10–20 % of
  * the fast-charge rate. Values clamp to 1.25–77.5 mA.
  *
- * @tessera expose category=tile name=set_pre_charge_ma section=config
+ * @studio expose category=tile name=set_pre_charge_ma section=config
  * @param  tile  Initialised tile handle
  * @param  ma   Target pre-charge current in mA (1.25–77.5)
  */
@@ -236,7 +236,7 @@ void tile_power_l_1t_set_pre_charge_ma(tile_t* tile, uint8_t ma);
  * threshold during the CV phase. 0 disables termination (charges
  * continuously until VBATREG is reached). Values clamp to 1–31 %.
  *
- * @tessera expose category=tile name=set_termination_percent section=config
+ * @studio expose category=tile name=set_termination_percent section=config
  * @param  tile  Initialised tile handle
  * @param  pct   Termination current as % of ICHG (0 = disabled, 1–31)
  */
@@ -249,7 +249,7 @@ void tile_power_l_1t_set_termination_percent(tile_t* tile, uint8_t pct);
  * folds back to keep VIN above the DPM threshold. Values clamp to
  * 5–500 mA in 5 mA steps.
  *
- * @tessera expose category=tile name=set_input_current_limit_ma section=config
+ * @studio expose category=tile name=set_input_current_limit_ma section=config
  * @param  tile  Initialised tile handle
  * @param  ma   Input current limit in mA (5–500)
  */
@@ -263,7 +263,7 @@ void tile_power_l_1t_set_input_current_limit_ma(tile_t* tile, uint16_t ma);
  * Replaces the deprecated raw-counts API; performs a 2-byte burst
  * read to avoid torn samples.
  *
- * @tessera expose category=tile name=get_vbat_mv returns=int section=runtime
+ * @studio expose category=tile name=get_vbat_mv returns=int section=runtime
  * @param  tile  Initialised tile handle
  * @return Battery voltage in mV (0–6000)
  */
@@ -271,7 +271,7 @@ uint16_t tile_power_l_1t_get_vbat_mv(tile_t* tile);
 
 /**
  * @brief  Read input (VIN) voltage from the ADC.
- * @tessera expose category=tile name=get_vin_mv returns=int section=runtime
+ * @studio expose category=tile name=get_vin_mv returns=int section=runtime
  * @param  tile  Initialised tile handle
  * @return VIN in mV (0–6000)
  */
@@ -279,7 +279,7 @@ uint16_t tile_power_l_1t_get_vin_mv(tile_t* tile);
 
 /**
  * @brief  Read PMID (system rail) voltage from the ADC.
- * @tessera expose category=tile name=get_pmid_mv returns=int section=runtime
+ * @studio expose category=tile name=get_pmid_mv returns=int section=runtime
  * @param  tile  Initialised tile handle
  * @return PMID in mV (0–6000)
  */
@@ -291,7 +291,7 @@ uint16_t tile_power_l_1t_get_pmid_mv(tile_t* tile);
  * Scaled relative to the configured ICHG fast-charge limit; returns
  * actual mA flowing into the cell.
  *
- * @tessera expose category=tile name=get_charge_current_ma returns=int section=runtime
+ * @studio expose category=tile name=get_charge_current_ma returns=int section=runtime
  * @param  tile  Initialised tile handle
  * @return Charge current in mA (0–500)
  */
@@ -303,7 +303,7 @@ uint16_t tile_power_l_1t_get_charge_current_ma(tile_t* tile);
  * Range scales with ILIMCTRL: ≤150 mA range gives 0–375 mA full
  * scale; >150 mA range gives 0–750 mA full scale.
  *
- * @tessera expose category=tile name=get_input_current_ma returns=int section=runtime
+ * @studio expose category=tile name=get_input_current_ma returns=int section=runtime
  * @param  tile  Initialised tile handle
  * @return Input current in mA (0–750)
  */
@@ -316,7 +316,7 @@ uint16_t tile_power_l_1t_get_input_current_ma(tile_t* tile);
  * to °C using the NTC's resistance/temperature curve in firmware —
  * the chip doesn't expose temperature directly.
  *
- * @tessera expose category=tile name=get_ts_mv returns=int section=runtime
+ * @studio expose category=tile name=get_ts_mv returns=int section=runtime
  * @param  tile  Initialised tile handle
  * @return TS voltage in mV (0–1200)
  */
@@ -328,7 +328,7 @@ uint16_t tile_power_l_1t_get_ts_mv(tile_t* tile);
  * Optional auxiliary input (0–1.2 V range). Useful for monitoring
  * an external sensor (e.g., separate NTC, voltage divider).
  *
- * @tessera expose category=tile name=get_adcin_mv returns=int section=runtime
+ * @studio expose category=tile name=get_adcin_mv returns=int section=runtime
  * @param  tile  Initialised tile handle
  * @return ADCIN voltage in mV (0–1200)
  */
@@ -342,7 +342,7 @@ uint16_t tile_power_l_1t_get_adcin_mv(tile_t* tile);
  * Derived from VBAT using a linear curve (3000 mV = 0%, 4200 mV =
  * 100%). Coarse — a real fuel gauge would integrate Coulombs.
  *
- * @tessera expose category=tile name=get_percent returns=int section=runtime
+ * @studio expose category=tile name=get_percent returns=int section=runtime
  * @param  tile  Initialised tile handle
  * @return Battery percentage (0–100)
  */
@@ -358,7 +358,7 @@ uint8_t tile_power_l_1t_get_percent(tile_t* tile);
  * 8.5.1.49–52 describes the exact mapping; users tuning JEITA
  * thresholds should consult the chip's NTC profile guide.
  *
- * @tessera expose category=tile name=set_ts_cold section=config
+ * @studio expose category=tile name=set_ts_cold section=config
  * @param  tile  Initialised tile handle
  * @param  code  Raw 8-bit TS_COLD register value
  */
@@ -366,7 +366,7 @@ void tile_power_l_1t_set_ts_cold(tile_t* tile, uint8_t code);
 
 /**
  * @brief  Set the cool-temperature TS threshold (raw register value).
- * @tessera expose category=tile name=set_ts_cool section=config
+ * @studio expose category=tile name=set_ts_cool section=config
  * @param  tile  Initialised tile handle
  * @param  code  Raw 8-bit TS_COOL register value
  */
@@ -374,7 +374,7 @@ void tile_power_l_1t_set_ts_cool(tile_t* tile, uint8_t code);
 
 /**
  * @brief  Set the warm-temperature TS threshold (raw register value).
- * @tessera expose category=tile name=set_ts_warm section=config
+ * @studio expose category=tile name=set_ts_warm section=config
  * @param  tile  Initialised tile handle
  * @param  code  Raw 8-bit TS_WARM register value
  */
@@ -382,7 +382,7 @@ void tile_power_l_1t_set_ts_warm(tile_t* tile, uint8_t code);
 
 /**
  * @brief  Set the hot-temperature TS threshold (raw register value).
- * @tessera expose category=tile name=set_ts_hot section=config
+ * @studio expose category=tile name=set_ts_hot section=config
  * @param  tile  Initialised tile handle
  * @param  code  Raw 8-bit TS_HOT register value
  */
@@ -394,7 +394,7 @@ void tile_power_l_1t_set_ts_hot(tile_t* tile, uint8_t code);
  * When disabled, the chip ignores the NTC entirely (charging
  * proceeds regardless of battery temperature). Default at init: enabled.
  *
- * @tessera expose category=tile name=set_ts_enabled section=config
+ * @studio expose category=tile name=set_ts_enabled section=config
  * @param  tile     Initialised tile handle
  * @param  enabled  1 = TS thermal protection on, 0 = off
  */
@@ -417,7 +417,7 @@ typedef enum {
  * pad 10. Useful for non-default tile variants or load-switch-mode
  * pass-through use.
  *
- * @tessera expose category=tile name=set_ldo_voltage_mv section=config
+ * @studio expose category=tile name=set_ldo_voltage_mv section=config
  * @param  tile  Initialised tile handle
  * @param  mv    Target LDO voltage in mV (600–3700)
  */
@@ -431,7 +431,7 @@ void tile_power_l_1t_set_ldo_voltage_mv(tile_t* tile, uint16_t mv);
  * via a FET (up to 150 mA, but VINLS must be tied to the desired
  * supply on the tile PCB).
  *
- * @tessera expose category=tile name=set_ldo_mode section=config
+ * @studio expose category=tile name=set_ldo_mode section=config
  * @param  tile  Initialised tile handle
  * @param  mode  LDO mode (POWER_L_1T_LDO_MODE_LDO or _LOAD_SWITCH)
  */
@@ -443,7 +443,7 @@ void tile_power_l_1t_set_ldo_mode(tile_t* tile, power_l_1t_ldo_mode_t mode);
  * When disabled, pad 10 (V+) goes high-impedance — downstream rails
  * expecting 1.8 V will drop. Default at init: enabled (chip default).
  *
- * @tessera expose category=tile name=set_ldo_enabled section=config
+ * @studio expose category=tile name=set_ldo_enabled section=config
  * @param  tile     Initialised tile handle
  * @param  enabled  1 = output on, 0 = output off (high-Z)
  */
@@ -458,7 +458,7 @@ void tile_power_l_1t_set_ldo_enabled(tile_t* tile, uint8_t enabled);
  * which clear on read) into the supplied struct. Call once per
  * polling cycle — multiple reads will lose flag transitions.
  *
- * @tessera expose category=tile name=get_charge_status section=runtime
+ * @studio expose category=tile name=get_charge_status section=runtime
  * @param  tile  Initialised tile handle
  * @param  out   Caller-allocated status struct (zeroed on entry)
  */
@@ -478,7 +478,7 @@ void tile_power_l_1t_get_charge_status(tile_t* tile,
  * re-insertion) to recover. Marked `section=advanced` for the same
  * posture as other one-way / hardware-gated operations.
  *
- * @tessera expose category=tile name=enter_ship_mode section=advanced
+ * @studio expose category=tile name=enter_ship_mode section=advanced
  * @param  tile  Initialised tile handle
  */
 void tile_power_l_1t_enter_ship_mode(tile_t* tile);
@@ -488,7 +488,7 @@ void tile_power_l_1t_enter_ship_mode(tile_t* tile);
 /**
  * @brief  Read any 8-bit BQ25150 register.
  *
- * @tessera expose category=tile name=read_status returns=int section=advanced
+ * @studio expose category=tile name=read_status returns=int section=advanced
  * @param  tile  Initialised tile handle
  * @param  reg   Register address
  * @return 8-bit register value
@@ -502,7 +502,7 @@ uint8_t tile_power_l_1t_read_status(tile_t* tile, uint8_t reg);
  * driver doesn't expose. Caller is responsible for not bricking the
  * chip — most useful registers have typed setters above.
  *
- * @tessera expose category=tile name=write_reg section=advanced
+ * @studio expose category=tile name=write_reg section=advanced
  * @param  tile   Initialised tile handle
  * @param  reg    Register address
  * @param  value  Value to write
@@ -523,7 +523,7 @@ void tile_power_l_1t_write_reg(tile_t* tile, uint8_t reg, uint8_t value);
 /**
  * @brief  Is the cell currently being charged?
  *
- * @tessera expose category=tile name=is_charging returns=bool section=runtime
+ * @studio expose category=tile name=is_charging returns=bool section=runtime
  *
  * Convenience over @ref tile_power_l_1t_get_charge_status — returns
  * the `charging` field as a bool. Note this reads (and clears) FLAG3
@@ -538,7 +538,7 @@ uint8_t tile_power_l_1t_is_charging(tile_t* tile);
 /**
  * @brief  Has charge termination been reached?
  *
- * @tessera expose category=tile name=is_charge_done returns=bool section=runtime
+ * @studio expose category=tile name=is_charge_done returns=bool section=runtime
  *
  * Returns the `charge_done` bit from STAT0 — set when the cell
  * reaches VBATREG and current tapers below the termination threshold.
@@ -551,7 +551,7 @@ uint8_t tile_power_l_1t_is_charge_done(tile_t* tile);
 /**
  * @brief  Is the battery below `threshold_pct`?
  *
- * @tessera expose category=tile name=is_battery_low returns=bool section=runtime
+ * @studio expose category=tile name=is_battery_low returns=bool section=runtime
  *
  * The classic "go to sleep" trigger. Equivalent to
  * `get_percent() < threshold_pct`. Quick: one ADC read.
@@ -565,7 +565,7 @@ uint8_t tile_power_l_1t_is_battery_low(tile_t* tile, uint8_t threshold_pct);
 /**
  * @brief  Is external power present (running off VIN)?
  *
- * @tessera expose category=tile name=is_powered returns=bool section=runtime
+ * @studio expose category=tile name=is_powered returns=bool section=runtime
  *
  * Returns the `vin_pgood` bit — true when VIN is in the valid
  * operating range (3.4–5.5 V). Use to branch behaviour between
@@ -579,7 +579,7 @@ uint8_t tile_power_l_1t_is_powered(tile_t* tile);
 /**
  * @brief  Block until charge_done is observed, or timeout.
  *
- * @tessera expose category=tile name=wait_for_charge_done returns=bool section=runtime
+ * @studio expose category=tile name=wait_for_charge_done returns=bool section=runtime
  *
  * Polls the charge_done bit at a 1 s cadence (charge state changes
  * on the order of minutes for a typical cell — faster polling wastes

@@ -50,11 +50,11 @@
  * Datasheet (DAC): https://www.ti.com/product/DAC63202W
  * Datasheet (Amp): https://www.ti.com/product/TPA2028D1
  *
- * @tessera tile label=Drive.A.2 icon=♬
+ * @studio tile label=Drive.A.2 icon=♬
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="DAC PWM-output mode (FBx pins)"
+ * @studio unsupported severity=advanced category="DAC PWM-output mode (FBx pins)"
  *   The DAC63202W FB0 / FB1 pins (package balls B2 / C2) can be
  *   configured as comparator / PWM outputs for driving external
  *   power-stage gates. On the Drive.A.2 tile these pins are tied
@@ -64,7 +64,7 @@
  *   observe or use the output. Closing this gap requires a tile
  *   hardware revision that breaks FBx out to a pad.
  *
- * @tessera unsupported severity=niche category="Per-amp independent control"
+ * @studio unsupported severity=niche category="Per-amp independent control"
  *   The tile carries 2× TPA2028D1 amps wired to a single shared I²C
  *   bus, and the TPA2028D1 has a fixed factory I²C address (0x58) —
  *   any write at 0x58 is acknowledged by both amps simultaneously.
@@ -369,7 +369,7 @@ void tile_drive_a_2_init(tiles_pal_t *hal, uint8_t instance,
 
 /**
  * @brief  Enter low-power sleep.
- * @tessera expose category=tile name=sleep section=lifecycle
+ * @studio expose category=tile name=sleep section=lifecycle
  *
  * Powers down both DAC VOUT channels (Hi-Z) and puts the amplifiers
  * into software shutdown.
@@ -378,7 +378,7 @@ void tile_drive_a_2_sleep(tile_t *tile);
 
 /**
  * @brief  Wake from sleep.
- * @tessera expose category=tile name=wake section=lifecycle
+ * @studio expose category=tile name=wake section=lifecycle
  *
  * Powers up both DAC VOUT channels and re-enables the amplifiers.
  * Restores cached gain settings.
@@ -399,7 +399,7 @@ void tile_drive_a_2_reset(tile_t *tile);
 
 /**
  * @brief  Set a DAC channel output by raw 12-bit code (0–4095).
- * @tessera expose category=tile name=set section=runtime
+ * @studio expose category=tile name=set section=runtime
  *
  * @param  tile     Tile handle
  * @param  channel  0 or 1
@@ -409,7 +409,7 @@ void tile_drive_a_2_set(tile_t *tile, uint8_t channel, uint16_t value);
 
 /**
  * @brief  Set a DAC channel output in millivolts.
- * @tessera expose category=tile name=set_mv section=runtime
+ * @studio expose category=tile name=set_mv section=runtime
  *
  * Computes the DAC code from the cached reference voltage and gain.
  *
@@ -421,7 +421,7 @@ void tile_drive_a_2_set_mv(tile_t *tile, uint8_t channel, uint16_t mv);
 
 /**
  * @brief  Read back the current DAC code for a channel.
- * @tessera expose category=tile name=get returns=int section=runtime
+ * @studio expose category=tile name=get returns=int section=runtime
  *
  * @param  tile     Tile handle
  * @param  channel  0 or 1
@@ -435,7 +435,7 @@ uint16_t tile_drive_a_2_get(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Set the voltage output gain for a DAC channel.
- * @tessera expose category=tile name=set_gain section=config
+ * @studio expose category=tile name=set_gain section=config
  *
  * Automatically enables the internal reference when an internal-reference
  * gain is selected, and updates the cached Vref for set_mv() calculations.
@@ -453,7 +453,7 @@ void tile_drive_a_2_set_gain(tile_t *tile, uint8_t channel,
 
 /**
  * @brief  Configure the waveform shape for a channel.
- * @tessera expose category=tile name=set_waveform section=runtime
+ * @studio expose category=tile name=set_waveform section=runtime
  *
  * Sets FUNC-CONFIG-X in DAC-X-FUNC-CONFIG. The waveform oscillates
  * between DAC-X-MARGIN-LOW and DAC-X-MARGIN-HIGH at the configured
@@ -468,7 +468,7 @@ void tile_drive_a_2_set_waveform(tile_t *tile, uint8_t channel,
 
 /**
  * @brief  Start waveform generation on a channel.
- * @tessera expose category=tile name=start_waveform section=runtime
+ * @studio expose category=tile name=start_waveform section=runtime
  *
  * @param  tile     Tile handle
  * @param  channel  0 or 1
@@ -477,7 +477,7 @@ void tile_drive_a_2_start_waveform(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Stop waveform generation on a channel.
- * @tessera expose category=tile name=stop_waveform section=runtime
+ * @studio expose category=tile name=stop_waveform section=runtime
  *
  * @param  tile     Tile handle
  * @param  channel  0 or 1
@@ -486,7 +486,7 @@ void tile_drive_a_2_stop_waveform(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Set the slew rate (time per code step) for a DAC channel.
- * @tessera expose category=tile name=set_slew_rate section=config
+ * @studio expose category=tile name=set_slew_rate section=config
  *
  * Programs SLEW-RATE-X bits[3:0] in DAC-X-FUNC-CONFIG. Affects both
  * slewed direct-output updates and the on-chip function generator's
@@ -504,7 +504,7 @@ void tile_drive_a_2_set_slew_rate(tile_t *tile, uint8_t channel,
 
 /**
  * @brief  Set the code step (LSBs per slew tick) for a DAC channel.
- * @tessera expose category=tile name=set_code_step section=config
+ * @studio expose category=tile name=set_code_step section=config
  *
  * Programs CODE-STEP-X bits[6:4] in DAC-X-FUNC-CONFIG. Larger steps
  * give faster ramps / higher waveform frequencies at the cost of
@@ -519,7 +519,7 @@ void tile_drive_a_2_set_code_step(tile_t *tile, uint8_t channel,
 
 /**
  * @brief  Set the upper / lower bounds for waveform & window-comparator modes.
- * @tessera expose category=tile name=set_margins section=config
+ * @studio expose category=tile name=set_margins section=config
  *
  * Writes DAC-X-MARGIN-HIGH and DAC-X-MARGIN-LOW. The function
  * generator oscillates between these levels, and they also serve
@@ -536,7 +536,7 @@ void tile_drive_a_2_set_margins(tile_t *tile, uint8_t channel,
 
 /**
  * @brief  Set the phase offset for the function generator.
- * @tessera expose category=tile name=set_phase section=config
+ * @studio expose category=tile name=set_phase section=config
  *
  * Programs PHASE-SEL-X bits[12:11] in DAC-X-FUNC-CONFIG. Take effect
  * the next time start_waveform() is called. Use phase = 90° on one
@@ -563,7 +563,7 @@ void tile_drive_a_2_set_phase(tile_t *tile, uint8_t channel,
  * fine-grained control, call set_margins() / set_code_step() /
  * set_slew_rate() / set_waveform() / set_phase() individually.
  *
- * @tessera expose category=tile name=set_waveform_params section=config
+ * @studio expose category=tile name=set_waveform_params section=config
  * @param  tile     Tile handle
  * @param  channel  0 or 1
  * @param  wave     Waveform shape (drive_a_2_wave_t)
@@ -581,7 +581,7 @@ void tile_drive_a_2_set_waveform_params(tile_t *tile, uint8_t channel,
 
 /**
  * @brief  Set the amplifier fixed gain.
- * @tessera expose category=tile name=amp_set_gain section=runtime
+ * @studio expose category=tile name=amp_set_gain section=runtime
  *
  * Both TPA2028D1 amplifiers share I2C address 0x58, so this write
  * affects both channels simultaneously.  No-op in SPI mode.
@@ -593,7 +593,7 @@ void tile_drive_a_2_amp_set_gain(tile_t *tile, int8_t gain_db);
 
 /**
  * @brief  Read the current amplifier fixed gain.
- * @tessera expose category=tile name=amp_get_gain returns=int section=runtime
+ * @studio expose category=tile name=amp_get_gain returns=int section=runtime
  *
  * @param  tile  Tile handle
  * @return Gain in dB (-28 to +30), or 0 if amp not available
@@ -602,7 +602,7 @@ int8_t tile_drive_a_2_amp_get_gain(tile_t *tile);
 
 /**
  * @brief  Enable the amplifiers (clear software shutdown).
- * @tessera expose category=tile name=amp_enable section=runtime
+ * @studio expose category=tile name=amp_enable section=runtime
  *
  * No-op in SPI mode.
  */
@@ -610,7 +610,7 @@ void tile_drive_a_2_amp_enable(tile_t *tile);
 
 /**
  * @brief  Disable the amplifiers (enter software shutdown).
- * @tessera expose category=tile name=amp_disable section=runtime
+ * @studio expose category=tile name=amp_disable section=runtime
  *
  * No-op in SPI mode.
  */
@@ -618,7 +618,7 @@ void tile_drive_a_2_amp_disable(tile_t *tile);
 
 /**
  * @brief  Configure the full AGC/DRC parameters.
- * @tessera expose category=tile name=amp_set_agc section=runtime
+ * @studio expose category=tile name=amp_set_agc section=runtime
  *
  * Writes all AGC registers (attack, release, hold, fixed gain,
  * limiter, compression, noise gate, max gain).  Affects both amps.
@@ -631,7 +631,7 @@ void tile_drive_a_2_amp_set_agc(tile_t *tile, const drive_a_2_agc_cfg_t *cfg);
 
 /**
  * @brief  Read the amplifier status register.
- * @tessera expose category=tile name=amp_read_status returns=int section=runtime
+ * @studio expose category=tile name=amp_read_status returns=int section=runtime
  *
  * Check bit 3 (FAULT) for short-circuit and bit 2 (Thermal) for
  * over-temperature.  Write 0 to the respective bit to clear.
@@ -647,7 +647,7 @@ uint8_t tile_drive_a_2_amp_read_status(tile_t *tile);
 
 /**
  * @brief  Read the DAC GENERAL-STATUS register.
- * @tessera expose category=tile name=read_status returns=int section=runtime
+ * @studio expose category=tile name=read_status returns=int section=runtime
  *
  * Contains DEVICE-ID, VERSION-ID, NVM CRC status, and DAC busy flags.
  *
@@ -662,7 +662,7 @@ uint16_t tile_drive_a_2_read_status(tile_t *tile);
 
 /**
  * @brief  Save the DAC's current register state into shadow NVM.
- * @tessera expose category=tile name=nvm_save section=config
+ * @studio expose category=tile name=nvm_save section=config
  *
  * Triggers NVM-PROG in COMMON-TRIGGER. The DAC's user-programmable
  * registers (gain, margins, slew, waveform shape, COMMON-CONFIG,
@@ -679,7 +679,7 @@ void tile_drive_a_2_nvm_save(tile_t *tile);
 
 /**
  * @brief  Reload all DAC registers from shadow NVM.
- * @tessera expose category=tile name=nvm_reload section=config
+ * @studio expose category=tile name=nvm_reload section=config
  *
  * Triggers NVM-RELOAD in COMMON-TRIGGER. Restores the saved
  * power-on configuration without a full reset — equivalent to
@@ -698,7 +698,7 @@ void tile_drive_a_2_nvm_reload(tile_t *tile);
 
 /**
  * @brief  Read any 16-bit DAC63202W register.
- * @tessera expose category=tile name=read_reg returns=int section=advanced
+ * @studio expose category=tile name=read_reg returns=int section=advanced
  *
  * Escape hatch for advanced users wanting to touch registers the
  * driver doesn't expose. Caller is responsible for not bricking
@@ -712,7 +712,7 @@ uint16_t tile_drive_a_2_read_reg(tile_t *tile, uint8_t reg);
 
 /**
  * @brief  Write any 16-bit DAC63202W register.
- * @tessera expose category=tile name=write_reg section=advanced
+ * @studio expose category=tile name=write_reg section=advanced
  *
  * @param  tile   Tile handle
  * @param  reg    Register address (7-bit)
@@ -736,7 +736,7 @@ void tile_drive_a_2_write_reg(tile_t *tile, uint8_t reg, uint16_t value);
 
 /**
  * @brief  Play a sine tone on `channel` for `ms` milliseconds.
- * @tessera expose category=tile name=play_tone section=runtime
+ * @studio expose category=tile name=play_tone section=runtime
  *
  * Configures DAC margins for full-scale swing, sets a sine
  * waveform, and uses the on-chip parametric generator together
@@ -758,7 +758,7 @@ void tile_drive_a_2_play_tone(tile_t *tile, drive_a_2_channel_t channel,
 
 /**
  * @brief  Hold the channel at silence (DAC mid-scale) for `ms` ms.
- * @tessera expose category=tile name=play_silence section=runtime
+ * @studio expose category=tile name=play_silence section=runtime
  *
  * Stops any active waveform on `channel`, parks the DAC code at
  * mid-scale (= zero differential at the amp input), and blocks
@@ -777,7 +777,7 @@ void tile_drive_a_2_play_silence(tile_t *tile, drive_a_2_channel_t channel,
 
 /**
  * @brief  Linear frequency sweep on `channel` from `start_hz` to `end_hz`.
- * @tessera expose category=tile name=play_chirp section=runtime
+ * @studio expose category=tile name=play_chirp section=runtime
  *
  * Software sine-LUT chirp delivered through `set` (raw DAC code)
  * at ~8 kHz update rate. Frequency advances linearly across `ms`.
@@ -799,7 +799,7 @@ void tile_drive_a_2_play_chirp(tile_t *tile, drive_a_2_channel_t channel,
 
 /**
  * @brief  Map a 0–100 percent volume to amplifier fixed gain.
- * @tessera expose category=tile name=set_volume_pct section=runtime
+ * @studio expose category=tile name=set_volume_pct section=runtime
  *
  * Linear mapping from `pct` to the TPA2028D1's full -28 dB to
  * +30 dB programmable range:
@@ -823,7 +823,7 @@ void tile_drive_a_2_set_volume_pct(tile_t *tile, drive_a_2_channel_t channel,
 
 /**
  * @brief  Mute `channel` by entering amp software shutdown.
- * @tessera expose category=tile name=mute section=runtime
+ * @studio expose category=tile name=mute section=runtime
  *
  * Stashes the current fixed-gain register so a later @ref
  * tile_drive_a_2_unmute restores it byte-exact, then puts the amp
@@ -837,7 +837,7 @@ void tile_drive_a_2_mute(tile_t *tile, drive_a_2_channel_t channel);
 
 /**
  * @brief  Restore audio output after a previous `mute` call.
- * @tessera expose category=tile name=unmute section=runtime
+ * @studio expose category=tile name=unmute section=runtime
  *
  * Re-applies the gain that was active at the time of @ref
  * tile_drive_a_2_mute and clears software shutdown (SWS=0). If

@@ -45,11 +45,11 @@
  *
  * Datasheet: Maxim MAX11644/MAX11645, 19-4544; Rev 3, 9/09
  *
- * @tessera tile label=Sense.MIC icon=◉
+ * @studio tile label=Sense.MIC icon=◉
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="External reference voltage on REF pin" section=config
+ * @studio unsupported severity=advanced category="External reference voltage on REF pin" section=config
  *   The MAX11645 supports an external reference on its REF/AIN1
  *   pin, but the Sense.MIC tile does not route REF/AIN1 to any
  *   pad (pad 6 carries the chip's analog audio output, not the
@@ -288,21 +288,21 @@ void tile_sense_mic_init(tiles_pal_t *hal, uint8_t instance,
 /**
  * @brief  Enter low-power mode (no conversions).
  *
- * @tessera expose category=tile name=sleep section=lifecycle
+ * @studio expose category=tile name=sleep section=lifecycle
  */
 void tile_sense_mic_sleep(tile_t *tile);
 
 /**
  * @brief  Wake from sleep, restore previous configuration.
  *
- * @tessera expose category=tile name=wake section=lifecycle
+ * @studio expose category=tile name=wake section=lifecycle
  */
 void tile_sense_mic_wake(tile_t *tile);
 
 /**
  * @brief  Reset the config register to power-on defaults. Must call init() again.
  *
- * @tessera expose category=tile name=reset section=lifecycle
+ * @studio expose category=tile name=reset section=lifecycle
  */
 void tile_sense_mic_reset(tile_t *tile);
 
@@ -316,7 +316,7 @@ void tile_sense_mic_reset(tile_t *tile);
  * @note   When switching to internal ref, allow ~10 µs for settling.
  *         This function inserts a 1 ms delay automatically.
  *
- * @tessera expose category=tile name=set_reference section=config
+ * @studio expose category=tile name=set_reference section=config
  * @param  ref  One of the sense_mic_ref_t values (VDD, INTERNAL, etc.)
  */
 void tile_sense_mic_set_reference(tile_t *tile, sense_mic_ref_t ref);
@@ -326,7 +326,7 @@ void tile_sense_mic_set_reference(tile_t *tile, sense_mic_ref_t ref);
  *
  * @param  ch  SENSE_MIC_CH_AIN0 (mic) or SENSE_MIC_CH_AIN1
  *
- * @tessera expose category=tile name=set_channel section=config
+ * @studio expose category=tile name=set_channel section=config
  */
 void tile_sense_mic_set_channel(tile_t *tile, sense_mic_channel_t ch);
 
@@ -335,7 +335,7 @@ void tile_sense_mic_set_channel(tile_t *tile, sense_mic_channel_t ch);
  *
  * @param  scan  SENSE_MIC_SCAN_SINGLE, SENSE_MIC_SCAN_UP, or SENSE_MIC_SCAN_8X
  *
- * @tessera expose category=tile name=set_scan_mode section=config
+ * @studio expose category=tile name=set_scan_mode section=config
  */
 void tile_sense_mic_set_scan_mode(tile_t *tile, sense_mic_scan_t scan);
 
@@ -355,7 +355,7 @@ void tile_sense_mic_set_scan_mode(tile_t *tile, sense_mic_scan_t scan);
  *
  * @param  clk  SENSE_MIC_CLOCK_INTERNAL or SENSE_MIC_CLOCK_EXTERNAL
  *
- * @tessera expose category=tile name=set_clock_mode section=config
+ * @studio expose category=tile name=set_clock_mode section=config
  */
 void tile_sense_mic_set_clock_mode(tile_t *tile, sense_mic_clock_t clk);
 
@@ -377,7 +377,7 @@ void tile_sense_mic_set_clock_mode(tile_t *tile, sense_mic_clock_t clk);
  *
  * @param  pol  SENSE_MIC_POLARITY_UNIPOLAR or SENSE_MIC_POLARITY_BIPOLAR
  *
- * @tessera expose category=tile name=set_polarity section=config
+ * @studio expose category=tile name=set_polarity section=config
  */
 void tile_sense_mic_set_polarity(tile_t *tile, sense_mic_polarity_t pol);
 
@@ -387,7 +387,7 @@ void tile_sense_mic_set_polarity(tile_t *tile, sense_mic_polarity_t pol);
  * Returns the Vref used for millivolt conversions (3300 for VDD, 2048
  * for internal, or the user-specified value for external).
  *
- * @tessera expose category=tile name=get_vref_mv returns=int section=runtime
+ * @studio expose category=tile name=get_vref_mv returns=int section=runtime
  */
 uint16_t tile_sense_mic_get_vref_mv(tile_t *tile);
 
@@ -402,7 +402,7 @@ uint16_t tile_sense_mic_get_vref_mv(tile_t *tile);
  * Conversion time is ~3.5 µs (internal clock); the I2C transaction
  * itself dominates the timing (~55 µs at 400 kHz).
  *
- * @tessera expose category=tile name=get_raw returns=int section=runtime
+ * @studio expose category=tile name=get_raw returns=int section=runtime
  */
 uint16_t tile_sense_mic_get_raw(tile_t *tile);
 
@@ -411,7 +411,7 @@ uint16_t tile_sense_mic_get_raw(tile_t *tile);
  *
  * Conversion: mv = raw * vref_mv / 4096
  *
- * @tessera expose category=tile name=get_raw_mv returns=int section=runtime
+ * @studio expose category=tile name=get_raw_mv returns=int section=runtime
  */
 uint16_t tile_sense_mic_get_raw_mv(tile_t *tile);
 
@@ -421,7 +421,7 @@ uint16_t tile_sense_mic_get_raw_mv(tile_t *tile);
  * Returns: (raw - dc_offset) where dc_offset is auto-calibrated during init().
  * Useful for audio waveform capture where DC bias is removed.
  *
- * @tessera expose category=tile name=get_audio_sample returns=int section=runtime
+ * @studio expose category=tile name=get_audio_sample returns=int section=runtime
  * @return Signed 16-bit value. 0 = silence.
  */
 int16_t tile_sense_mic_get_audio_sample(tile_t *tile);
@@ -432,7 +432,7 @@ int16_t tile_sense_mic_get_audio_sample(tile_t *tile);
  * Measured during init() by averaging 64 samples. Typically 600–900
  * with VDD reference, depending on supply voltage and PCB layout.
  *
- * @tessera expose category=tile name=get_dc_offset returns=int section=runtime
+ * @studio expose category=tile name=get_dc_offset returns=int section=runtime
  */
 uint16_t tile_sense_mic_get_dc_offset(tile_t *tile);
 
@@ -442,7 +442,7 @@ uint16_t tile_sense_mic_get_dc_offset(tile_t *tile);
  * Averages 64 samples to update the stored bias point.
  * @note   Call in a quiet environment for best results.
  *
- * @tessera expose category=tile name=calibrate section=advanced
+ * @studio expose category=tile name=calibrate section=advanced
  */
 void tile_sense_mic_calibrate(tile_t *tile);
 
@@ -453,8 +453,8 @@ void tile_sense_mic_calibrate(tile_t *tile);
  *   - 400 kHz: ~12.5 ksps
  *   - 1 MHz:   ~16 ksps
  *
- * @tessera expose category=tile name=get_samples section=runtime
- * @tessera out_buffer buf type=uint16_t cap_param=count
+ * @studio expose category=tile name=get_samples section=runtime
+ * @studio out_buffer buf type=uint16_t cap_param=count
  * @param  buf    Output buffer (caller-allocated, min count entries)
  * @param  count  Number of samples to read
  */
@@ -473,8 +473,8 @@ void tile_sense_mic_get_samples(tile_t *tile, uint16_t *buf, uint16_t count);
  * Useful for determining the mic bias point. Varies with supply
  * voltage and PCB bias circuit (typically 600–900 with VDD ref).
  *
- * @tessera expose category=tile name=dc_level returns=int section=runtime
- * @tessera in_buffer samples type=uint16_t length_param=count
+ * @studio expose category=tile name=dc_level returns=int section=runtime
+ * @studio in_buffer samples type=uint16_t length_param=count
  *
  * @param  tile     Tile handle (unused — accepted for DSL-binding
  *                  symmetry with the rest of the driver surface).
@@ -489,8 +489,8 @@ uint16_t tile_sense_mic_dc_level(tile_t *tile, const uint16_t *samples, uint16_t
  *
  * Returns max - min across all samples. Silence ≈ 5–20 counts (noise floor).
  *
- * @tessera expose category=tile name=peak_to_peak returns=int section=runtime
- * @tessera in_buffer samples type=uint16_t length_param=count
+ * @studio expose category=tile name=peak_to_peak returns=int section=runtime
+ * @studio in_buffer samples type=uint16_t length_param=count
  *
  * @param  tile     Tile handle (unused — accepted for DSL-binding symmetry).
  * @param  samples  Sample buffer.
@@ -502,8 +502,8 @@ uint16_t tile_sense_mic_peak_to_peak(tile_t *tile, const uint16_t *samples, uint
 /**
  * @brief  Compute RMS amplitude relative to a DC offset (raw counts).
  *
- * @tessera expose category=tile name=rms returns=int section=runtime
- * @tessera in_buffer samples type=uint16_t length_param=count
+ * @studio expose category=tile name=rms returns=int section=runtime
+ * @studio in_buffer samples type=uint16_t length_param=count
  *
  * @param  tile       Tile handle (unused — accepted for DSL-binding symmetry).
  * @param  samples    Sample buffer.
@@ -520,7 +520,7 @@ uint16_t tile_sense_mic_rms(tile_t *tile, const uint16_t *samples, uint16_t coun
  * Uses the configured reference voltage to scale a peak-to-peak raw
  * ADC count into millivolts: mv = pp_raw * vref_mv / 4096.
  *
- * @tessera expose category=tile name=amplitude_mv returns=int section=runtime
+ * @studio expose category=tile name=amplitude_mv returns=int section=runtime
  * @param  pp_raw  [0..4095] Peak-to-peak amplitude in raw ADC counts.
  * @return Amplitude in millivolts.
  */
@@ -551,7 +551,7 @@ uint16_t tile_sense_mic_amplitude_mv(tile_t *tile, uint16_t pp_raw);
 /**
  * @brief  Quick "is the room loud right now?" check.
  *
- * @tessera expose category=tile name=is_loud returns=bool section=runtime
+ * @studio expose category=tile name=is_loud returns=bool section=runtime
  *
  * Captures a short sample buffer (~64 samples / ~5 ms at 12.5 ksps)
  * via @ref tile_sense_mic_get_samples, computes the RMS amplitude
@@ -570,7 +570,7 @@ uint8_t tile_sense_mic_is_loud(tile_t *tile, int16_t threshold_db);
 /**
  * @brief  Read instantaneous SPL in 0.1 dB units.
  *
- * @tessera expose category=tile name=read_spl_db returns=int section=runtime
+ * @studio expose category=tile name=read_spl_db returns=int section=runtime
  *
  * Captures a short sample buffer (~64 samples), computes the RMS
  * amplitude relative to the calibrated DC offset, scales to mV
@@ -593,7 +593,7 @@ int16_t tile_sense_mic_read_spl_db(tile_t *tile);
 /**
  * @brief  Block until ambient SPL crosses a threshold (or timeout).
  *
- * @tessera expose category=tile name=wait_for_sound returns=bool section=runtime
+ * @studio expose category=tile name=wait_for_sound returns=bool section=runtime
  *
  * Polls @ref tile_sense_mic_read_spl_db every ~5 ms until the
  * computed SPL (in 0.1 dB units) exceeds `threshold_db`, or the
@@ -613,7 +613,7 @@ uint8_t tile_sense_mic_wait_for_sound(tile_t *tile, int16_t threshold_db,
 /**
  * @brief  Detect a clap pattern (two peaks, quiet brackets).
  *
- * @tessera expose category=tile name=detect_clap returns=bool section=runtime
+ * @studio expose category=tile name=detect_clap returns=bool section=runtime
  *
  * Watches the SPL stream looking for the canonical clap signature:
  *   1. Quiet bracket (≥100 ms below ~50 dB SPL) — establishes baseline

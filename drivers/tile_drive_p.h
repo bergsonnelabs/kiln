@@ -15,7 +15,7 @@
  * Datasheet: https://www.bergsonne.io/tiles/drive/p
  * IC datasheet: https://mosaic-component-datasheets.s3.eu-north-1.amazonaws.com/5/Bor_as_Technologies-BOS1921.pdf
  *
- * @tessera tile label=Drive.P icon=♪
+ * @studio tile label=Drive.P icon=♪
  *
  * Quick start:
  * @code
@@ -31,14 +31,14 @@
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="Multi-device SYNC pin" section=advanced
+ * @studio unsupported severity=advanced category="Multi-device SYNC pin" section=advanced
  *   SYNC pin coordinates phase between cascaded BOS1921s
  *   (< 2 µs delay). The Drive.P tile has 10 pads (I2C/I3C, OUT±,
  *   GPIO, V+, V_DRIVE, GND); the SYNC pin on the IC is not routed
  *   to a pad, so multi-tile cascading is hardware-gated to a
  *   future tile rev.
  *
- * @tessera unsupported severity=advanced category="I3C alternate bus mode"
+ * @studio unsupported severity=advanced category="I3C alternate bus mode"
  *   Pads 4/5 are bus-shared between I²C (default) and I3C SDR
  *   (≤12.5 Mbps with in-band interrupts). The cores tile-driver
  *   framework only ships an I²C PAL; I3C support is an
@@ -204,7 +204,7 @@ void tile_drive_p_reset(tile_t* tile);
 
 /**
  * @brief  Set the operating mode.
- * @tessera expose category=tile name=set_mode section=runtime
+ * @studio expose category=tile name=set_mode section=runtime
  *
  * @param  tile  Pointer to tile handle
  * @param  mode  One of the drive_p_mode_t values
@@ -213,7 +213,7 @@ void tile_drive_p_set_mode(tile_t* tile, drive_p_mode_t mode);
 
 /**
  * @brief  Read the current return register value.
- * @tessera expose category=tile name=read returns=int section=runtime
+ * @studio expose category=tile name=read returns=int section=runtime
  *
  * @param  tile  Pointer to tile handle
  * @return 16-bit value from the currently selected return register
@@ -222,7 +222,7 @@ uint16_t tile_drive_p_read(tile_t* tile);
 
 /**
  * @brief  Read the sensed piezo voltage.
- * @tessera expose category=tile name=read_sense returns=int section=runtime
+ * @studio expose category=tile name=read_sense returns=int section=runtime
  *
  * Must be in SENSE_FINE or SENSE_COARSE mode.
  *
@@ -233,7 +233,7 @@ int16_t tile_drive_p_read_sense(tile_t* tile);
 
 /**
  * @brief  Read the IC status register.
- * @tessera expose category=tile name=read_status returns=int section=runtime
+ * @studio expose category=tile name=read_status returns=int section=runtime
  *
  * @param  tile  Pointer to tile handle
  * @return 16-bit IC_STATUS value
@@ -242,7 +242,7 @@ uint16_t tile_drive_p_read_status(tile_t* tile);
 
 /**
  * @brief  Write a sample to the FIFO.
- * @tessera expose category=tile name=write_fifo section=advanced
+ * @studio expose category=tile name=write_fifo section=advanced
  *
  * @param  tile    Pointer to tile handle
  * @param  sample  Signed 16-bit waveform sample
@@ -261,8 +261,8 @@ void tile_drive_p_write_reg(tile_t* tile, uint8_t reg, uint16_t value);
 /**
  * @brief  Write a multi-word WFS command to the BOS1921.
  *
- * @tessera expose category=tile name=wfs_write section=advanced
- * @tessera in_buffer words type=uint16_t length_param=count
+ * @studio expose category=tile name=wfs_write section=advanced
+ * @studio in_buffer words type=uint16_t length_param=count
  *
  * @param  tile   Pointer to tile handle
  * @param  words  Array of 16-bit words (big-endian on wire)
@@ -272,7 +272,7 @@ void tile_drive_p_wfs_write(tile_t* tile, const uint16_t* words, uint16_t count)
 
 /**
  * @brief  Enter low-power sleep mode.
- * @tessera expose category=tile name=sleep section=lifecycle
+ * @studio expose category=tile name=sleep section=lifecycle
  *
  * @param  tile  Pointer to tile handle
  */
@@ -280,7 +280,7 @@ void tile_drive_p_sleep(tile_t* tile);
 
 /**
  * @brief  Check status and recover from error/fault states.
- * @tessera expose category=tile name=check_and_recover returns=bool section=advanced
+ * @studio expose category=tile name=check_and_recover returns=bool section=advanced
  *
  * @param  tile          Pointer to tile handle
  * @param  restore_mode  Mode to re-enter after recovery
@@ -290,7 +290,7 @@ uint8_t tile_drive_p_check_and_recover(tile_t* tile, drive_p_mode_t restore_mode
 
 /**
  * @brief  Select the output voltage range (CONFIG.GAIND).
- * @tessera expose category=tile name=set_output_range section=config
+ * @studio expose category=tile name=set_output_range section=config
  *
  * High-V (±95 V) is the BOS1921 default and suits most piezo
  * actuators. Low-V (±13.28 V) is for low-voltage piezos where the
@@ -310,7 +310,7 @@ void tile_drive_p_set_output_range(tile_t* tile, drive_p_output_range_t range);
 
 /**
  * @brief  Select the sense-channel resolution (CONFIG.GAINS).
- * @tessera expose category=tile name=set_sense_gain section=config
+ * @studio expose category=tile name=set_sense_gain section=config
  *
  * Fine gain (7.6 mV LSB) is the BOS1921 default and gives the
  * highest sensing resolution. Coarse gain (54.5 mV LSB) widens the
@@ -325,7 +325,7 @@ void tile_drive_p_set_sense_gain(tile_t* tile, drive_p_sense_gain_t gain);
 
 /**
  * @brief  Configure register and RAM retention during SLEEP (CONFIG.RET).
- * @tessera expose category=tile name=set_sleep_retention section=config
+ * @studio expose category=tile name=set_sleep_retention section=config
  *
  * Default is retain (~2.4 µA quiescent) so that RAM contents and
  * register configuration survive a sleep cycle. Disabling retention
@@ -339,7 +339,7 @@ void tile_drive_p_set_sleep_retention(tile_t* tile, uint8_t retain);
 
 /**
  * @brief  Enable or disable the auto-sleep timeout (COMM.TOUT).
- * @tessera expose category=tile name=set_auto_sleep section=config
+ * @studio expose category=tile name=set_auto_sleep section=config
  *
  * When enabled, the device drops into SLEEP after 4 ms of bus
  * inactivity during Direct or FIFO playback. Useful for unattended
@@ -357,7 +357,7 @@ void tile_drive_p_set_auto_sleep(tile_t* tile, uint8_t enabled);
 
 /**
  * @brief  Enable or disable the Unidirectional Power Input (PARCAP.UPI).
- * @tessera expose category=tile name=set_upi section=config
+ * @studio expose category=tile name=set_upi section=config
  *
  * UPI forces the BOS1921 into sink-only operation: energy
  * recovered from piezo discharge is dumped instead of pushed back
@@ -381,7 +381,7 @@ void tile_drive_p_set_upi(tile_t* tile, uint8_t enabled);
 /**
  * @brief  Fire a single sharp tactile click.
  *
- * @tessera expose category=tile name=play_click section=runtime
+ * @studio expose category=tile name=play_click section=runtime
  *
  * Streams a half-sine pulse through the FIFO at 8 ksps. Intensity
  * scales the peak output amplitude in the configured voltage range
@@ -398,7 +398,7 @@ void tile_drive_p_play_click(tile_t* tile, uint8_t intensity_pct);
 /**
  * @brief  Play a continuous sine wave for `ms` milliseconds.
  *
- * @tessera expose category=tile name=play_sine section=runtime
+ * @studio expose category=tile name=play_sine section=runtime
  *
  * Generates and streams sine samples at 8 ksps. Frequency is
  * software-quantised to the sample rate (max useful ~3 kHz). The
@@ -417,7 +417,7 @@ void tile_drive_p_play_sine(tile_t* tile, uint16_t freq_hz,
 /**
  * @brief  Play a buzz (sustained mid-frequency vibration).
  *
- * @tessera expose category=tile name=play_buzz section=runtime
+ * @studio expose category=tile name=play_buzz section=runtime
  *
  * Convenience wrapper for @ref tile_drive_p_play_sine at 150 Hz —
  * a frequency typical small-form-factor piezo actuators feel
@@ -433,7 +433,7 @@ void tile_drive_p_play_buzz(tile_t* tile, uint8_t intensity_pct, uint16_t ms);
 /**
  * @brief  Play N clicks separated by gaps.
  *
- * @tessera expose category=tile name=play_pulse_train section=runtime
+ * @studio expose category=tile name=play_pulse_train section=runtime
  *
  * The classic "tick-tick-tick" pattern. Composes @ref
  * tile_drive_p_play_click with `core_delay_ms` between clicks.
@@ -449,7 +449,7 @@ void tile_drive_p_play_pulse_train(tile_t* tile, uint8_t intensity_pct,
 /**
  * @brief  Check whether the piezo is being touched / pressed.
  *
- * @tessera expose category=tile name=is_touched returns=bool section=runtime
+ * @studio expose category=tile name=is_touched returns=bool section=runtime
  *
  * Switches into sense mode (fine resolution), reads one sense
  * sample, compares the absolute value against `threshold_mv`, and
@@ -466,7 +466,7 @@ uint8_t tile_drive_p_is_touched(tile_t* tile, uint16_t threshold_mv);
 /**
  * @brief  Block until touch detected, then fire a click.
  *
- * @tessera expose category=tile name=play_on_touch section=runtime
+ * @studio expose category=tile name=play_on_touch section=runtime
  *
  * Polls the sense channel until `threshold_mv` is exceeded, then
  * switches into FIFO mode and plays a click via @ref
@@ -487,7 +487,7 @@ uint8_t tile_drive_p_play_on_touch(tile_t* tile, uint8_t intensity_pct,
 /**
  * @brief  Stream a buffer of pre-computed samples through the FIFO.
  *
- * @tessera expose category=tile name=play_samples section=runtime
+ * @studio expose category=tile name=play_samples section=runtime
  *
  * Switches into FIFO play mode (if not already there) and writes
  * `count` samples. Samples are signed 12-bit (range −2048..+2047)
@@ -506,7 +506,7 @@ void tile_drive_p_play_samples(tile_t* tile, const int16_t* samples,
 /**
  * @brief  Read a buffer of sense samples.
  *
- * @tessera expose category=tile name=read_sense_samples section=runtime
+ * @studio expose category=tile name=read_sense_samples section=runtime
  *
  * Switches into fine-resolution sense mode (if not already there)
  * and reads `count` consecutive samples into the caller's buffer.

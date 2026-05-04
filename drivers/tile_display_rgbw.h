@@ -20,11 +20,11 @@
  *            flash, is_faulted) + section= tagging for Coverage Table.
  *   v2.0.0 — Initial tier-1 surface (set, off, current, faults).
  *
- * @tessera tile label=Display.RGBW icon=◑
+ * @studio tile label=Display.RGBW icon=◑
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=common category="Animation Engine Unit (AEU)"
+ * @studio unsupported severity=common category="Animation Engine Unit (AEU)"
  *   The LP5811 has 4 autonomous animation engines (one per LED, with
  *   AEU1/AEU2/AEU3 sub-engines per channel) that play breathe / pulse /
  *   ramp patterns without MCU intervention. The bytecode-style register
@@ -35,7 +35,7 @@
  *   reverse-engineering against TI's evaluation tool); deliberately
  *   deferred until that source is available.
  *
- * @tessera unsupported severity=niche category="Multi-address support (0x50–0x53)"
+ * @studio unsupported severity=niche category="Multi-address support (0x50–0x53)"
  *   Chip-gated. The four LP5811 addresses 0x50/0x51/0x52/0x53 are
  *   selected by Bit4/Bit3 of the chip-address byte, but those bits
  *   are fixed by the factory material variant (LP5811A/B/C/D, see
@@ -176,7 +176,7 @@ void tile_display_rgbw_init(tiles_pal_t *hal, uint8_t instance, tile_t *tile,
 /**
  * @brief Set RGBW output levels.
  *
- * @tessera expose category=tile icon=◑ name=set section=runtime
+ * @studio expose category=tile icon=◑ name=set section=runtime
  * @param r [0..255] Red PWM.
  * @param g [0..255] Green PWM.
  * @param b [0..255] Blue PWM.
@@ -187,14 +187,14 @@ void tile_display_rgbw_set(tile_t *tile, uint8_t r, uint8_t g, uint8_t b, uint8_
 /**
  * @brief Turn all LEDs off (PWM = 0).
  *
- * @tessera expose category=tile icon=◑ name=off section=runtime
+ * @studio expose category=tile icon=◑ name=off section=runtime
  */
 void tile_display_rgbw_off(tile_t *tile);
 
 /**
  * @brief Set per-channel current limit.
  *
- * @tessera expose category=tile icon=◑ name=set_current section=runtime
+ * @studio expose category=tile icon=◑ name=set_current section=runtime
  * @param r [0..255] Red current (fraction of full-scale max).
  * @param g [0..255] Green current.
  * @param b [0..255] Blue current.
@@ -215,7 +215,7 @@ void tile_display_rgbw_set_current(tile_t *tile, uint8_t r, uint8_t g, uint8_t b
  * latch (0x55) the chip requires for config-register writes to
  * actually take effect.
  *
- * @tessera expose category=tile icon=◑ name=set_max_current section=config
+ * @studio expose category=tile icon=◑ name=set_max_current section=config
  * @param  tile  Initialised tile handle
  * @param  mode  25.5 mA (0) or 51 mA (1)
  */
@@ -234,7 +234,7 @@ void tile_display_rgbw_set_max_current(tile_t *tile, disp_rgbw_max_current_t mod
  * (25.5 mA mode) or ~180 mV (51 mA mode). Short-circuit threshold
  * (VLSD_TH) is configurable via `set_short_threshold()`.
  *
- * @tessera expose category=tile icon=◑ name=read_faults section=runtime
+ * @studio expose category=tile icon=◑ name=read_faults section=runtime
  * @param  tile  Initialised tile handle
  * @param  out   Caller-allocated fault snapshot (zeroed on entry)
  */
@@ -246,7 +246,7 @@ void tile_display_rgbw_read_faults(tile_t *tile, disp_rgbw_faults_t *out);
  * Writes 0x07 to Fault_Clear (W1C — write 1 to clear). After this
  * call, `read_faults()` reflects only currently-active faults.
  *
- * @tessera expose category=tile icon=◑ name=clear_faults section=runtime
+ * @studio expose category=tile icon=◑ name=clear_faults section=runtime
  * @param  tile  Initialised tile handle
  */
 void tile_display_rgbw_clear_faults(tile_t *tile);
@@ -259,7 +259,7 @@ void tile_display_rgbw_clear_faults(tile_t *tile);
  * Driver default (init) is 0.65 × VOUT — most permissive, least
  * likely to mis-fire on cold LEDs whose Vf hasn't settled.
  *
- * @tessera expose category=tile icon=◑ name=set_short_threshold section=config
+ * @studio expose category=tile icon=◑ name=set_short_threshold section=config
  * @param  tile       Initialised tile handle
  * @param  threshold  One of DISP_RGBW_LSD_TH_*
  */
@@ -274,7 +274,7 @@ void tile_display_rgbw_set_short_threshold(tile_t *tile,
  * When disabled (driver default), the chip flags the fault but keeps
  * driving — firmware decides what to do.
  *
- * @tessera expose category=tile icon=◑ name=set_short_shutdown section=config
+ * @studio expose category=tile icon=◑ name=set_short_shutdown section=config
  * @param  tile     Initialised tile handle
  * @param  enabled  1 = chip auto-shuts-down on LSD, 0 = report only
  */
@@ -289,7 +289,7 @@ void tile_display_rgbw_set_short_shutdown(tile_t *tile, uint8_t enabled);
  * the open is intermittent (e.g., a flexing wire) and firmware
  * wants to retry rather than relying on the chip to recover.
  *
- * @tessera expose category=tile icon=◑ name=set_open_shutdown section=config
+ * @studio expose category=tile icon=◑ name=set_open_shutdown section=config
  * @param  tile     Initialised tile handle
  * @param  enabled  1 = chip auto-shuts-down a single sink, 0 = report only
  */
@@ -298,21 +298,21 @@ void tile_display_rgbw_set_open_shutdown(tile_t *tile, uint8_t enabled);
 /**
  * @brief Enter sleep (disable chip).
  *
- * @tessera expose category=tile icon=◑ name=sleep section=lifecycle
+ * @studio expose category=tile icon=◑ name=sleep section=lifecycle
  */
 void tile_display_rgbw_sleep(tile_t *tile);
 
 /**
  * @brief Wake (re-enable chip, LEDs retain previous state).
  *
- * @tessera expose category=tile icon=◑ name=wake section=lifecycle
+ * @studio expose category=tile icon=◑ name=wake section=lifecycle
  */
 void tile_display_rgbw_wake(tile_t *tile);
 
 /**
  * @brief  Software reset. Must call init() again after.
  *
- * @tessera expose category=tile icon=◑ name=reset section=lifecycle
+ * @studio expose category=tile icon=◑ name=reset section=lifecycle
  */
 void tile_display_rgbw_reset(tile_t *tile);
 
@@ -329,7 +329,7 @@ void tile_display_rgbw_reset(tile_t *tile);
 /**
  * @brief  Set a solid RGB colour (W channel forced off).
  *
- * @tessera expose category=tile icon=◑ name=set_color section=runtime
+ * @studio expose category=tile icon=◑ name=set_color section=runtime
  *
  * Convenience wrapper around @ref tile_display_rgbw_set for the
  * common case where only the RGB channels matter. White is held at
@@ -345,7 +345,7 @@ void tile_display_rgbw_set_color(tile_t *tile, uint8_t r, uint8_t g, uint8_t b);
 /**
  * @brief  Show a colour for `ms` milliseconds, then turn off.
  *
- * @tessera expose category=tile icon=◑ name=pulse section=runtime
+ * @studio expose category=tile icon=◑ name=pulse section=runtime
  *
  * Simple alert / acknowledgement idiom. Blocking — the call returns
  * after `ms` has elapsed and the LEDs have been turned back off. White
@@ -364,7 +364,7 @@ void tile_display_rgbw_pulse(tile_t *tile, uint8_t r, uint8_t g, uint8_t b,
 /**
  * @brief  Continuous fade in/out (one breath cycle).
  *
- * @tessera expose category=tile icon=◑ name=breathe section=runtime
+ * @studio expose category=tile icon=◑ name=breathe section=runtime
  *
  * The "thinking" indicator. Plays a single up-and-down PWM ramp over
  * `period_ms` (i.e., dark → peak → dark = one full breath). Loop in
@@ -395,7 +395,7 @@ void tile_display_rgbw_breathe(tile_t *tile, uint8_t r, uint8_t g, uint8_t b,
 /**
  * @brief  N quick on/off blinks at the given colour.
  *
- * @tessera expose category=tile icon=◑ name=flash section=runtime
+ * @studio expose category=tile icon=◑ name=flash section=runtime
  *
  * Notification idiom — alarm, error indication, "got it" ack. Each
  * blink is 100 ms on, 100 ms off (200 ms per cycle). White is forced
@@ -416,7 +416,7 @@ void tile_display_rgbw_flash(tile_t *tile, uint8_t r, uint8_t g, uint8_t b,
 /**
  * @brief  Quick yes/no on whether any LP5811 fault is currently latched.
  *
- * @tessera expose category=tile icon=◑ name=is_faulted returns=bool section=runtime
+ * @studio expose category=tile icon=◑ name=is_faulted returns=bool section=runtime
  *
  * Wraps @ref tile_display_rgbw_read_faults and returns 1 if any fault
  * bit is set — open-circuit (LOD), short-circuit (LSD), thermal

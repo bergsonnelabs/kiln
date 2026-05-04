@@ -68,11 +68,11 @@
  *
  * Datasheet: Azoteq IQS323, Rev v1.11, August 2025
  *
- * @tessera tile label=Sense.T.C icon=◕
+ * @studio tile label=Sense.T.C icon=◕
  *
  * Driver gaps (chip capabilities not exposed by this driver):
  *
- * @tessera unsupported severity=advanced category="Per-gesture threshold tuning" section=config
+ * @studio unsupported severity=advanced category="Per-gesture threshold tuning" section=config
  *   IQS323 gesture timing (tap touch/release time, hold duration,
  *   swipe distance, flick velocity) is packed across several
  *   GESTURE_* registers with chip-specific encodings. The driver
@@ -81,7 +81,7 @@
  *   dedicated pass with Azoteq's gesture-config guide. Raw
  *   write_reg works for advanced users in the interim.
  *
- * @tessera unsupported severity=niche category="Per-channel timeout / OutA event-indicator" section=advanced
+ * @studio unsupported severity=niche category="Per-channel timeout / OutA event-indicator" section=advanced
  *   Channel-timeout disable bits (auto-reseed on timeout) and the
  *   OutA pin's event-indicator output mode aren't exposed. Most
  *   applications don't need them; raw write_reg covers the niche
@@ -343,7 +343,7 @@ void tile_sense_t_c_init(tiles_pal_t *hal, uint8_t instance,
 
 /**
  * @brief  Read pending touch/proximity events and update internal state.
- * @tessera expose category=tile name=process section=events
+ * @studio expose category=tile name=process section=events
  *
  * Call from your main loop.
  * In polled mode: reads status register, fires callback if events present.
@@ -356,7 +356,7 @@ void tile_sense_t_c_process(tile_t *tile);
 
 /**
  * @brief  Register or change the event callback for touch/proximity events.
- * @tessera expose category=tile name=on_event section=events
+ * @studio expose category=tile name=on_event section=events
  * @param  tile  Tile handle
  * @param  cb    Callback function (NULL to disable)
  * @param  ctx   User context passed to callback
@@ -367,13 +367,13 @@ void tile_sense_t_c_on_event(tile_t *tile, sense_t_c_event_cb_t cb, void *ctx);
 
 /**
  * @brief  Enter low-power sleep mode.
- * @tessera expose category=tile name=sleep section=lifecycle
+ * @studio expose category=tile name=sleep section=lifecycle
  */
 void tile_sense_t_c_sleep(tile_t *tile);
 
 /**
  * @brief  Wake from sleep mode.
- * @tessera expose category=tile name=wake section=lifecycle
+ * @studio expose category=tile name=wake section=lifecycle
  */
 void tile_sense_t_c_wake(tile_t *tile);
 
@@ -383,25 +383,25 @@ void tile_sense_t_c_reset(tile_t *tile);
 
 /**
  * @brief  Read the cached System Status word from the last process() call.
- * @tessera expose category=tile name=get_status returns=int section=runtime
+ * @studio expose category=tile name=get_status returns=int section=runtime
  */
 uint16_t tile_sense_t_c_get_status(tile_t *tile);
 
 /**
  * @brief  Read the cached Gesture Status word from the last process() call.
- * @tessera expose category=tile name=get_gestures returns=int section=runtime
+ * @studio expose category=tile name=get_gestures returns=int section=runtime
  */
 uint16_t tile_sense_t_c_get_gestures(tile_t *tile);
 
 /**
  * @brief  Check if the given channel is currently touched.
- * @tessera expose category=tile name=is_touched returns=bool section=runtime
+ * @studio expose category=tile name=is_touched returns=bool section=runtime
  */
 uint8_t  tile_sense_t_c_is_touched(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Check if the given channel currently reports proximity.
- * @tessera expose category=tile name=is_prox returns=bool section=runtime
+ * @studio expose category=tile name=is_prox returns=bool section=runtime
  */
 uint8_t  tile_sense_t_c_is_prox(tile_t *tile, uint8_t channel);
 
@@ -409,25 +409,25 @@ uint8_t  tile_sense_t_c_is_prox(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Read the raw counts value for a channel.
- * @tessera expose category=tile name=get_counts returns=int section=runtime
+ * @studio expose category=tile name=get_counts returns=int section=runtime
  */
 uint16_t tile_sense_t_c_get_counts(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Read the long-term average (LTA) for a channel.
- * @tessera expose category=tile name=get_lta returns=int section=runtime
+ * @studio expose category=tile name=get_lta returns=int section=runtime
  */
 uint16_t tile_sense_t_c_get_lta(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Read the delta (counts - LTA) for a channel.
- * @tessera expose category=tile name=get_delta returns=int section=runtime
+ * @studio expose category=tile name=get_delta returns=int section=runtime
  */
 int16_t  tile_sense_t_c_get_delta(tile_t *tile, uint8_t channel);
 
 /**
  * @brief  Read the slider position (if a slider is configured).
- * @tessera expose category=tile name=get_slider returns=int section=runtime
+ * @studio expose category=tile name=get_slider returns=int section=runtime
  */
 uint16_t tile_sense_t_c_get_slider(tile_t *tile);
 
@@ -435,26 +435,26 @@ uint16_t tile_sense_t_c_get_slider(tile_t *tile);
 
 /**
  * @brief  Set proximity and touch thresholds for a channel.
- * @tessera expose category=tile name=set_thresholds section=runtime
+ * @studio expose category=tile name=set_thresholds section=runtime
  */
 void tile_sense_t_c_set_thresholds(tile_t *tile, uint8_t channel,
                                    uint8_t prox_thresh, uint8_t touch_thresh);
 
 /**
  * @brief  Set the device power mode.
- * @tessera expose category=tile name=set_power_mode section=config
+ * @studio expose category=tile name=set_power_mode section=config
  */
 void tile_sense_t_c_set_power_mode(tile_t *tile, sense_t_c_power_mode_t mode);
 
 /**
  * @brief  Set the events-enable mask (which events drive RDY pulses).
- * @tessera expose category=tile name=enable_events section=config
+ * @studio expose category=tile name=enable_events section=config
  */
 void tile_sense_t_c_enable_events(tile_t *tile, uint16_t mask);
 
 /**
  * @brief  Trigger an ATI (auto-tuning) cycle and wait for completion.
- * @tessera expose category=tile name=ati section=config
+ * @studio expose category=tile name=ati section=config
  */
 void tile_sense_t_c_ati(tile_t *tile);
 
@@ -474,7 +474,7 @@ void tile_sense_t_c_ati(tile_t *tile);
  * ambient capacitance shifts (cover-glass thickness, mounting
  * substrate) push the working point off the chip's defaults.
  *
- * @tessera expose category=tile name=set_ati_setup section=config
+ * @studio expose category=tile name=set_ati_setup section=config
  * @param  tile     Initialised tile handle
  * @param  channel  0–2
  * @param  value    Raw 16-bit ATI Setup register value
@@ -491,7 +491,7 @@ void tile_sense_t_c_set_ati_setup(tile_t *tile, uint8_t channel, uint16_t value)
  * typical electrode geometries; tune up for noisy environments,
  * tune down for fast-response applications.
  *
- * @tessera expose category=tile name=set_counts_filter section=config
+ * @studio expose category=tile name=set_counts_filter section=config
  * @param  tile  Initialised tile handle
  * @param  beta  Raw 16-bit Counts Filter Betas register value
  */
@@ -505,7 +505,7 @@ void tile_sense_t_c_set_counts_filter(tile_t *tile, uint16_t beta);
  * or when self-capacitance interactions push beyond the chip's
  * default Conversion Frequency Fraction.
  *
- * @tessera expose category=tile name=set_conversion_freq section=config
+ * @studio expose category=tile name=set_conversion_freq section=config
  * @param  tile     Initialised tile handle
  * @param  channel  0–2
  * @param  value    Raw 16-bit Conversion Frequency register value
@@ -538,7 +538,7 @@ typedef enum {
  * REFERENCE first, then set followers). Re-run @ref tile_sense_t_c_ati
  * after changing channel modes.
  *
- * @tessera expose category=tile name=set_channel_mode section=config
+ * @studio expose category=tile name=set_channel_mode section=config
  * @param  tile          Initialised tile handle
  * @param  channel       0–2
  * @param  mode          Channel role
@@ -565,7 +565,7 @@ typedef enum {
  * higher current, lower latency. Use streaming for continuous logging
  * or for hosts that can't handle interrupt-driven I²C cleanly.
  *
- * @tessera expose category=tile name=set_comm_mode section=config
+ * @studio expose category=tile name=set_comm_mode section=config
  * @param  tile  Initialised tile handle
  * @param  mode  Event or streaming
  */
@@ -584,7 +584,7 @@ void tile_sense_t_c_set_comm_mode(tile_t *tile, sense_t_c_comm_mode_t mode);
 /**
  * @brief  Check whether *any* channel is currently touched.
  *
- * @tessera expose category=tile name=is_touched_any returns=bool section=runtime
+ * @studio expose category=tile name=is_touched_any returns=bool section=runtime
  *
  * Reflects the cached System Status from the most recent process()
  * call — it does not perform an I²C read itself, so it's safe to
@@ -600,7 +600,7 @@ uint8_t tile_sense_t_c_is_touched_any(tile_t *tile);
 /**
  * @brief  Block until any channel is touched (or timeout elapses).
  *
- * @tessera expose category=tile name=wait_for_touch returns=bool section=runtime
+ * @studio expose category=tile name=wait_for_touch returns=bool section=runtime
  *
  * Polls process() at ~5 ms cadence and returns as soon as any
  * channel reports touch. If RDY-mode is configured, process() is a
@@ -617,7 +617,7 @@ uint8_t tile_sense_t_c_wait_for_touch(tile_t *tile, uint32_t timeout_ms);
 /**
  * @brief  Block until any gesture fires (or timeout elapses).
  *
- * @tessera expose category=tile name=wait_for_gesture returns=int section=runtime
+ * @studio expose category=tile name=wait_for_gesture returns=int section=runtime
  *
  * Polls the Gesture Status register at ~5 ms cadence. Returns the
  * raw 16-bit gesture word as soon as any gesture bit is set
@@ -637,7 +637,7 @@ uint16_t tile_sense_t_c_wait_for_gesture(tile_t *tile, uint32_t timeout_ms);
 /**
  * @brief  Read the slider position scaled to 0–100 percent.
  *
- * @tessera expose category=tile name=read_slider_pct returns=bool section=runtime
+ * @studio expose category=tile name=read_slider_pct returns=bool section=runtime
  *
  * The IQS323 slider register reports a 10-bit position in the range
  * 0–1023. This helper integer-scales it to a 0–100 percentage and
@@ -660,13 +660,13 @@ uint8_t tile_sense_t_c_read_slider_pct(tile_t *tile, uint8_t *out_pct);
 
 /**
  * @brief  Read a raw 16-bit IQS323 register.
- * @tessera expose category=tile name=read_reg returns=int section=advanced
+ * @studio expose category=tile name=read_reg returns=int section=advanced
  */
 uint16_t tile_sense_t_c_read_reg(tile_t *tile, uint8_t reg);
 
 /**
  * @brief  Write a raw 16-bit IQS323 register.
- * @tessera expose category=tile name=write_reg section=advanced
+ * @studio expose category=tile name=write_reg section=advanced
  */
 void tile_sense_t_c_write_reg(tile_t *tile, uint8_t reg, uint16_t value);
 
